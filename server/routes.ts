@@ -426,10 +426,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Join with company data
       const companies = await storage.getAllCompanies();
-      const driversWithCompanies = drivers.map(driver => ({
-        ...driver,
-        company: companies.find(c => c.id === driver.companyId)
-      }));
+      console.log("Companies found:", companies.length);
+      console.log("Drivers found:", drivers.length);
+      
+      const driversWithCompanies = drivers.map(driver => {
+        const company = companies.find(c => c.id === driver.companyId);
+        const result = {
+          ...driver,
+          company: company || null
+        };
+        console.log(`Driver mapping result:`, JSON.stringify({
+          driverName: driver.name,
+          companyId: driver.companyId,
+          foundCompany: company?.name || 'null',
+          hasCompanyField: 'company' in result
+        }));
+        return result;
+      });
       
       res.json(driversWithCompanies);
     } catch (error) {
