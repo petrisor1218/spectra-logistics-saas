@@ -42,27 +42,77 @@ async function parsePdfInvoice(buffer: Buffer): Promise<any[]> {
       currentInvoiceType = '30_days';
     }
     
-    // For testing purposes, generate sample data based on your PDF examples
-    // In real implementation, this would extract actual data from PDF
-    const sampleInvoiceData = [
-      {
-        'Tour ID': '1157X9TXR',
-        'Load ID': '1157X9TXR',
-        'Gross Pay Amt (Excl. Tax)': '586.37',
-        'Invoice Type': currentInvoiceType
-      },
-      {
-        'Tour ID': '115PS2QBY',
-        'Load ID': '115PS2QBY',
-        'Gross Pay Amt (Excl. Tax)': '330.44',
-        'Invoice Type': currentInvoiceType
+    // Extract Tour IDs and amounts from PDF text
+    const invoiceData: any[] = [];
+    
+    // Parse PDF text to extract actual data
+    const lines = pdfString.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    let currentTourId = '';
+    let currentAmount = '';
+    
+    console.log('Analyzing PDF content for Tour IDs and amounts...');
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Look for Tour ID patterns (typically alphanumeric codes like 1157X9TXR)
+      const tourIdMatch = line.match(/\b([A-Z0-9]{7,10})\b/);
+      if (tourIdMatch && !line.includes('$') && !line.includes('€') && !line.includes('.')) {
+        currentTourId = tourIdMatch[1];
       }
-    ];
+      
+      // Look for amount patterns (numbers with decimals, possibly with currency symbols)
+      const amountMatch = line.match(/(\d+\.\d{2})/);
+      if (amountMatch && currentTourId && parseFloat(amountMatch[1]) > 10) {
+        currentAmount = amountMatch[1];
+        
+        // Add the found invoice data
+        invoiceData.push({
+          'Tour ID': currentTourId,
+          'Load ID': currentTourId, // Same as Tour ID in Amazon system
+          'Gross Pay Amt (Excl. Tax)': currentAmount,
+          'Invoice Type': currentInvoiceType
+        });
+        
+        console.log(`Found: Tour ID ${currentTourId}, Amount ${currentAmount}`);
+        
+        // Reset for next iteration
+        currentTourId = '';
+        currentAmount = '';
+      }
+    }
     
-    console.log(`PDF processed: ${sampleInvoiceData.length} invoices found, type: ${currentInvoiceType}`);
+    // If no data found with the above method, try alternative parsing
+    if (invoiceData.length === 0) {
+      console.log('Primary parsing failed, trying alternative method...');
+      
+      // Alternative: Look for all Tour IDs and amounts, then match them
+      const tourIdPattern = /\b([A-Z0-9]{7,10})\b/g;
+      const amountPattern = /\b(\d{2,4}\.\d{2})\b/g;
+      
+      const tourIds = [...pdfString.matchAll(tourIdPattern)].map(match => match[1]);
+      const amounts = [...pdfString.matchAll(amountPattern)].map(match => match[1]);
+      
+      console.log(`Found ${tourIds.length} Tour IDs and ${amounts.length} amounts`);
+      
+      // Match tour IDs with amounts (assuming they appear in order)
+      const minLength = Math.min(tourIds.length, amounts.length);
+      for (let i = 0; i < minLength; i++) {
+        if (parseFloat(amounts[i]) > 10) { // Filter out small amounts (might be taxes, etc.)
+          invoiceData.push({
+            'Tour ID': tourIds[i],
+            'Load ID': tourIds[i],
+            'Gross Pay Amt (Excl. Tax)': amounts[i],
+            'Invoice Type': currentInvoiceType
+          });
+          console.log(`Matched: Tour ID ${tourIds[i]}, Amount ${amounts[i]}`);
+        }
+      }
+    }
     
-    // Return the sample data for now - this allows you to test the full workflow
-    return sampleInvoiceData;
+    console.log(`PDF processed: ${invoiceData.length} invoices found, type: ${currentInvoiceType}`);
+    return invoiceData;
     
   } catch (error) {
     console.error('Error parsing PDF:', error);
