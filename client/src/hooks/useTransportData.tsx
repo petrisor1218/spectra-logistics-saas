@@ -589,6 +589,40 @@ export function useTransportData() {
     return Math.max(0, total - paid);
   };
 
+  // Save processed data to database
+  const saveProcessedData = async () => {
+    if (!selectedWeek || Object.keys(processedData).length === 0) {
+      alert('Nu există date procesate de salvat');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/weekly-processing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          weekLabel: selectedWeek,
+          data: processedData,
+          processedAt: new Date().toISOString()
+        }),
+      });
+
+      if (response.ok) {
+        alert('Datele au fost salvate cu succes în baza de date!');
+      } else {
+        throw new Error('Failed to save processed data');
+      }
+    } catch (error) {
+      console.error('Error saving processed data:', error);
+      alert('Eroare la salvarea datelor în baza de date');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     // State
     tripData,
@@ -621,6 +655,7 @@ export function useTransportData() {
     loadWeeklyPaymentHistory,
     loadAllPaymentHistory,
     loadPaymentsForWeek,
+    saveProcessedData,
     
     // Computed
     getCurrentWeekRange,

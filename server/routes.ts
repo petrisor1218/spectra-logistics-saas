@@ -216,6 +216,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Weekly processing routes
+  app.post("/api/weekly-processing", async (req, res) => {
+    try {
+      const { weekLabel, data, processedAt } = req.body;
+      
+      const weeklyProcessingData = {
+        weekLabel,
+        processingDate: processedAt ? new Date(processedAt) : new Date(),
+        tripDataCount: 0,
+        invoice7Count: 0, 
+        invoice30Count: 0,
+        processedData: data
+      };
+
+      const savedProcessing = await storage.createWeeklyProcessing(weeklyProcessingData);
+      res.json(savedProcessing);
+    } catch (error) {
+      console.error("Error saving weekly processing:", error);
+      res.status(500).json({ error: "Failed to save processed data" });
+    }
+  });
+
+  app.get("/api/weekly-processing", async (req, res) => {
+    try {
+      const { weekLabel } = req.query;
+      
+      if (weekLabel) {
+        const processing = await storage.getWeeklyProcessingByWeek(weekLabel as string);
+        res.json(processing);
+      } else {
+        const allProcessing = await storage.getAllWeeklyProcessing();
+        res.json(allProcessing);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch weekly processing data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

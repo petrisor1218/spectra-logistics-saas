@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -42,6 +42,7 @@ export default function Home() {
     deletePayment,
     loadAllPaymentHistory,
     loadPaymentsForWeek,
+    saveProcessedData,
     
     // Computed
     getWeekOptions,
@@ -196,13 +197,27 @@ export default function Home() {
                   >
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold text-white">Rezultate Procesare</h3>
-                      {selectedWeek && (
-                        <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg px-3 py-2">
-                          <p className="text-blue-300 text-sm">
-                            📊 Date procesate pentru: <strong>{selectedWeek}</strong>
-                          </p>
-                        </div>
-                      )}
+                      
+                      <div className="flex items-center space-x-4">
+                        {selectedWeek && (
+                          <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg px-3 py-2">
+                            <p className="text-blue-300 text-sm">
+                              📊 Date procesate pentru: <strong>{selectedWeek}</strong>
+                            </p>
+                          </div>
+                        )}
+                        
+                        <motion.button
+                          onClick={saveProcessedData}
+                          className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-6 py-3 rounded-xl text-white font-medium flex items-center space-x-2 transition-all duration-300 shadow-lg hover:shadow-green-500/25"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          disabled={loading}
+                        >
+                          <Save className="w-5 h-5" />
+                          <span>{loading ? 'Se salvează...' : 'Salvează în BD'}</span>
+                        </motion.button>
+                      </div>
                     </div>
                     
                     <div className="overflow-x-auto">

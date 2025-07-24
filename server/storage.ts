@@ -39,6 +39,8 @@ export interface IStorage {
   
   // Weekly processing methods
   getWeeklyProcessing(weekLabel: string): Promise<WeeklyProcessing | undefined>;
+  getWeeklyProcessingByWeek(weekLabel: string): Promise<WeeklyProcessing | undefined>;
+  getAllWeeklyProcessing(): Promise<WeeklyProcessing[]>;
   createWeeklyProcessing(processing: InsertWeeklyProcessing): Promise<WeeklyProcessing>;
   updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing>;
   
@@ -121,6 +123,15 @@ export class DatabaseStorage implements IStorage {
       .values(insertProcessing)
       .returning();
     return processing;
+  }
+
+  async getWeeklyProcessingByWeek(weekLabel: string): Promise<WeeklyProcessing | undefined> {
+    const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
+    return processing || undefined;
+  }
+
+  async getAllWeeklyProcessing(): Promise<WeeklyProcessing[]> {
+    return await db.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
   }
 
   async updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing> {
