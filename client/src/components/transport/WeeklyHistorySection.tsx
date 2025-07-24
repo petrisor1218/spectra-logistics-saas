@@ -215,22 +215,19 @@ export function WeeklyHistorySection({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    {/* Company Totals with Remaining Payments */}
+                    {/* Company Payment Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                       {Object.entries(weekTotals).map(([company, total]: [string, any]) => {
                         // Load weekly processing data for this week if available
                         const processingData = weeklyProcessingData[weekLabel];
-                        const companyData = processingData?.companies?.find((c: any) => c.name === company);
-                        const totalOwed = companyData ? 
-                          (companyData.total7Days + companyData.total30Days - companyData.commission) : 0;
-                        const remaining = Math.max(0, totalOwed - total);
+                        const companyData = processingData?.processedData?.[company];
                         
-                        return (
-                          <div
-                            key={company}
-                            className="bg-white/5 rounded-xl p-4 border border-white/10"
-                          >
-                            <div className="space-y-3">
+                        if (!companyData) {
+                          return (
+                            <div
+                              key={company}
+                              className="bg-white/5 rounded-xl p-4 border border-white/10"
+                            >
                               <div className="flex items-center justify-between">
                                 <div>
                                   <h4 className="font-medium text-white">{company}</h4>
@@ -245,17 +242,64 @@ export function WeeklyHistorySection({
                                   <div className="text-xs text-gray-400">Plătit</div>
                                 </div>
                               </div>
+                            </div>
+                          );
+                        }
+
+                        const sevenDaysAmount = companyData.Total_7_days || 0;
+                        const thirtyDaysAmount = companyData.Total_30_days || 0;
+                        const commission = companyData.Total_comision || 0;
+                        const totalOwed = sevenDaysAmount + thirtyDaysAmount - commission;
+                        const remaining = Math.max(0, totalOwed - total);
+                        
+                        return (
+                          <div
+                            key={company}
+                            className="bg-white/5 rounded-xl p-4 border border-white/10"
+                          >
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between mb-3">
+                                <div>
+                                  <h4 className="font-medium text-white">{company}</h4>
+                                  <p className="text-sm text-gray-400">
+                                    {weekPayments.filter((p: any) => (p.company || p.companyName) === company).length} plăți
+                                  </p>
+                                </div>
+                              </div>
                               
-                              {totalOwed > 0 && (
-                                <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                                  <div className="text-sm text-gray-300">
-                                    Rest de plată:
-                                  </div>
-                                  <div className={`text-sm font-semibold ${remaining === 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                    €{remaining.toFixed(2)}
+                              {/* Payment Details Summary */}
+                              <div className="bg-gray-800/50 rounded-lg p-3 space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-400">Facturi 7 zile:</span>
+                                  <span className="text-green-400">€{sevenDaysAmount.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-400">Facturi 30 zile:</span>
+                                  <span className="text-blue-400">€{thirtyDaysAmount.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-400">Comision:</span>
+                                  <span className="text-red-400">-€{commission.toFixed(2)}</span>
+                                </div>
+                                <div className="border-t border-gray-600 pt-2">
+                                  <div className="flex justify-between font-medium">
+                                    <span className="text-white">Total de plată:</span>
+                                    <span className="text-white">€{totalOwed.toFixed(2)}</span>
                                   </div>
                                 </div>
-                              )}
+                                <div className="border-t border-gray-600 pt-2">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-400">Deja plătit:</span>
+                                    <span className="text-yellow-400">€{total.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between font-medium mt-1">
+                                    <span className="text-white">Rest de plată:</span>
+                                    <span className={`${remaining === 0 ? 'text-green-400' : 'text-orange-400'}`}>
+                                      €{remaining.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         );
