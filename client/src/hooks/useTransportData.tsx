@@ -124,14 +124,62 @@ export function useTransportData() {
     return Array.from(new Set(variants));
   };
 
-  // Build normalized dictionary - DO NOT MODIFY!
-  const DRIVER_COMPANY_MAP: Record<string, string> = {};
-  Object.entries(DRIVER_COMPANY_MAP_ORIGINAL).forEach(([driver, company]) => {
-    const variants = generateNameVariants(driver);
-    variants.forEach(variant => {
+  // Load drivers from database and combine with static mapping
+  const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
+  
+  const loadDriversFromDatabase = async () => {
+    try {
+      const [driversResponse, companiesResponse] = await Promise.all([
+        fetch('/api/drivers'),
+        fetch('/api/companies')
+      ]);
+      
+      if (driversResponse.ok && companiesResponse.ok) {
+        const drivers = await driversResponse.json();
+        const companies = await companiesResponse.json();
+        
+        const dbDriverMap: Record<string, string> = {};
+        
+        drivers.forEach((driver: any) => {
+          if (driver.companyId) {
+            const company = companies.find((c: any) => c.id === driver.companyId);
+            if (company) {
+              // Generate variants for each driver name
+              const variants = generateNameVariants(driver.name);
+              variants.forEach(variant => {
+                dbDriverMap[variant] = company.name;
+              });
+            }
+          }
+        });
+        
+        setDynamicDriverMap(dbDriverMap);
+        console.log('Loaded drivers from database:', Object.keys(dbDriverMap).length, 'variants');
+      }
+    } catch (error) {
+      console.error('Error loading drivers from database:', error);
+    }
+  };
+
+  // Build complete normalized dictionary (static + dynamic)
+  const getCompleteDriverMap = () => {
+    const DRIVER_COMPANY_MAP: Record<string, string> = {};
+    
+    // Add static mapping first
+    Object.entries(DRIVER_COMPANY_MAP_ORIGINAL).forEach(([driver, company]) => {
+      const variants = generateNameVariants(driver);
+      variants.forEach(variant => {
+        DRIVER_COMPANY_MAP[variant] = company;
+      });
+    });
+    
+    // Add dynamic mapping (will override static if same name exists)
+    Object.entries(dynamicDriverMap).forEach(([variant, company]) => {
       DRIVER_COMPANY_MAP[variant] = company;
     });
-  });
+    
+    return DRIVER_COMPANY_MAP;
+  };
 
   const extractAndFindDriver = (driverName: string) => {
     if (!driverName || typeof driverName !== 'string') {
@@ -139,6 +187,7 @@ export function useTransportData() {
       return "Unknown";
     }
     
+    const DRIVER_COMPANY_MAP = getCompleteDriverMap();
     const drivers = driverName.split(',').map(d => d.trim());
     
     for (const driver of drivers) {
@@ -372,8 +421,8 @@ export function useTransportData() {
     }
   };
 
-  // Data processing - DO NOT MODIFY!
-  const processData = () => {
+  // Data processing with dynamic driver loading
+  const processData = async () => {
     if (!tripData || !invoice7Data || !invoice30Data) {
       alert('Vă rugăm să încărcați toate fișierele necesare.');
       return;
@@ -385,6 +434,10 @@ export function useTransportData() {
     }
 
     setLoading(true);
+    
+    // Load fresh driver data before processing
+    await loadDriversFromDatabase();
+    
     const results: any = {};
 
     try {
@@ -774,6 +827,7 @@ export function useTransportData() {
     loadAllWeeklyProcessing,
     loadWeeklyProcessingByWeek,
     assignUnmatchedVRID,
+    loadDriversFromDatabase,
     
     // Computed
     getCurrentWeekRange,
