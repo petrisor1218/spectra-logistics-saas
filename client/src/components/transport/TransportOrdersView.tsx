@@ -120,6 +120,23 @@ export function TransportOrdersView() {
     const doc = new jsPDF();
     const companyDetails = getCompanyDetails(order.companyName);
     let currentY = 0;
+    const docPageHeight = 297; // A4 height in mm
+    const pageMargin = 15; // Bottom margin
+    
+    // Helper function to check if we need a new page
+    const checkPageBreak = (requiredHeight: number) => {
+      if (currentY + requiredHeight > docPageHeight - pageMargin) {
+        doc.addPage();
+        // Add simple header on new page
+        doc.setTextColor(37, 99, 235);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Transportator: ${order.companyName}`, 15, 15);
+        currentY = 25;
+        return true;
+      }
+      return false;
+    };
     
     // Modern Header with Colors and Styling
     // Background gradient effect (simulated with overlapping rectangles)
@@ -179,6 +196,8 @@ export function TransportOrdersView() {
     currentY += 35;
     
     // Transportator Section with Modern Card Design
+    checkPageBreak(60);
+    
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(1);
@@ -214,6 +233,8 @@ export function TransportOrdersView() {
     currentY += 60;
     
     // Route Section
+    checkPageBreak(25);
+    
     doc.setFillColor(59, 130, 246);
     doc.rect(15, currentY, 180, 15, 'F');
     
@@ -224,10 +245,25 @@ export function TransportOrdersView() {
     
     currentY += 25;
     
-    // Transport Details Section
+    // Transport Details Section with Dynamic Height
+    const vridsText = `VRIDs (${order.vrids.length}): ${order.vrids.join(', ')}`;
+    const splitText = doc.splitTextToSize(vridsText, 170);
+    const vridsSectionHeight = Math.max(40, (splitText.length * 5) + 25);
+    
+    // Check if we need new page for VRID section
+    if (currentY + vridsSectionHeight > docPageHeight - pageMargin) {
+      doc.addPage();
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Transportator: ${order.companyName} - Detalii Transport`, 15, 15);
+      currentY = 25;
+    }
+    
+    const sectionStartY = currentY;
     doc.setFillColor(248, 250, 252);
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(15, currentY, 180, 40, 2, 2, 'FD');
+    doc.roundedRect(15, currentY, 180, vridsSectionHeight, 2, 2, 'FD');
     
     // Section header
     doc.setFillColor(168, 85, 247);
@@ -242,14 +278,35 @@ export function TransportOrdersView() {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     
-    // VRIDs in a neat grid
-    const vridsText = `VRIDs (${order.vrids.length}): ${order.vrids.join(', ')}`;
-    const splitText = doc.splitTextToSize(vridsText, 170);
+    // VRIDs with proper pagination
     let vridY = currentY + 15;
-    splitText.forEach((line: string) => {
+    splitText.forEach((line: string, index: number) => {
+      // Check if we need a new page for each line
+      if (vridY + 5 > docPageHeight - pageMargin) {
+        doc.addPage();
+        // Add simple header
+        doc.setTextColor(37, 99, 235);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Transportator: ${order.companyName} - VRID lista (continuare)`, 15, 15);
+        vridY = 25;
+        doc.setTextColor(51, 65, 85);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+      }
       doc.text(line, 20, vridY);
       vridY += 5;
     });
+    
+    // Check for ADR info
+    if (vridY + 10 > docPageHeight - pageMargin) {
+      doc.addPage();
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Transportator: ${order.companyName} - Detalii`, 15, 15);
+      vridY = 25;
+    }
     
     doc.setFont('helvetica', 'bold');
     doc.text('ADR: Non ADR', 20, vridY + 5);
@@ -317,9 +374,9 @@ export function TransportOrdersView() {
     doc.text('Intocmit de: [Completati Nume]', 20, notesY + 10);
     
     // Page footer
-    const pageHeight = doc.internal.pageSize.height;
-    doc.text('Pagina 1 din 2', 105, pageHeight - 20, { align: 'center' });
-    doc.text(`Transportator: ${order.companyName}`, 105, pageHeight - 10, { align: 'center' });
+    const footerHeight = doc.internal.pageSize.height;
+    doc.text('Pagina 1 din 2', 105, footerHeight - 20, { align: 'center' });
+    doc.text(`Transportator: ${order.companyName}`, 105, footerHeight - 10, { align: 'center' });
     
     // Add second page with conditions
     doc.addPage();
