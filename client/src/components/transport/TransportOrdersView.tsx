@@ -112,48 +112,108 @@ export function TransportOrdersView() {
   const generatePDF = (order: TransportOrder) => {
     const doc = new jsPDF();
     const companyDetails = getCompanyDetails(order.companyName);
+    let currentY = 0;
     
-    // Company Header
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('A Z LOGISTIC EOOD', 20, 20);
+    // Modern Header with Colors and Styling
+    // Background gradient effect (simulated with overlapping rectangles)
+    doc.setFillColor(240, 245, 255); // Light blue background
+    doc.rect(0, 0, 210, 40, 'F');
     
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Billing Data: BG206507560, 206507560', 20, 30);
-    doc.text('Adress: Ruser, Ruse,', 20, 37);
-    doc.text('Bank: DSK BANK', 20, 44);
-    doc.text('Account Euro: BG22STSA93000028729251', 20, 51);
-    doc.text('VTA rate: 0%', 20, 58);
-    doc.text('Email: azlogistic8@gmail.com', 20, 65);
+    doc.setFillColor(59, 130, 246); // Blue gradient top
+    doc.rect(0, 0, 210, 8, 'F');
     
-    // Main Title
+    doc.setFillColor(37, 99, 235); // Darker blue
+    doc.rect(0, 6, 210, 2, 'F');
+    
+    // Company Logo Area (decorative box)
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(59, 130, 246);
+    doc.setLineWidth(2);
+    doc.roundedRect(15, 12, 60, 20, 3, 3, 'FD');
+    
+    // Company Name with modern styling
+    doc.setTextColor(37, 99, 235);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('ORDIN DE TRANSPORT RUTIER', 105, 85, { align: 'center' });
+    doc.text('A Z LOGISTIC EOOD', 20, 22);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Transport & Logistics Solutions', 20, 27);
+    
+    // Contact info in modern format
+    doc.setFillColor(248, 250, 252);
+    doc.rect(80, 12, 115, 20, 'F');
+    
+    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('📧 azlogistic8@gmail.com', 85, 18);
+    doc.text('🏦 DSK BANK - BG22STSA93000028729251', 85, 22);
+    doc.text('🆔 BG206507560 | 📍 Ruser, Ruse, Bulgaria', 85, 26);
+    doc.text('💶 TVA: 0%', 85, 30);
+    
+    // Modern Title Section
+    currentY = 50;
+    
+    // Title background
+    doc.setFillColor(37, 99, 235);
+    doc.rect(15, currentY, 180, 25, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ORDIN DE TRANSPORT RUTIER', 105, currentY + 10, { align: 'center' });
     
     doc.setFontSize(12);
     const orderDate = new Date(order.orderDate).toLocaleDateString('ro-RO');
-    doc.text(`Nr. ${order.orderNumber} din ${orderDate}`, 105, 95, { align: 'center' });
+    doc.text(`Nr. ${order.orderNumber} din ${orderDate}`, 105, currentY + 20, { align: 'center' });
     
-    // Transportator section
+    currentY += 35;
+    
+    // Transportator Section with Modern Card Design
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(1);
+    doc.roundedRect(15, currentY, 180, 50, 2, 2, 'FD');
+    
+    // Section header
+    doc.setFillColor(16, 185, 129);
+    doc.rect(15, currentY, 180, 8, 'F');
+    
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Transportator:', 20, 115);
+    doc.text('🚛 TRANSPORTATOR', 20, currentY + 6);
     
+    // Company details in organized columns
+    doc.setTextColor(51, 65, 85);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Denumire Companie: ${order.companyName}`, 20, 125);
-    doc.text(`CIF: ${companyDetails.cif}`, 20, 132);
-    doc.text(`Numar Registrul Comertului: ${companyDetails.rc}`, 20, 139);
-    doc.text(`Adresa Companiei: ${companyDetails.adresa}`, 20, 146);
-    doc.text(`Localitate: ${companyDetails.localitate}`, 20, 153);
-    doc.text(`Judet: ${companyDetails.judet}`, 20, 160);
-    doc.text('Tara: Romania', 20, 167);
-    doc.text(`Contact: ${companyDetails.contact}`, 20, 174);
     
+    const leftColumnY = currentY + 15;
     doc.setFont('helvetica', 'bold');
-    doc.text(`Ruta: ${order.route}`, 20, 185);
+    doc.text(`${order.companyName}`, 20, leftColumnY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`CIF: ${companyDetails.cif}`, 20, leftColumnY + 6);
+    doc.text(`RC: ${companyDetails.rc}`, 20, leftColumnY + 12);
+    doc.text(`📍 ${companyDetails.adresa}`, 20, leftColumnY + 18);
+    
+    const rightColumnY = leftColumnY;
+    doc.text(`${companyDetails.localitate}, ${companyDetails.judet}`, 110, rightColumnY + 6);
+    doc.text(`🇷🇴 România`, 110, rightColumnY + 12);
+    doc.text(`📞 ${companyDetails.contact}`, 110, rightColumnY + 18);
+    
+    currentY += 60;
+    
+    // Route Section
+    doc.setFillColor(59, 130, 246);
+    doc.rect(15, currentY, 180, 15, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`🌍 RUTA: ${order.route}`, 20, currentY + 10);
     
     // Transport section
     doc.setFont('helvetica', 'bold');
@@ -164,7 +224,7 @@ export function TransportOrdersView() {
     
     // Split VRIDs into multiple lines if too long
     const splitText = doc.splitTextToSize(vridsText, 170);
-    let currentY = 210;
+    currentY = 210;
     splitText.forEach((line: string) => {
       doc.text(line, 20, currentY);
       currentY += 7;
