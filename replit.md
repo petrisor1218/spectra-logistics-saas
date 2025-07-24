@@ -23,14 +23,17 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: Express.js with TypeScript
 - **Module System**: ES Modules
 - **Development**: Hot reloading with Vite integration
-- **Storage**: In-memory storage with interface for future database integration
+- **Storage**: PostgreSQL database with Drizzle ORM (DatabaseStorage implementation)
 - **Session Management**: Connect-pg-simple for PostgreSQL session storage
+- **Database**: Neon serverless PostgreSQL with automated seeding
 
 ### Database Schema
 - **ORM**: Drizzle ORM with PostgreSQL
 - **Database**: Neon Database (serverless PostgreSQL)
-- **Schema**: User table with id, username, password fields
+- **Schema**: Complete transport payment system with users, companies, drivers, weekly processing, payments, and payment history tables
 - **Validation**: Zod schemas for type-safe data validation
+- **Seeding**: Automated database seeding with transport companies and driver mappings
+- **Relations**: Proper foreign key relationships between companies, drivers, and payments
 
 ## Key Components
 
