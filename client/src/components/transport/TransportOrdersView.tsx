@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { FileText, Eye, Calendar, Truck, Package, AlertCircle, Loader2, Download } from "lucide-react";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface TransportOrder {
   id: number;
@@ -137,7 +137,7 @@ export function TransportOrdersView() {
     ]);
     
     // Add table
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 130,
       head: [['Nr.', 'VRID']],
       body: tableData,
