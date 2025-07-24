@@ -299,6 +299,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/transport-orders/:id", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ error: "Invalid order ID" });
+      }
+
+      await storage.deleteTransportOrder(orderId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting transport order:", error);
+      res.status(500).json({ error: "Failed to delete transport order" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { FileText, Eye, Calendar, Truck, Package, AlertCircle, Loader2, Download } from "lucide-react";
+import { FileText, Eye, Calendar, Truck, Package, AlertCircle, Loader2, Download, Trash2 } from "lucide-react";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -21,6 +21,8 @@ export function TransportOrdersView() {
   const [orders, setOrders] = useState<TransportOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<TransportOrder | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadTransportOrders();
@@ -259,6 +261,33 @@ export function TransportOrdersView() {
     doc.save(`Comanda_Transport_${order.companyName.replace(/\s+/g, '_')}_${order.orderNumber}_${new Date().getTime()}.pdf`);
   };
 
+  const handleDeleteOrder = async (orderId: number) => {
+    if (deleteConfirm !== orderId) {
+      setDeleteConfirm(orderId);
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/transport-orders/${orderId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setOrders(orders.filter(order => order.id !== orderId));
+        setDeleteConfirm(null);
+        setSelectedOrder(null);
+      } else {
+        throw new Error('Failed to delete transport order');
+      }
+    } catch (error) {
+      console.error('Error deleting transport order:', error);
+      alert('Eroare la ștergerea comenzii de transport');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -373,6 +402,25 @@ export function TransportOrdersView() {
                         title="Vezi detalii"
                       >
                         <Eye className="w-4 h-4" />
+                      </motion.button>
+
+                      <motion.button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className={`glass-button p-2 rounded-lg transition-colors ${
+                          deleteConfirm === order.id 
+                            ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400' 
+                            : 'hover:bg-red-500/10 hover:text-red-400'
+                        }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        title={deleteConfirm === order.id ? "Confirmă ștergerea" : "Șterge comanda"}
+                        disabled={deleting}
+                      >
+                        {deleting && deleteConfirm === order.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </motion.button>
                     </div>
                   </div>
