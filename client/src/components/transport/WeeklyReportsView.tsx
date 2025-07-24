@@ -138,6 +138,9 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
 
     const doc = new jsPDF('landscape');
     
+    // Set font to support Romanian characters
+    doc.setFont('helvetica', 'normal');
+    
     // Header cu design modern
     doc.setFillColor(37, 99, 235);
     doc.rect(0, 0, 297, 25, 'F');
@@ -145,10 +148,10 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Raport Curse Săptămânale - ${selectedCompany}`, 148.5, 15, { align: 'center' });
+    doc.text(`Raport Curse Saptamanale - ${selectedCompany}`, 148.5, 15, { align: 'center' });
     
     doc.setFontSize(12);
-    doc.text(`Săptămâna: ${selectedReportWeek}`, 148.5, 22, { align: 'center' });
+    doc.text(`Saptamana: ${selectedReportWeek}`, 148.5, 22, { align: 'center' });
 
     // Prepare table data
     const headers = ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
@@ -206,7 +209,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       }
     });
 
-    const fileName = `${selectedCompany}_Curse_Saptamanale_${selectedReportWeek.replace(/\//g, '-')}.pdf`;
+    const fileName = `${selectedCompany.replace(/\s+/g, '_')}_Curse_Saptamanale_${selectedReportWeek.replace(/[\/\s\-\.]/g, '_')}.pdf`;
     doc.save(fileName);
   };
 
@@ -232,7 +235,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Curse Saptamanale');
     
-    const fileName = `${selectedCompany}_Curse_Saptamanale_${selectedReportWeek.replace(/\//g, '-')}.xlsx`;
+    const fileName = `${selectedCompany.replace(/\s+/g, '_')}_Curse_Saptamanale_${selectedReportWeek.replace(/[\/\s\-\.]/g, '_')}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
