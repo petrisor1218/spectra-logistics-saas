@@ -294,18 +294,50 @@ export function useTransportData() {
   const handleFileUpload = async (file: File, type: string) => {
     if (!file) return;
     
+    if (!processingWeek) {
+      alert('Vă rugăm să selectați săptămâna mai întâi!');
+      return;
+    }
+    
     setLoading(true);
     try {
       let data = [];
       
-      if (file.name.endsWith('.csv')) {
+      // Handle PDF, CSV, and Excel files
+      if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+        // Use API for PDF processing
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('fileType', type);
+        formData.append('weekLabel', processingWeek);
+        
+        const response = await fetch('/api/upload-file', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Eroare la încărcarea PDF-ului');
+        }
+        
+        const result = await response.json();
+        data = result.data;
+        
+        console.log(`PDF ${type} procesat:`, {
+          nume: file.name,
+          randuri: data.length,
+          tipPlata: data[0]?.['Invoice Type'] || 'necunoscut'
+        });
+        
+      } else if (file.name.endsWith('.csv')) {
         const text = await file.text();
         data = parseCSV(text);
       } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
         const arrayBuffer = await file.arrayBuffer();
         data = parseExcel(arrayBuffer);
       } else {
-        throw new Error('Format de fișier nesuportat. Acceptăm CSV și Excel.');
+        throw new Error('Format de fișier nesuportat. Acceptăm PDF, CSV și Excel.');
       }
       
       console.log(`Fișier ${type} încărcat:`, {
@@ -318,9 +350,15 @@ export function useTransportData() {
       if (type === 'trip') {
         setTripData(data);
       } else if (type === 'invoice7') {
-        setInvoice7Data(data);
+        setInvoice7Data(prev => {
+          // Handle multiple PDF files for invoice7
+          return prev ? [...prev, ...data] : data;
+        });
       } else if (type === 'invoice30') {
-        setInvoice30Data(data);
+        setInvoice30Data(prev => {
+          // Handle multiple PDF files for invoice30
+          return prev ? [...prev, ...data] : data;
+        });
       }
       
     } catch (error: any) {
@@ -331,10 +369,15 @@ export function useTransportData() {
     }
   };
 
-  // Data processing - DO NOT MODIFY!
-  const processData = () => {
-    if (!tripData || !invoice7Data || !invoice30Data) {
-      alert('Vă rugăm să încărcați toate fișierele necesare.');
+  // Data processing - Updated to use backend API
+  const processData = async () => {
+    if (!tripData) {
+      alert('Vă rugăm să încărcați fișierul TRIP mai întâi.');
+      return;
+    }
+
+    if (!invoice7Data && !invoice30Data) {
+      alert('Vă rugăm să încărcați cel puțin un fișier de factură (7 sau 30 zile).');
       return;
     }
 
@@ -344,80 +387,37 @@ export function useTransportData() {
     }
 
     setLoading(true);
-    const results: any = {};
-
     try {
-      const processInvoice = (invoiceData: any[], invoiceType: string) => {
-        invoiceData.forEach((row, index) => {
-          let vrid = '';
-          if (row['Tour ID'] && row['Tour ID'].trim()) {
-            vrid = row['Tour ID'].trim();
-          } else if (row['Load ID'] && row['Load ID'].trim()) {
-            vrid = row['Load ID'].trim();
-          } else {
-            vrid = `UNKNOWN-${index}`;
-          }
+      const response = await fetch('/api/process-transport-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ weekLabel: processingWeek }),
+      });
 
-          const amount = parseFloat(row['Gross Pay Amt (Excl. Tax)'] || 0);
-          if (isNaN(amount) || amount === 0) return;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Eroare la procesarea datelor');
+      }
 
-          const tripRecord = tripData.find((trip: any) => 
-            trip['Trip ID'] === vrid || trip['VR ID'] === vrid
-          );
-
-          let company = 'Unmatched';
-          if (tripRecord && tripRecord['Driver']) {
-            const foundCompany = extractAndFindDriver(tripRecord['Driver']);
-            if (foundCompany !== 'Unknown') {
-              company = foundCompany;
-            } else {
-              console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
-            }
-          } else {
-            console.log(`VRID ${vrid} - Nu s-a găsit în trip data sau nu are driver`);
-          }
-
-          if (!results[company]) {
-            results[company] = {
-              Total_7_days: 0,
-              Total_30_days: 0,
-              Total_comision: 0,
-              VRID_details: {}
-            };
-          }
-
-          const commissionRate = company === "Fast Express" ? 0.02 : 0.04;
-          const commission = amount * commissionRate;
-
-          if (invoiceType === '7_days') {
-            results[company].Total_7_days += amount;
-          } else {
-            results[company].Total_30_days += amount;
-          }
-          
-          results[company].Total_comision += commission;
-
-          if (!results[company].VRID_details[vrid]) {
-            results[company].VRID_details[vrid] = {
-              '7_days': 0,
-              '30_days': 0,
-              'commission': 0
-            };
-          }
-
-          results[company].VRID_details[vrid][invoiceType] = amount;
-          results[company].VRID_details[vrid].commission += commission;
-        });
-      };
-
-      processInvoice(invoice7Data, '7_days');
-      processInvoice(invoice30Data, '30_days');
-
-      setProcessedData(results);
+      const result = await response.json();
+      
+      setProcessedData(result.results);
       setSelectedWeek(processingWeek);
       setActiveTab('calculations');
 
+      console.log('Date procesate cu succes:', {
+        companii: Object.keys(result.results).length,
+        nepereche: result.unpairedList?.length || 0
+      });
+
+      if (result.unpairedList && result.unpairedList.length > 0) {
+        console.warn('VRID-uri nepereche:', result.unpairedList);
+      }
+
     } catch (error: any) {
+      console.error('Eroare la procesarea datelor:', error);
       alert('Eroare la procesarea datelor: ' + error.message);
     } finally {
       setLoading(false);

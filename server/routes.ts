@@ -2,6 +2,131 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertPaymentSchema, insertWeeklyProcessingSchema } from "@shared/schema";
+import multer from "multer";
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf' || file.mimetype === 'text/csv' || 
+        file.originalname.toLowerCase().endsWith('.csv') || 
+        file.originalname.toLowerCase().endsWith('.pdf')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Acceptăm doar fișiere PDF și CSV'), false);
+    }
+  }
+});
+
+// Parse PDF invoices
+async function parsePdfInvoice(buffer: Buffer): Promise<any[]> {
+  try {
+    const pdfParse = (await import("pdf-parse")).default;
+    const data = await pdfParse(buffer);
+    const text = data.text;
+    
+    // Extract invoice data from PDF text
+    const invoiceData = [];
+    const lines = text.split('\n');
+    
+    let currentInvoiceType = '';
+    let isInDetailsSection = false;
+    
+    // Detect invoice type (7 days vs 30 days) based on payment terms
+    if (text.includes('Net 7') || text.includes('Pay term                     Net 7')) {
+      currentInvoiceType = '7_days';
+    } else if (text.includes('Net 30') || text.includes('Pay term                     Net 30')) {
+      currentInvoiceType = '30_days';
+    }
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Look for section markers
+      if (line.includes('DETAILS')) {
+        isInDetailsSection = true;
+        continue;
+      }
+      
+      // Skip if not in details section
+      if (!isInDetailsSection) continue;
+      
+      // Look for Load/Trip IDs and amounts
+      // Pattern for loads: starts with numbers/letters followed by EUR amount
+      const loadMatch = line.match(/^([A-Z0-9]{8,})\s+.*€([\d,]+\.[\d]{2})/);
+      if (loadMatch) {
+        const [, loadId, amount] = loadMatch;
+        invoiceData.push({
+          'Tour ID': loadId,
+          'Load ID': loadId,
+          'Gross Pay Amt (Excl. Tax)': amount.replace(',', ''),
+          'Invoice Type': currentInvoiceType
+        });
+        continue;
+      }
+      
+      // Alternative pattern: Trip/Load ID at beginning of line with amount
+      const tripMatch = line.match(/^(T-[A-Z0-9]+|[A-Z0-9]{8,})\s+.*€([\d,]+\.[\d]{2})/);
+      if (tripMatch) {
+        const [, tripId, amount] = tripMatch;
+        invoiceData.push({
+          'Tour ID': tripId,
+          'Load ID': tripId,
+          'Gross Pay Amt (Excl. Tax)': amount.replace(',', ''),
+          'Invoice Type': currentInvoiceType
+        });
+        continue;
+      }
+      
+      // Look for standalone amounts with context
+      const amountMatch = line.match(/€([\d,]+\.[\d]{2})/);
+      if (amountMatch && line.length < 50) {
+        const amount = amountMatch[1];
+        
+        // Look for Load ID in previous lines
+        for (let j = Math.max(0, i - 5); j < i; j++) {
+          const prevLine = lines[j].trim();
+          const idMatch = prevLine.match(/([A-Z0-9]{8,})/);
+          if (idMatch) {
+            const loadId = idMatch[1];
+            invoiceData.push({
+              'Tour ID': loadId,
+              'Load ID': loadId,
+              'Gross Pay Amt (Excl. Tax)': amount.replace(',', ''),
+              'Invoice Type': currentInvoiceType
+            });
+            break;
+          }
+        }
+      }
+    }
+    
+    return invoiceData;
+  } catch (error) {
+    console.error('Error parsing PDF:', error);
+    throw new Error('Nu am putut procesa fișierul PDF');
+  }
+}
+
+// Parse CSV data
+function parseCSV(text: string): any[] {
+  const lines = text.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return [];
+  
+  const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''));
+  
+  return lines.slice(1).map(line => {
+    const values = line.split(',').map(v => v.trim().replace(/['"]/g, ''));
+    const row: any = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index] || '';
+    });
+    return row;
+  }).filter(row => Object.values(row).some(val => val));
+}
 
 // Seed initial companies and drivers
 async function seedDatabase() {
@@ -213,6 +338,223 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(history);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch payment history" });
+    }
+  });
+
+  // File upload and processing routes
+  app.post("/api/upload-file", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Nu a fost încărcat niciun fișier" });
+      }
+
+      const { fileType, weekLabel } = req.body;
+      
+      if (!fileType || !weekLabel) {
+        return res.status(400).json({ error: "Tipul fișierului și săptămâna sunt obligatorii" });
+      }
+
+      let parsedData: any[] = [];
+
+      if (req.file.mimetype === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
+        parsedData = await parsePdfInvoice(req.file.buffer);
+      } else if (req.file.mimetype === 'text/csv' || req.file.originalname.toLowerCase().endsWith('.csv')) {
+        const csvText = req.file.buffer.toString('utf-8');
+        parsedData = parseCSV(csvText);
+      } else {
+        return res.status(400).json({ error: "Format de fișier nesuportat" });
+      }
+
+      // Save the processed data
+      const existing = await storage.getWeeklyProcessing(weekLabel);
+      const updateData: any = {};
+
+      if (fileType === 'trip') {
+        updateData.tripDataCount = parsedData.length;
+      } else if (fileType === 'invoice7') {
+        updateData.invoice7Count = parsedData.length;
+      } else if (fileType === 'invoice30') {
+        updateData.invoice30Count = parsedData.length;
+      }
+
+      // Merge processed data
+      const currentProcessedData = existing?.processedData || {};
+      currentProcessedData[fileType] = parsedData;
+      updateData.processedData = currentProcessedData;
+
+      if (existing) {
+        await storage.updateWeeklyProcessing(weekLabel, updateData);
+      } else {
+        await storage.createWeeklyProcessing({
+          weekLabel,
+          ...updateData
+        });
+      }
+
+      res.json({
+        success: true,
+        recordsProcessed: parsedData.length,
+        fileType,
+        weekLabel,
+        data: parsedData
+      });
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      res.status(500).json({ error: (error as Error).message || "Eroare la procesarea fișierului" });
+    }
+  });
+
+  // Process transport data
+  app.post("/api/process-transport-data", async (req, res) => {
+    try {
+      const { weekLabel } = req.body;
+      
+      if (!weekLabel) {
+        return res.status(400).json({ error: "Săptămâna este obligatorie" });
+      }
+
+      const processing = await storage.getWeeklyProcessing(weekLabel);
+      if (!processing || !processing.processedData) {
+        return res.status(400).json({ error: "Nu există date procesate pentru această săptămână" });
+      }
+
+      const { trip: tripData, invoice7: invoice7Data, invoice30: invoice30Data } = processing.processedData;
+
+      if (!tripData) {
+        return res.status(400).json({ error: "Lipsesc datele TRIP" });
+      }
+
+      if (!invoice7Data && !invoice30Data) {
+        return res.status(400).json({ error: "Lipsesc datele facturilor" });
+      }
+
+      // Driver-company mapping from seed data
+      const companies = await storage.getAllCompanies();
+      const drivers = await storage.getAllDrivers();
+      
+      const driverCompanyMap: { [key: string]: string } = {};
+      drivers.forEach(driver => {
+        const company = companies.find(c => c.id === driver.companyId);
+        if (company && driver.nameVariants) {
+          const variants = Array.isArray(driver.nameVariants) ? driver.nameVariants : [driver.name];
+          variants.forEach(variant => {
+            driverCompanyMap[variant.toLowerCase()] = company.name;
+          });
+        }
+      });
+
+      const results: any = {};
+      const unpairedList: any[] = [];
+
+      const processInvoiceData = (invoiceData: any[], invoiceType: string) => {
+        invoiceData.forEach((row, index) => {
+          let vrid = '';
+          if (row['Tour ID'] && row['Tour ID'].trim()) {
+            vrid = row['Tour ID'].trim();
+          } else if (row['Load ID'] && row['Load ID'].trim()) {
+            vrid = row['Load ID'].trim();
+          } else {
+            vrid = `UNKNOWN-${index}`;
+          }
+
+          const amount = parseFloat(row['Gross Pay Amt (Excl. Tax)'] || 0);
+          if (isNaN(amount) || amount === 0) return;
+
+          const tripRecord = tripData.find((trip: any) => 
+            trip['Trip ID'] === vrid || trip['VR ID'] === vrid
+          );
+
+          let company = 'Unmatched';
+          if (tripRecord && tripRecord['Driver']) {
+            const driverName = tripRecord['Driver'].toLowerCase();
+            for (const [variant, companyName] of Object.entries(driverCompanyMap)) {
+              if (driverName.includes(variant) || variant.includes(driverName)) {
+                company = companyName;
+                break;
+              }
+            }
+            
+            if (company === 'Unmatched') {
+              unpairedList.push({
+                vrid,
+                amount,
+                type: invoiceType,
+                reason: `Șofer negăsit: ${tripRecord['Driver']}`,
+                driver: tripRecord['Driver']
+              });
+            }
+          } else {
+            unpairedList.push({
+              vrid,
+              amount,
+              type: invoiceType,
+              reason: 'VRID nu există în datele TRIP',
+              driver: null
+            });
+          }
+
+          if (!results[company]) {
+            results[company] = {
+              Total_7_days: 0,
+              Total_30_days: 0,
+              Total_comision: 0,
+              VRID_details: {}
+            };
+          }
+
+          const companyData = companies.find(c => c.name === company);
+          const commissionRate = companyData ? parseFloat(companyData.commissionRate.toString()) : 0.04;
+          const commission = amount * commissionRate;
+
+          if (invoiceType === '7_days') {
+            results[company].Total_7_days += amount;
+          } else {
+            results[company].Total_30_days += amount;
+          }
+          
+          results[company].Total_comision += commission;
+
+          if (!results[company].VRID_details[vrid]) {
+            results[company].VRID_details[vrid] = {
+              '7_days': 0,
+              '30_days': 0,
+              'commission': 0
+            };
+          }
+
+          results[company].VRID_details[vrid][invoiceType] = amount;
+          results[company].VRID_details[vrid].commission += commission;
+        });
+      };
+
+      if (invoice7Data) {
+        processInvoiceData(invoice7Data, '7_days');
+      }
+
+      if (invoice30Data) {
+        processInvoiceData(invoice30Data, '30_days');
+      }
+
+      // Update processing with results
+      await storage.updateWeeklyProcessing(weekLabel, {
+        processedData: {
+          ...processing.processedData,
+          results,
+          unpairedList
+        }
+      });
+
+      res.json({
+        success: true,
+        results,
+        unpairedList,
+        weekLabel
+      });
+
+    } catch (error) {
+      console.error('Processing error:', error);
+      res.status(500).json({ error: "Eroare la procesarea datelor" });
     }
   });
 
