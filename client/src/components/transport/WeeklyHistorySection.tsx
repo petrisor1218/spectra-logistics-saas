@@ -4,20 +4,23 @@ import { History, Calendar, Eye, DollarSign, TrendingUp, ChevronDown, ChevronUp 
 
 interface WeeklyHistorySectionProps {
   weeklyPaymentHistory: any;
-  loadAllPaymentHistory: () => Promise<any>;
+  loadAllPaymentHistory: () => Promise<any>;  
   loadPaymentsForWeek: (weekLabel: string) => Promise<void>;
   getWeekOptions: () => any[];
+  loadWeeklyProcessingData?: (weekLabel: string) => Promise<any>;
 }
 
 export function WeeklyHistorySection({
   weeklyPaymentHistory,
   loadAllPaymentHistory,
   loadPaymentsForWeek,
-  getWeekOptions
+  getWeekOptions,
+  loadWeeklyProcessingData
 }: WeeklyHistorySectionProps) {
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [historicalData, setHistoricalData] = useState<any>({});
+  const [weeklyProcessingData, setWeeklyProcessingData] = useState<any>({});
 
   useEffect(() => {
     loadHistoricalData();
@@ -35,12 +38,25 @@ export function WeeklyHistorySection({
     }
   };
 
-  const toggleWeekExpansion = (weekLabel: string) => {
+  const toggleWeekExpansion = async (weekLabel: string) => {
     const newExpanded = new Set(expandedWeeks);
     if (newExpanded.has(weekLabel)) {
       newExpanded.delete(weekLabel);
     } else {
       newExpanded.add(weekLabel);
+      
+      // Load weekly processing data when expanding a week
+      if (loadWeeklyProcessingData && !weeklyProcessingData[weekLabel]) {
+        try {
+          const processingData = await loadWeeklyProcessingData(weekLabel);
+          setWeeklyProcessingData((prev: any) => ({
+            ...prev,
+            [weekLabel]: processingData
+          }));
+        } catch (error) {
+          console.error('Error loading weekly processing data:', error);
+        }
+      }
     }
     setExpandedWeeks(newExpanded);
   };
@@ -199,28 +215,51 @@ export function WeeklyHistorySection({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    {/* Company Totals */}
+                    {/* Company Totals with Remaining Payments */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                      {Object.entries(weekTotals).map(([company, total]: [string, any]) => (
-                        <div
-                          key={company}
-                          className="bg-white/5 rounded-xl p-4 border border-white/10"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium text-white">{company}</h4>
-                              <p className="text-sm text-gray-400">
-                                {weekPayments.filter((p: any) => (p.company || p.companyName) === company).length} plăți
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-lg font-semibold text-green-400">
-                                €{total.toFixed(2)}
+                      {Object.entries(weekTotals).map(([company, total]: [string, any]) => {
+                        // Load weekly processing data for this week if available
+                        const processingData = weeklyProcessingData[weekLabel];
+                        const companyData = processingData?.companies?.find((c: any) => c.name === company);
+                        const totalOwed = companyData ? 
+                          (companyData.total7Days + companyData.total30Days - companyData.commission) : 0;
+                        const remaining = Math.max(0, totalOwed - total);
+                        
+                        return (
+                          <div
+                            key={company}
+                            className="bg-white/5 rounded-xl p-4 border border-white/10"
+                          >
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium text-white">{company}</h4>
+                                  <p className="text-sm text-gray-400">
+                                    {weekPayments.filter((p: any) => (p.company || p.companyName) === company).length} plăți
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-lg font-semibold text-green-400">
+                                    €{total.toFixed(2)}
+                                  </div>
+                                  <div className="text-xs text-gray-400">Plătit</div>
+                                </div>
                               </div>
+                              
+                              {totalOwed > 0 && (
+                                <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                                  <div className="text-sm text-gray-300">
+                                    Rest de plată:
+                                  </div>
+                                  <div className={`text-sm font-semibold ${remaining === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    €{remaining.toFixed(2)}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Individual Payments */}

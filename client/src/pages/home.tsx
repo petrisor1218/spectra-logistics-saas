@@ -377,6 +377,7 @@ export default function Home() {
                 loadAllPaymentHistory={loadAllPaymentHistory}
                 loadPaymentsForWeek={loadPaymentsForWeek}
                 getWeekOptions={getWeekOptions}
+                loadWeeklyProcessingData={loadWeeklyProcessingByWeek}
               />
             )}
           </motion.div>
