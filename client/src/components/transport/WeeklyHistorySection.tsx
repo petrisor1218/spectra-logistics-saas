@@ -101,7 +101,9 @@ export function WeeklyHistorySection({
         const month = monthMap[monthAbbr];
         if (month !== undefined) {
           const currentYear = new Date().getFullYear();
-          return new Date(currentYear, month, day);
+          const parsedDate = new Date(currentYear, month, day);
+          console.log(`Parsed week "${weekStr}" to date:`, parsedDate);
+          return parsedDate;
         }
       }
     } catch (error) {
@@ -114,8 +116,12 @@ export function WeeklyHistorySection({
     // Sort by most recent first (reverse chronological order)
     const dateA = parseWeekString(a);
     const dateB = parseWeekString(b);
-    return dateB.getTime() - dateA.getTime();
+    const result = dateB.getTime() - dateA.getTime();
+    console.log(`Comparing "${a}" (${dateA.toISOString()}) vs "${b}" (${dateB.toISOString()}) = ${result}`);
+    return result;
   });
+
+  console.log('Final sorted weeks:', availableWeeks);
 
   if (loading) {
     return (
