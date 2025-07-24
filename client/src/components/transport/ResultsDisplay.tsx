@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Building, DollarSign, Check, Clock, Plus, Trash2 } from "lucide-react";
+import { Building, DollarSign, Check, Clock, Plus, Trash2, Truck, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaymentModal } from "./PaymentModal";
+import { TransportOrderModal } from "./TransportOrderModal";
 import { useState } from "react";
 
 interface ResultsDisplayProps {
@@ -11,6 +12,7 @@ interface ResultsDisplayProps {
   recordPayment: (company: string, amount: number, description?: string) => void;
   deletePayment: (paymentId: number) => void;
   getRemainingPayment: (company: string) => number;
+  selectedWeek: string;
 }
 
 export function ResultsDisplay({
@@ -19,15 +21,22 @@ export function ResultsDisplay({
   paymentHistory,
   recordPayment,
   deletePayment,
-  getRemainingPayment
+  getRemainingPayment,
+  selectedWeek
 }: ResultsDisplayProps) {
   const companies = Object.keys(processedData);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showTransportOrderModal, setShowTransportOrderModal] = useState(false);
 
   const openPaymentModal = (company: string) => {
     setSelectedCompany(company);
     setShowPaymentModal(true);
+  };
+
+  const openTransportOrderModal = (company: string) => {
+    setSelectedCompany(company);
+    setShowTransportOrderModal(true);
   };
 
   const handleConfirmPayment = (amount: number, description: string, type: 'partial' | 'full') => {
@@ -83,14 +92,25 @@ export function ResultsDisplay({
                       <p className="text-lg font-bold text-green-400">€{totalAmount.toFixed(2)}</p>
                       <p className="text-gray-400 text-sm">Comision {commissionRate}</p>
                     </div>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => openPaymentModal(company)}
-                      className="px-3 py-2 gradient-primary rounded-lg text-white text-sm font-medium hover-glow"
-                    >
-                      Plătește
-                    </motion.button>
+                    <div className="flex items-center space-x-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => openPaymentModal(company)}
+                        className="px-3 py-2 gradient-primary rounded-lg text-white text-sm font-medium hover-glow"
+                      >
+                        Plătește
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => openTransportOrderModal(company)}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium"
+                        title="Generează comandă de transport"
+                      >
+                        <Truck className="w-4 h-4" />
+                      </motion.button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -199,6 +219,20 @@ export function ResultsDisplay({
           thirtyDaysAmount={processedData[selectedCompany]?.Total_30_days || 0}
           commission={processedData[selectedCompany]?.Total_comision || 0}
           onConfirmPayment={handleConfirmPayment}
+        />
+      )}
+
+      {/* Transport Order Modal */}
+      {selectedCompany && (
+        <TransportOrderModal
+          isOpen={showTransportOrderModal}
+          onClose={() => {
+            setShowTransportOrderModal(false);
+            setSelectedCompany(null);
+          }}
+          company={selectedCompany}
+          processedData={processedData}
+          selectedWeek={selectedWeek}
         />
       )}
     </div>

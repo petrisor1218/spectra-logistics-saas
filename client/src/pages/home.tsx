@@ -316,6 +316,7 @@ export default function Home() {
                   recordPayment={recordPayment}
                   deletePayment={deletePayment}
                   getRemainingPayment={getRemainingPayment}
+                  selectedWeek={selectedWeek || ''}
                 />
               </div>
             )}

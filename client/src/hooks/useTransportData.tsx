@@ -1,7 +1,47 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 
-// Driver company mapping - DO NOT MODIFY THIS LOGIC!
+// Company details from transport orders system
+const COMPANY_DETAILS = {
+  "Fast & Express S.R.L.": {
+    "CIF": "RO35986465",
+    "Trade register number": "J34/227/2016",
+    "Company Address": "Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42, -",
+    "Location": "Alexandria",
+    "County": "Teleorman",
+    "Country": "Romania",
+    "Contact": ""
+  },
+  "Stef Trans S.R.L.": {
+    "CIF": "RO19075934",
+    "Trade register number": "J34/570/2006",
+    "Company Address": "-, -",
+    "Location": "Dobrotesti",
+    "County": "Teleorman",
+    "Country": "Romania",
+    "Contact": "0729897775, scsteftrans@yahoo.com"
+  },
+  "De Cargo Sped S.R.L.": {
+    "CIF": "RO43642683",
+    "Trade register number": "J34/70/2021",
+    "Company Address": "Str. Iasomiei, 9, -",
+    "Location": "Mavrodin",
+    "County": "Teleorman",
+    "Country": "Romania",
+    "Contact": "Ginel, 0763698696, decargosped@gmail.com"
+  },
+  "Daniel Ontheroad S.R.L.": {
+    "CIF": "RO40383134",
+    "Trade register number": "J34/27/2019",
+    "Company Address": "Str. Sos. Turnu Magurele, 4-6, Bl:601, Sc:a, Et:2, Ap:10, -",
+    "Location": "Alexandria",
+    "County": "Teleorman",
+    "Country": "Romania",
+    "Contact": "Mariana, 0762653911, feleagadanut@gmail.com"
+  }
+};
+
+// Enhanced driver company mapping with complete information
 const DRIVER_COMPANY_MAP_ORIGINAL = {
   "ADRIAN  MIRON": "Fast Express",
   "Adrian miron": "Fast Express",

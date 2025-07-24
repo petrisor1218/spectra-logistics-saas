@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPaymentSchema, insertWeeklyProcessingSchema } from "@shared/schema";
+import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema } from "@shared/schema";
 
 // Seed initial companies and drivers
 async function seedDatabase() {
@@ -251,6 +251,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch weekly processing data" });
+    }
+  });
+
+  // Transport orders routes
+  app.get("/api/transport-orders", async (req, res) => {
+    try {
+      const { weekLabel, companyName } = req.query;
+      
+      if (weekLabel) {
+        const orders = await storage.getTransportOrdersByWeek(weekLabel as string);
+        res.json(orders);
+      } else if (companyName) {
+        const orders = await storage.getTransportOrdersByCompany(companyName as string);
+        res.json(orders);
+      } else {
+        const orders = await storage.getAllTransportOrders();
+        res.json(orders);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transport orders" });
+    }
+  });
+
+  app.post("/api/transport-orders", async (req, res) => {
+    try {
+      const validatedData = insertTransportOrderSchema.parse(req.body);
+      const order = await storage.createTransportOrder(validatedData);
+      res.json(order);
+    } catch (error) {
+      console.error("Error creating transport order:", error);
+      res.status(500).json({ error: "Failed to create transport order" });
     }
   });
 

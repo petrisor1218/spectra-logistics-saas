@@ -13,6 +13,13 @@ export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   commissionRate: decimal("commission_rate", { precision: 5, scale: 4 }).notNull(),
+  cif: varchar("cif", { length: 50 }),
+  tradeRegisterNumber: varchar("trade_register_number", { length: 100 }),
+  address: text("address"),
+  location: varchar("location", { length: 100 }),
+  county: varchar("county", { length: 100 }),
+  country: varchar("country", { length: 100 }).default("Romania"),
+  contact: text("contact"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -49,6 +56,19 @@ export const paymentHistory = pgTable("payment_history", {
   paymentId: integer("payment_id").references(() => payments.id),
   action: varchar("action", { length: 50 }).notNull(), // 'created', 'updated', 'deleted'
   previousData: jsonb("previous_data"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const transportOrders = pgTable("transport_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: varchar("order_number", { length: 100 }).notNull(),
+  companyName: varchar("company_name", { length: 100 }).notNull(),
+  orderDate: timestamp("order_date").notNull(),
+  weekLabel: varchar("week_label", { length: 100 }).notNull(),
+  vrids: jsonb("vrids"), // Array of VRID numbers
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  route: varchar("route", { length: 200 }).default("DE-BE-NL"),
+  status: varchar("status", { length: 50 }).default("draft"), // 'draft', 'sent', 'confirmed'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -105,6 +125,11 @@ export const insertPaymentHistorySchema = createInsertSchema(paymentHistory).omi
   createdAt: true,
 });
 
+export const insertTransportOrderSchema = createInsertSchema(transportOrders).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -123,3 +148,6 @@ export type Payment = typeof payments.$inferSelect;
 
 export type InsertPaymentHistory = z.infer<typeof insertPaymentHistorySchema>;
 export type PaymentHistoryRecord = typeof paymentHistory.$inferSelect;
+
+export type InsertTransportOrder = z.infer<typeof insertTransportOrderSchema>;
+export type TransportOrder = typeof transportOrders.$inferSelect;

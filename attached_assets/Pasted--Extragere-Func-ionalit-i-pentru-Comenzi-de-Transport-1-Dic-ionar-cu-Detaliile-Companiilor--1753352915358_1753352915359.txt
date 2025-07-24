@@ -1,0 +1,621 @@
+# Extragere Funcționalități pentru Comenzi de Transport
+
+## 1. Dicționar cu Detaliile Companiilor
+
+```python
+COMPANY_DETAILS = {
+    "Fast & Express S.R.L.": {
+        "CIF": "RO35986465",
+        "Trade register number": "J34/227/2016",
+        "Company Address": "Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42, -",
+        "Location": "Alexandria",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": ""
+    },
+    "Stef Trans S.R.L.": {
+        "CIF": "RO19075934",
+        "Trade register number": "J34/570/2006",
+        "Company Address": "-, -",
+        "Location": "Dobrotesti",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": "0729897775, scsteftrans@yahoo.com"
+    },
+    "De Cargo Sped S.R.L.": {
+        "CIF": "RO43642683",
+        "Trade register number": "J34/70/2021",
+        "Company Address": "Str. Iasomiei, 9, -",
+        "Location": "Mavrodin",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": "Ginel, 0763698696, decargosped@gmail.com"
+    },
+    "Daniel Ontheroad S.R.L.": {
+        "CIF": "RO40383134",
+        "Trade register number": "J34/27/2019",
+        "Company Address": "Str. Sos. Turnu Magurele, 4-6, Bl:601, Sc:a, Et:2, Ap:10, -",
+        "Location": "Alexandria",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": "Mariana, 0762653911, feleagadanut@gmail.com"
+    }
+}
+```
+
+## 2. Maparea Șoferilor la Companii
+
+```python
+DRIVER_COMPANY_MAP_ORIGINAL = {
+    "ADRIAN  MIRON": "Fast Express",
+    "Adrian miron": "Fast Express",
+    "Andrei Serban Badea": "Fast Express",
+    "Petrisor Besteala": "Fast Express",
+    "Georgian Florentin Moise": "Fast Express",
+    "Gabriel Marian Ivan": "Fast Express",
+    "Olteanu Ionut": "Fast Express",
+    "Marius Condila": "Fast Express",
+    "Teodor Petrișor Chiar": "Fast Express",
+    "Tiberiu Iulian  Ivan": "Fast Express",
+    "Marius Adrian Badea": "Fast Express",
+    "Florin Oprea": "Fast Express",
+    "George Mihaita Butnaru": "Fast Express",
+    "Dan Costinel Savu": "Fast Express",
+    "Iosip Ionel": "Fast Express",
+    "Andrei Tanase": "Fast Express",
+    "Pana Stefan Daniel": "Fast Express",
+    "Vasilică Roman": "Fast Express",
+    "Florin Nicolae Sanislai": "Fast Express",
+    "Costica Mihalcea": "Daniel Ontheroad",
+    "Adrian Budescu": "Daniel Ontheroad",
+    "Danut Feleaga": "Daniel Ontheroad",
+    "Razvan Jurubita": "Daniel Ontheroad",
+    "Feleagă Marian": "Daniel Ontheroad",
+    "Dimitrov F": "Daniel Ontheroad",
+    "Cernat Lucian Marian": "DE Cargo Speed",
+    "Draghici Marius Sorin": "DE Cargo Speed",
+    "Sorin petrisor Dumitrache": "DE Cargo Speed",
+    "Petre Iulian LEUCE": "DE Cargo Speed",
+    "Gorgos Adrian": "Stef Trans",
+    "Barbuceanu Anghel": "Stef Trans",
+    "Adi-Nicolae Gocea": "Stef Trans",
+    "Dumitru Ciobanu": "Stef Trans",
+    "Dimache Mihalache": "Stef Trans",
+    "Toma Alin Marian": "Bis General",
+    "Balanean Daniel": "Bis General"
+}
+```
+
+## 3. Funcții pentru Gestionarea Numelor de Șoferi
+
+```python
+def generate_name_variants(name):
+    """Generează toate variantele posibile de nume"""
+    name = ' '.join(name.split())
+    variants = [name.lower()]
+    
+    parts = name.split()
+    if len(parts) > 1:
+        reversed_name = ' '.join(parts[::-1]).lower()
+        variants.append(reversed_name)
+        
+        if len(parts) >= 3:
+            first_rest_reversed = parts[0].lower() + ' ' + ' '.join(parts[1:][::-1]).lower()
+            variants.append(first_rest_reversed)
+            
+            last_rest_reversed = parts[-1].lower() + ' ' + ' '.join(parts[:-1][::-1]).lower()
+            variants.append(last_rest_reversed)
+    
+    return variants
+
+# Construim dicționarul normalizat
+DRIVER_COMPANY_MAP_NORMALIZED = {}
+for driver, company in DRIVER_COMPANY_MAP_ORIGINAL.items():
+    variants = generate_name_variants(driver)
+    for variant in variants:
+        DRIVER_COMPANY_MAP_NORMALIZED[variant] = company
+
+def extract_and_find_driver(driver_name):
+    """Extrage și găsește șoferul din DRIVER_COMPANY_MAP"""
+    if not isinstance(driver_name, str) or not driver_name.strip():
+        return "Unknown"
+    
+    driver_names = [name.strip() for name in driver_name.split(',')]
+    
+    for driver in driver_names:
+        normalized_driver = driver.lower()
+        normalized_driver = ' '.join(normalized_driver.split())
+        
+        if normalized_driver in DRIVER_COMPANY_MAP_NORMALIZED:
+            return DRIVER_COMPANY_MAP_NORMALIZED[normalized_driver]
+        
+        variants = generate_name_variants(driver)
+        for variant in variants:
+            if variant in DRIVER_COMPANY_MAP_NORMALIZED:
+                return DRIVER_COMPANY_MAP_NORMALIZED[variant]
+    
+    print(f"Șofer negăsit în mapare: {driver_name}")
+    return "Unknown Company"
+```
+
+## 4. Funcții pentru Tabelul pe Companii
+
+```python
+def update_company_table(self, event=None):
+    """Actualizează tabelul pentru compania selectată"""
+    selected_company = self.company_var.get()
+    if selected_company in self.processed_data:
+        for i in self.company_table.get_children():
+            self.company_table.delete(i)
+    
+        company_data = self.processed_data[selected_company]
+        for vrid, details in company_data['VRID_details'].items():
+            total_7 = details['7_days']
+            total_30 = details['30_days']
+            commission = details['commission']
+            final = total_7 + total_30 - commission
+            self.company_table.insert('', 'end', values=(
+                vrid,
+                f"{total_7:.2f}",
+                f"{total_30:.2f}",
+                f"{commission:.2f}",
+                f"{final:.2f}"
+            ))
+```
+
+## 5. Funcții pentru Comenzile de Transport
+
+```python
+def create_transport_order_buttons(self):
+    """Creează butoane pentru comenzile de transport pentru fiecare companie"""
+    # Ștergem butoanele existente
+    for widget in self.company_buttons_frame.winfo_children():
+        widget.destroy()
+
+    if not self.processed_data:
+        messagebox.showwarning("Avertisment", "Nu există date procesate.")
+        return
+
+    # Creăm butoane pentru fiecare companie
+    for company in self.processed_data.keys():
+        if company != 'Unmatched':
+            tk.Button(self.company_buttons_frame, text=f"Comandă pentru {company}", 
+                      command=lambda c=company: self.generate_transport_order(c)).pack(side=tk.LEFT, padx=5)
+
+def generate_transport_order(self, company):
+    """Generează fereastra pentru comanda de transport"""
+    order_window = tk.Toplevel(self.master)
+    order_window.title(f"Comandă de Transport - {company}")
+    order_window.geometry("400x200")
+
+    tk.Label(order_window, text="Număr Comandă:").pack(pady=(10, 0))
+    order_number_entry = tk.Entry(order_window)
+    order_number_entry.pack()
+
+    tk.Label(order_window, text="Data Comandă:").pack(pady=(10, 0))
+    order_date_entry = tk.Entry(order_window)
+    order_date_entry.pack()
+
+    tk.Button(order_window, text="Generează PDF", 
+              command=lambda: self.generate_pdf_order(company, order_number_entry.get(), order_date_entry.get())).pack(pady=20)
+```
+
+## 6. Generarea PDF-ului pentru Comanda de Transport
+
+```python
+def generate_pdf_order(self, company, order_number, order_date):
+    """Generează PDF-ul pentru comanda de transport"""
+    if not order_number or not order_date:
+        messagebox.showwarning("Avertisment", "Va rugam sa completati numarul comenzii si data.")
+        return
+
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".pdf", 
+        filetypes=[("PDF files", "*.pdf")],
+        initialfile=f"Comanda_Transport_{company}_{order_number}.pdf"
+    )
+    if not file_path:
+        return
+
+    # Calculăm suma netă
+    total_net = (self.processed_data[company]['Total_7_days'] + 
+                 self.processed_data[company]['Total_30_days'] - 
+                 self.processed_data[company]['Total_comision'])
+
+    # Obținem VRID-urile pentru compania selectată
+    vrids = list(self.processed_data[company]['VRID_details'].keys())
+
+    # Creăm documentul PDF
+    doc = SimpleDocTemplate(file_path, pagesize=letter)
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
+
+    content = []
+
+    # Antetul documentului
+    content.append(Paragraph("A Z LOGISTIC EOOD", styles['Heading1']))
+    content.append(Paragraph("Billing Data: BG206507560, 206507560", styles['Normal']))
+    content.append(Paragraph("Adress: Ruser, Ruse,", styles['Normal']))
+    content.append(Paragraph("Bank: DSK BANK", styles['Normal']))
+    content.append(Paragraph("Account Euro: BG22STSA93000028729251", styles['Normal']))
+    content.append(Paragraph("VTA rate: 0%", styles['Normal']))
+    content.append(Paragraph("Email: azlogistic8@gmail.com", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    # Titlul comenzii
+    content.append(Paragraph(f"ORDIN DE TRANSPORT RUTIER", styles['Heading2']))
+    content.append(Paragraph(f"Nr. {order_number} din {order_date}", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    # Detaliile transportatorului
+    content.append(Paragraph("Transportator:", styles['Heading3']))
+    content.append(Paragraph(f"Denumire Companie: {company}", styles['Normal']))
+    
+    # Folosim informațiile din dicționarul COMPANY_DETAILS
+    company_info = COMPANY_DETAILS.get(company, {})
+    content.append(Paragraph(f"CIF: {company_info.get('CIF', '[Completati CIF]')}", styles['Normal']))
+    content.append(Paragraph(f"Numar Registrul Comertului: {company_info.get('Trade register number', '[Completati]')}", styles['Normal']))
+    content.append(Paragraph(f"Adresa Companiei: {company_info.get('Company Address', '[Completati]')}", styles['Normal']))
+    content.append(Paragraph(f"Localitate: {company_info.get('Location', '[Completati]')}", styles['Normal']))
+    content.append(Paragraph(f"Judet: {company_info.get('County', '[Completati]')}", styles['Normal']))
+    content.append(Paragraph(f"Tara: {company_info.get('Country', 'Romania')}", styles['Normal']))
+    content.append(Paragraph(f"Contact: {company_info.get('Contact', '[Completati]')}", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    # Detalii transport
+    content.append(Paragraph("Ruta: DE-BE-NL", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    content.append(Paragraph("Transport:", styles['Heading3']))
+    content.append(Paragraph(f"VRID-uri: {', '.join(vrids)}", styles['Normal']))
+    content.append(Paragraph("ADR: Non ADR", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    # Alte detalii
+    content.append(Paragraph("Locatia si data incarcarii: _______________________________", styles['Normal']))
+    content.append(Paragraph("Locatia si data descarcarii: _______________________________", styles['Normal']))
+    content.append(Paragraph("Telefon sofer si numar: _______________________________", styles['Normal']))
+    content.append(Paragraph("Tip camion: _______________________________", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    content.append(Paragraph(f"Pret negociat: {total_net:.2f} EUR + TVA: 0%", styles['Normal']))
+    content.append(Paragraph("Metoda de plata: Ordin de plata", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    content.append(Paragraph("Note: 7 zile, documente originale conform cerintelor (2 CMR originale, T1, CEMT, Certificat auto, Documente de descarcare, Note de transport, Nota de cantarire)", styles['Normal']))
+    content.append(Spacer(1, 12))
+
+    # Continuă cu condițiile generale...
+    # (vezi codul complet în fișierul original)
+
+    doc.build(content)
+    messagebox.showinfo("Succes", f"Comanda de transport a fost salvata in {file_path}")
+```
+
+## 7. Widget-uri de Interface Necesare
+
+```python
+# Frame pentru selectarea companiei și afișarea tabelului
+company_frame = tk.Frame(self.master)
+company_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+# Dropdown pentru selectarea companiei
+tk.Label(company_frame, text="Selectați compania:").pack(side=tk.LEFT, padx=(0, 10))
+self.company_var = tk.StringVar()
+self.company_dropdown = ttk.Combobox(company_frame, textvariable=self.company_var)
+self.company_dropdown.pack(side=tk.LEFT)
+self.company_dropdown.bind('<<ComboboxSelected>>', self.update_company_table)
+
+# Tabel pentru detaliile companiei
+self.company_table = ttk.Treeview(self.master, columns=('VRID', 'Total 7', 'Total 30', 'Comision', 'Total Final'), show='headings')
+self.company_table.heading('VRID', text='VRID')
+self.company_table.heading('Total 7', text='Total 7 zile')
+self.company_table.heading('Total 30', text='Total 30 zile')
+self.company_table.heading('Comision', text='Comision')
+self.company_table.heading('Total Final', text='Total Final')
+self.company_table.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+# Frame pentru butoanele companiilor
+self.company_buttons_frame = tk.Frame(self.master)
+self.company_buttons_frame.pack(pady=10, padx=10, fill=tk.X)
+
+# Buton pentru generarea comenzilor de transport
+tk.Button(self.master, text="Generează Comenzi de Transport", command=self.create_transport_order_buttons).pack(pady=5)
+```
+
+## 8. Funcționalitatea pentru VRID-uri Neîmperecheate
+
+```python
+def find_unpaired_vrids(self):
+    """Identifică VRID-urile neîmperecheate din facturi"""
+    if self.trip_data is None or self.invoice7_data is None or self.invoice30_data is None:
+        messagebox.showwarning("Avertisment", "Nu toate datele necesare au fost încărcate.")
+        return
+
+    try:
+        self.unpaired_vrids = [
+            vrid for vrid, details in self.processed_data.get('Unmatched', {}).get('VRID_details', {}).items()
+            if details.get('7_days', 0) > 0 or details.get('30_days', 0) > 0
+        ]
+
+        if self.unpaired_vrids:
+            unpaired_list = "\n".join(self.unpaired_vrids)
+            self.log(f"VRID-uri neîmperecheate găsite în facturi:\n{unpaired_list}")
+            messagebox.showinfo("VRID-uri Neîmperecheate", f"S-au găsit {len(self.unpaired_vrids)} VRID-uri neîmperecheate. Verificați logurile pentru detalii.")
+        else:
+            messagebox.showinfo("Verificare Completă", "Toate VRID-urile din facturi sunt împerecheate corect.")
+    except Exception as e:
+        messagebox.showerror("Eroare", f"A apărut o eroare la identificarea VRID-urilor: {str(e)}")
+
+def assign_unpaired_vrids(self):
+    """Deschide fereastra pentru asignarea VRID-urilor neîmperecheate"""
+    if not self.processed_data:
+        messagebox.showwarning("Avertisment", "Nu există date procesate pentru asignare.")
+        return
+    if not self.unpaired_vrids:
+        messagebox.showinfo("Informație", "Nu există VRID-uri neîmperecheate pentru asignare.")
+        return
+
+    assign_window = tk.Toplevel(self.master)
+    assign_window.title("Asignare VRID-uri neîmperecheate")
+    assign_window.geometry("600x400")
+
+    frame = tk.Frame(assign_window)
+    frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+    # Lista cu VRID-urile neîmperecheate
+    vrid_listbox = tk.Listbox(frame, width=30)
+    vrid_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    for vrid in self.unpaired_vrids:
+        vrid_listbox.insert(tk.END, vrid)
+
+    # Frame pentru selectarea companiei
+    company_frame = tk.Frame(frame)
+    company_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+    tk.Label(company_frame, text="Selectați compania:").pack(pady=(0, 5))
+    company_combobox = ttk.Combobox(company_frame, values=list(self.processed_data.keys()))
+    company_combobox.pack(pady=(0, 10))
+
+    assign_button = tk.Button(assign_window, text="Asignează VRID",
+                      command=lambda: self.do_assign_vrid(vrid_listbox, company_combobox, assign_window))
+    assign_button.pack(pady=10)
+
+def do_assign_vrid(self, vrid_listbox, company_combobox, assign_window):
+    """Execută asignarea efectivă a unui VRID la o companie"""
+    if not vrid_listbox.curselection():
+        messagebox.showwarning("Avertisment", "Vă rugăm să selectați un VRID.")
+        return
+    if not company_combobox.get():
+        messagebox.showwarning("Avertisment", "Vă rugăm să selectați o companie.")
+        return
+
+    selected_vrid = vrid_listbox.get(vrid_listbox.curselection()[0])
+    selected_company = company_combobox.get()
+
+    # Obținem sumele pentru VRID-ul selectat din 'Unmatched'
+    vrid_data = self.processed_data['Unmatched']['VRID_details'][selected_vrid]
+    sum_7_days = vrid_data['7_days']
+    sum_30_days = vrid_data['30_days']
+    commission = vrid_data['commission']
+
+    # Scădem sumele din 'Unmatched'
+    self.processed_data['Unmatched']['Total_7_days'] -= sum_7_days
+    self.processed_data['Unmatched']['Total_30_days'] -= sum_30_days
+    self.processed_data['Unmatched']['Total_comision'] -= commission
+
+    # Adăugăm sumele la compania selectată
+    if selected_company not in self.processed_data:
+        self.processed_data[selected_company] = {
+            "Total_7_days": 0,
+            "Total_30_days": 0,
+            "Total_comision": 0,
+            "VRID_details": {}
+        }
+
+    self.processed_data[selected_company]['Total_7_days'] += sum_7_days
+    self.processed_data[selected_company]['Total_30_days'] += sum_30_days
+    self.processed_data[selected_company]['Total_comision'] += commission
+    self.processed_data[selected_company]['VRID_details'][selected_vrid] = vrid_data
+
+    # Eliminăm VRID-ul din 'Unmatched'
+    del self.processed_data['Unmatched']['VRID_details'][selected_vrid]
+
+    # Dacă 'Unmatched' nu mai are VRID-uri, îl eliminăm complet
+    if not self.processed_data['Unmatched']['VRID_details']:
+        del self.processed_data['Unmatched']
+
+    # Eliminăm VRID-ul din lista de neîmperecheate
+    self.unpaired_vrids.remove(selected_vrid)
+
+    # Gestionarea ferestrei de asignare și actualizarea afișajelor
+    if not self.unpaired_vrids:
+        assign_window.destroy()
+        messagebox.showinfo("Informație", "Toate VRID-urile au fost asignate.")
+    else:
+        # Actualizăm lista de VRID-uri în fereastra de asignare
+        vrid_listbox.delete(0, tk.END)
+        for vrid in self.unpaired_vrids:
+            vrid_listbox.insert(tk.END, vrid)
+
+        # Actualizăm dropdown-ul de companii doar dacă fereastra încă există
+        try:
+            if assign_window.winfo_exists():
+                company_combobox['values'] = [company for company in self.processed_data.keys() if company != 'Unmatched']
+        except tk.TclError:
+            print("Fereastra de asignare a fost închisă.")
+
+    # Actualizăm afișajele principale
+    self.company_var.set(selected_company)
+    self.update_company_table()
+    self.update_display()
+```
+
+## 9. Procesarea Facturilor cu Identificarea VRID-urilor Neîmperecheate
+
+```python
+def process_invoice(self, invoice_data, invoice_type):
+    """Procesează facturile și identifică VRID-urile neîmperecheate"""
+    print(f"Coloane disponibile în invoice_data: {invoice_data.columns.tolist()}")
+    print(f"Primele câteva rânduri din invoice_data:\n{invoice_data.head().to_string()}")
+    
+    def get_company_for_trip(trip_id):
+        """Găsește compania pentru VRID-ul dat"""
+        if not isinstance(trip_id, str):
+            trip_id = str(trip_id)
+            
+        matching_rows = self.trip_data[self.trip_data['Trip ID'].astype(str) == trip_id]
+        
+        if matching_rows.empty:
+            # Încercăm să căutăm și după VR ID dacă Trip ID nu este găsit
+            matching_rows = self.trip_data[self.trip_data['VR ID'].astype(str) == trip_id]
+            if matching_rows.empty:
+                return None
+                
+        driver_info = matching_rows.iloc[0]['Driver']
+        company = extract_and_find_driver(driver_info)
+        
+        if company == "Unknown Company":
+            self.log(f"Șofer negăsit pentru VRID {trip_id}: {driver_info}")
+            
+        return company
+
+    # Definim numele coloanelor pentru VRID și suma
+    tour_id_column = 'Tour ID'
+    load_id_column = 'Load ID'
+    amount_column = 'Gross Pay Amt (Excl. Tax)'
+
+    if tour_id_column not in invoice_data.columns or load_id_column not in invoice_data.columns or amount_column not in invoice_data.columns:
+        print(f"Eroare: Nu s-au găsit toate coloanele necesare. Coloane disponibile: {invoice_data.columns.tolist()}")
+        return
+
+    unknown_count = 0
+    empty_count = 0
+
+    for index, invoice_row in invoice_data.iterrows():
+        # Încercăm să extragem VRID-ul mai întâi din Tour ID, apoi din Load ID
+        tour_id = invoice_row[tour_id_column]
+        load_id = invoice_row[load_id_column]
+
+        if pd.notna(tour_id) and str(tour_id).strip():
+            vrid = str(tour_id).strip()
+        elif pd.notna(load_id) and str(load_id).strip():
+            vrid = str(load_id).strip()
+        else:
+            vrid = f"UNKNOWN-{index}"
+            unknown_count += 1
+            print(f"VRID necunoscut la indexul {index}. Tour ID: {tour_id}, Load ID: {load_id}")
+
+        if vrid == f"UNKNOWN-{index}":
+            empty_count += 1
+
+        # Extragem suma
+        total_amount = invoice_row[amount_column]
+
+        if pd.isna(total_amount) or total_amount == 0:
+            print(f"Suma invalidă la indexul {index}: {total_amount}")
+            continue
+
+        print(f"Processing VRID: {vrid}, Amount: {total_amount}")
+
+        company = get_company_for_trip(vrid)
+        
+        if company and company != "Unknown Company":
+            if company not in self.processed_data:
+                self.processed_data[company] = {
+                    "Total_7_days": 0,
+                    "Total_30_days": 0,
+                    "Total_comision": 0,
+                    "VRID_details": {}
+                }
+
+            # Aplicăm comisionul diferențiat
+            if company == "Fast Express":
+                commission_rate = 0.02  # 2% pentru Fast Express
+            else:
+                commission_rate = 0.04  # 4% pentru restul companiilor
+
+            commission = total_amount * commission_rate
+            self.processed_data[company][f'Total_{invoice_type}'] += total_amount
+            self.processed_data[company]['Total_comision'] += commission
+
+            if vrid not in self.processed_data[company]['VRID_details']:
+                self.processed_data[company]['VRID_details'][vrid] = {
+                    '7_days': 0,
+                    '30_days': 0,
+                    'commission': 0
+                }
+
+            self.processed_data[company]['VRID_details'][vrid][invoice_type] = total_amount
+            self.processed_data[company]['VRID_details'][vrid]['commission'] += commission
+        else:
+            # Adăugăm la categoria 'Unmatched' pentru VRID-urile neîmperecheate
+            if 'Unmatched' not in self.processed_data:
+                self.processed_data['Unmatched'] = {
+                    "Total_7_days": 0,
+                    "Total_30_days": 0,
+                    "Total_comision": 0,
+                    "VRID_details": {}
+                }
+            # Pentru 'Unmatched', aplicăm comisionul de 2%
+            commission = total_amount * 0.02
+            self.processed_data['Unmatched'][f'Total_{invoice_type}'] += total_amount
+            self.processed_data['Unmatched']['Total_comision'] += commission
+            if vrid not in self.processed_data['Unmatched']['VRID_details']:
+                self.processed_data['Unmatched']['VRID_details'][vrid] = {
+                    '7_days': 0,
+                    '30_days': 0,
+                    'commission': 0
+                }
+            self.processed_data['Unmatched']['VRID_details'][vrid][invoice_type] = total_amount
+            self.processed_data['Unmatched']['VRID_details'][vrid]['commission'] += commission
+
+    # Adăugăm VRID-urile neîmperecheate la lista pentru asignare ulterioară
+    self.unpaired_vrids = list(self.processed_data.get('Unmatched', {}).get('VRID_details', {}).keys())
+
+    # Afișăm un sumar la final
+    print(f"\nSumar procesare:")
+    print(f"Total VRID-uri procesate: {len(invoice_data)}")
+    print(f"VRID-uri necunoscute (UNKNOWN): {unknown_count}")
+    print(f"VRID-uri goale (EMPTY): {empty_count}")
+    print(f"Număr de VRID-uri neîmperecheate: {len(self.unpaired_vrids)}")
+    print(f"Exemple de VRID-uri neîmperecheate: {self.unpaired_vrids[:10]}")
+
+    # Verificare suplimentară pentru VRID-uri problematice
+    problematic_vrids = [vrid for vrid in self.unpaired_vrids if vrid.startswith('UNKNOWN-')]
+    if problematic_vrids:
+        print(f"\nVRID-uri problematice găsite: {len(problematic_vrids)}")
+        print(f"Exemple: {problematic_vrids[:10]}")
+```
+
+## 10. Butoane Suplimentare pentru Interface
+
+```python
+# Butoane pentru VRID-uri neîmperecheate
+tk.Button(self.master, text="Identifică VRID-uri Neîmperecheate", command=self.find_unpaired_vrids).pack(pady=10)
+tk.Button(self.master, text="Asignează VRID-uri Neîmperecheate", command=self.assign_unpaired_vrids).pack(pady=5)
+```
+
+## 11. Inițializarea Variabilelor în Constructor
+
+```python
+def __init__(self, master):
+    # ... alte inițializări ...
+    self.unpaired_vrids = None  # Lista cu VRID-urile neîmperecheate
+```
+
+## Instrucțiuni pentru Integrare
+
+1. **Adaugă dicționarele și funcțiile** în partea de sus a fișierului principal
+2. **Integrează widget-urile** în interfața principală
+3. **Conectează funcțiile** la butoanele și evenimentele corespunzătoare
+4. **Testează funcționalitatea** pas cu pas
+5. **Ajustează stilurile și layout-ul** după necesități
+
+Aceste componente vor permite:
+- Afișarea datelor pe companii în tabele separate
+- Generarea comenzilor de transport cu detaliile complete ale companiilor
+- Maparea corectă a șoferilor la companiile lor
+- **Identificarea și asignarea VRID-urilor neîmperecheate**
+- **Gestionarea completă a VRID-urilor care nu au șoferi asociați**
+- Generarea PDF-urilor cu condițiile și detaliile complete

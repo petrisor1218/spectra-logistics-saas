@@ -16,7 +16,10 @@ import {
   type Payment,
   type InsertPayment,
   type PaymentHistoryRecord,
-  type InsertPaymentHistory
+  type InsertPaymentHistory,
+  transportOrders,
+  type TransportOrder,
+  type InsertTransportOrder
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -54,6 +57,14 @@ export interface IStorage {
   // Payment history methods
   getPaymentHistory(paymentId?: number): Promise<PaymentHistoryRecord[]>;
   createPaymentHistoryRecord(record: InsertPaymentHistory): Promise<PaymentHistoryRecord>;
+
+  // Transport orders
+  createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder>;
+  getAllTransportOrders(): Promise<TransportOrder[]>;
+  getTransportOrdersByWeek(weekLabel: string): Promise<TransportOrder[]>;
+  getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]>;
+  updateTransportOrder(id: number, updates: Partial<InsertTransportOrder>): Promise<TransportOrder>;
+  deleteTransportOrder(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -187,6 +198,40 @@ export class DatabaseStorage implements IStorage {
       .values(insertRecord)
       .returning();
     return record;
+  }
+
+  // Transport orders methods
+  async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
+    const [transportOrder] = await db
+      .insert(transportOrders)
+      .values(order)
+      .returning();
+    return transportOrder;
+  }
+
+  async getAllTransportOrders(): Promise<TransportOrder[]> {
+    return await db.select().from(transportOrders).orderBy(desc(transportOrders.createdAt));
+  }
+
+  async getTransportOrdersByWeek(weekLabel: string): Promise<TransportOrder[]> {
+    return await db.select().from(transportOrders).where(eq(transportOrders.weekLabel, weekLabel));
+  }
+
+  async getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]> {
+    return await db.select().from(transportOrders).where(eq(transportOrders.companyName, companyName));
+  }
+
+  async updateTransportOrder(id: number, updates: Partial<InsertTransportOrder>): Promise<TransportOrder> {
+    const [transportOrder] = await db
+      .update(transportOrders)
+      .set(updates)
+      .where(eq(transportOrders.id, id))
+      .returning();
+    return transportOrder;
+  }
+
+  async deleteTransportOrder(id: number): Promise<void> {
+    await db.delete(transportOrders).where(eq(transportOrders.id, id));
   }
 }
 
