@@ -276,6 +276,19 @@ export default function Home() {
                   </motion.div>
                 )}
 
+                {/* Results Display in Calculations Tab */}
+                {Object.keys(processedData).length > 0 && (
+                  <ResultsDisplay
+                    processedData={processedData}
+                    payments={payments}
+                    paymentHistory={paymentHistory}
+                    recordPayment={recordPayment}
+                    deletePayment={deletePayment}
+                    getRemainingPayment={getRemainingPayment}
+                    selectedWeek={selectedWeek || ''}
+                  />
+                )}
+
                 {Object.keys(processedData).length === 0 && (
                   <motion.div 
                     className="text-center text-gray-400 py-16"

@@ -25,6 +25,18 @@ export function ResultsDisplay({
   selectedWeek
 }: ResultsDisplayProps) {
   const companies = Object.keys(processedData);
+  
+  // Debug log
+  console.log('ResultsDisplay - processedData:', processedData);
+  console.log('ResultsDisplay - companies:', companies);
+  
+  if (!processedData || Object.keys(processedData).length === 0) {
+    return (
+      <div className="text-center text-gray-400 py-8">
+        <p>Nu există date procesate pentru afișare</p>
+      </div>
+    );
+  }
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showTransportOrderModal, setShowTransportOrderModal] = useState(false);
@@ -105,10 +117,11 @@ export function ResultsDisplay({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => openTransportOrderModal(company)}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium"
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium border-2 border-blue-400"
                         title="Generează comandă de transport"
                       >
                         <Truck className="w-4 h-4" />
+                        <span className="ml-1 text-xs">Comandă</span>
                       </motion.button>
                     </div>
                   </div>
