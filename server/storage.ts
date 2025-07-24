@@ -119,6 +119,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCompany(id: number): Promise<void> {
+    // First delete all drivers for this company
+    await db.delete(drivers).where(eq(drivers.companyId, id));
+    // Then delete the company
     await db.delete(companies).where(eq(companies.id, id));
   }
 

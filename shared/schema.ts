@@ -28,6 +28,8 @@ export const drivers = pgTable("drivers", {
   name: varchar("name", { length: 200 }).notNull(),
   companyId: integer("company_id").references(() => companies.id),
   nameVariants: jsonb("name_variants"),
+  phone: varchar("phone", { length: 20 }).default(""),
+  email: varchar("email", { length: 100 }).default(""),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

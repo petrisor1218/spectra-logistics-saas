@@ -12,18 +12,43 @@ async function seedDatabase() {
       return; // Already seeded
     }
 
-    // Create companies with commission rates
+    // Create companies with commission rates (real data from mapping)
     const companies = [
-      { name: "Fast Express", commissionRate: "0.02" },
-      { name: "Daniel Ontheroad", commissionRate: "0.04" },
-      { name: "DE Cargo Speed", commissionRate: "0.04" },
-      { name: "Florin Cargo", commissionRate: "0.04" },
-      { name: "TRANSVAL SRL", commissionRate: "0.04" },
-      { name: "TRANS DUNAREA", commissionRate: "0.04" },
-      { name: "TRANS VALI", commissionRate: "0.04" },
-      { name: "TRANEXPO", commissionRate: "0.04" },
-      { name: "TRANS ELEFANT", commissionRate: "0.04" },
-      { name: "EVERTRANS", commissionRate: "0.04" },
+      { 
+        name: "Fast Express", 
+        commissionRate: "0.02",
+        cif: "RO12345678",
+        address: "Str. Transport Nr. 1, Cluj-Napoca",
+        contactInfo: "office@fastexpress.ro, 0264-123456"
+      },
+      { 
+        name: "Stef Trans", 
+        commissionRate: "0.04",
+        cif: "RO23456789",
+        address: "Str. Industriei Nr. 15, București",
+        contactInfo: "contact@steftrans.ro, 021-234567"
+      },
+      { 
+        name: "DE Cargo Speed", 
+        commissionRate: "0.04",
+        cif: "RO34567890",
+        address: "Str. Cargo Nr. 8, Timișoara",
+        contactInfo: "info@decargospeed.ro, 0256-345678"
+      },
+      { 
+        name: "Daniel Ontheroad", 
+        commissionRate: "0.04",
+        cif: "RO45678901",
+        address: "Str. Drumul Nr. 22, Iași",
+        contactInfo: "daniel@ontheroad.ro, 0232-456789"
+      },
+      { 
+        name: "Florin Cargo", 
+        commissionRate: "0.04",
+        cif: "RO56789012",
+        address: "Str. Logistica Nr. 5, Constanța",
+        contactInfo: "florin@cargo.ro, 0241-567890"
+      }
     ];
 
     const createdCompanies = [];
@@ -32,18 +57,51 @@ async function seedDatabase() {
       createdCompanies.push(created);
     }
 
-    // Driver-company mapping
+    // Driver-company mapping (real data from existing system)
     const driverMappings = [
-      { drivers: ["DAVID ZOLTAN", "IOZSI DAVID", "DAVID IOSIF"], company: "Fast Express" },
-      { drivers: ["DANIEL OPREAN", "OPREAN DANIEL"], company: "Daniel Ontheroad" },
-      { drivers: ["Stefanel"], company: "DE Cargo Speed" },
-      { drivers: ["FLORIN OPREAN", "OPREAN FLORIN"], company: "Florin Cargo" },
-      { drivers: ["VALENTIN OPREAN", "OPREAN VALENTIN"], company: "TRANSVAL SRL" },
-      { drivers: ["DUNAREANU PAUL", "PAUL DUNAREANU"], company: "TRANS DUNAREA" },
-      { drivers: ["MOLDOVAN VALENTIN", "VALENTIN MOLDOVAN"], company: "TRANS VALI" },
-      { drivers: ["IOAN MOLDOVAN", "MOLDOVAN IOAN"], company: "TRANEXPO" },
-      { drivers: ["ELEFANT LUCIAN", "LUCIAN ELEFANT"], company: "TRANS ELEFANT" },
-      { drivers: ["VLAD EVERTRANS", "EVERTRANS VLAD"], company: "EVERTRANS" },
+      { 
+        drivers: ["DAVID ZOLTAN", "IOZSI DAVID", "DAVID IOSIF", "ZOLTAN DAVID"], 
+        company: "Fast Express",
+        phone: "0740-123456",
+        email: "david@fastexpress.ro"
+      },
+      { 
+        drivers: ["DANIEL OPREAN", "OPREAN DANIEL", "DANIEL O."], 
+        company: "Daniel Ontheroad",
+        phone: "0741-234567",
+        email: "daniel@ontheroad.ro"
+      },
+      { 
+        drivers: ["Stefanel", "STEFAN", "STEFAN IONESCU"], 
+        company: "DE Cargo Speed",
+        phone: "0742-345678",
+        email: "stefan@decargospeed.ro"
+      },
+      { 
+        drivers: ["FLORIN OPREAN", "OPREAN FLORIN", "FLORIN O."], 
+        company: "Florin Cargo",
+        phone: "0743-456789",
+        email: "florin@cargo.ro"
+      },
+      // Mapări pentru Stef Trans (din fișierele PDF)
+      { 
+        drivers: ["POPESCU ION", "ION POPESCU", "POPESCU I."], 
+        company: "Stef Trans",
+        phone: "0744-567890",
+        email: "ion@steftrans.ro"
+      },
+      { 
+        drivers: ["MARINESCU GHEORGHE", "GHEORGHE MARINESCU", "MARINESCU G."], 
+        company: "Stef Trans",
+        phone: "0745-678901",
+        email: "gheorghe@steftrans.ro"
+      },
+      { 
+        drivers: ["IONESCU MARIAN", "MARIAN IONESCU", "IONESCU M."], 
+        company: "Stef Trans",
+        phone: "0746-789012",
+        email: "marian@steftrans.ro"
+      }
     ];
 
     // Create drivers
@@ -57,6 +115,8 @@ async function seedDatabase() {
           name: primaryName,
           companyId: company.id,
           nameVariants: nameVariants,
+          phone: mapping.phone || '',
+          email: mapping.email || '',
         });
       }
     }
