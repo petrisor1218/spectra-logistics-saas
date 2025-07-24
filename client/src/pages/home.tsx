@@ -66,6 +66,9 @@ export default function Home() {
   const weekOptions = getWeekOptions();
   const canProcess = tripData && invoice7Data && invoice30Data && processingWeek;
 
+  // Debug logging
+  console.log('Home component rendered', { activeTab });
+
   const tabs = [
     { id: 'upload', label: 'Încărcare Fișiere', icon: Upload },
     { id: 'calculations', label: 'Calcule și Totale', icon: Calculator },
