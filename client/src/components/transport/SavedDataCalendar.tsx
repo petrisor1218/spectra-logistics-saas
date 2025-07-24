@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Calendar, Database, Eye, TrendingUp, FileText, Loader2, AlertCircle } from "lucide-react";
+import { Calendar, Database, Eye, TrendingUp, FileText, Loader2, AlertCircle, SortDesc, SortAsc } from "lucide-react";
 
 interface SavedDataCalendarProps {
   loadAllWeeklyProcessing: () => Promise<any[]>;
@@ -19,6 +19,7 @@ export function SavedDataCalendar({
   const [loading, setLoading] = useState(true);
   const [selectedWeekData, setSelectedWeekData] = useState<any>(null);
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'recent' | 'oldest'>('recent');
 
   useEffect(() => {
     loadSavedData();
@@ -72,6 +73,21 @@ export function SavedDataCalendar({
     });
   };
 
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'recent' ? 'oldest' : 'recent');
+  };
+
+  // Sort saved weeks based on user preference
+  const sortedSavedWeeks = [...savedWeeks].sort((a, b) => {
+    if (sortOrder === 'recent') {
+      // Recent first: reverse alphabetical order works for "DD mmm. - DD mmm." format
+      return b.weekLabel.localeCompare(a.weekLabel);
+    } else {
+      // Oldest first: normal alphabetical order
+      return a.weekLabel.localeCompare(b.weekLabel);
+    }
+  });
+
   const calculateWeekTotals = (processedData: any) => {
     if (!processedData) return { companies: 0, totalAmount: 0 };
     
@@ -113,15 +129,37 @@ export function SavedDataCalendar({
           </div>
         </div>
         
-        <motion.button
-          onClick={loadSavedData}
-          className="glass-button px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-white/10"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <TrendingUp className="w-4 h-4" />
-          <span>Reîncarcă</span>
-        </motion.button>
+        <div className="flex items-center space-x-3">
+          <motion.button
+            onClick={toggleSortOrder}
+            className="glass-button px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-white/10"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title={sortOrder === 'recent' ? 'Schimbă la cele mai vechi prima' : 'Schimbă la cele mai recente prima'}
+          >
+            {sortOrder === 'recent' ? (
+              <>
+                <SortDesc className="w-4 h-4" />
+                <span>Recente Prima</span>
+              </>
+            ) : (
+              <>
+                <SortAsc className="w-4 h-4" />
+                <span>Vechi Prima</span>
+              </>
+            )}
+          </motion.button>
+          
+          <motion.button
+            onClick={loadSavedData}
+            className="glass-button px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-white/10"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Reîncarcă</span>
+          </motion.button>
+        </div>
       </div>
 
       {savedWeeks.length === 0 ? (
@@ -140,7 +178,7 @@ export function SavedDataCalendar({
         </motion.div>
       ) : (
         <div className="grid gap-4">
-          {savedWeeks.map((week, index) => {
+          {sortedSavedWeeks.map((week, index) => {
             const totals = calculateWeekTotals(week.processedData);
             const isExpanded = expandedWeek === week.weekLabel;
 
