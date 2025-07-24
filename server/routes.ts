@@ -11,11 +11,14 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
+    console.log(`Multer fileFilter - File: ${file.originalname}, Mimetype: ${file.mimetype}`);
     if (file.mimetype === 'application/pdf' || file.mimetype === 'text/csv' || 
         file.originalname.toLowerCase().endsWith('.csv') || 
         file.originalname.toLowerCase().endsWith('.pdf')) {
+      console.log('File accepted by filter');
       cb(null, true);
     } else {
+      console.log('File rejected by filter');
       cb(new Error('Acceptăm doar fișiere PDF și CSV'), false);
     }
   }
@@ -299,8 +302,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // File upload and processing routes
   app.post("/api/upload-file", upload.single('file'), async (req, res) => {
+    console.log('Upload request received:', {
+      hasFile: !!req.file,
+      body: req.body,
+      fileName: req.file?.originalname,
+      mimetype: req.file?.mimetype
+    });
+    
     try {
       if (!req.file) {
+        console.log('No file received in request');
         return res.status(400).json({ error: "Nu a fost încărcat niciun fișier" });
       }
 
