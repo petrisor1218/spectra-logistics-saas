@@ -111,9 +111,14 @@ export function FileUploadSection({
                 accept={section.accept}
                 multiple={section.multiple}
                 onChange={(e) => {
+                  console.log(`File input changed for ${section.type}:`, e.target.files?.length, 'files');
                   const files = Array.from(e.target.files || []);
+                  console.log('Files selected:', files.map(f => f.name));
                   files.forEach(file => {
-                    if (file) handleFileUpload(file, section.type);
+                    if (file) {
+                      console.log(`Calling handleFileUpload: ${file.name}, type: ${section.type}`);
+                      handleFileUpload(file, section.type);
+                    }
                   });
                 }}
               />

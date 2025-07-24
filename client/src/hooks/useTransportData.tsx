@@ -292,13 +292,20 @@ export function useTransportData() {
   };
 
   const handleFileUpload = async (file: File, type: string) => {
-    if (!file) return;
+    console.log('handleFileUpload called:', { fileName: file.name, type, size: file.size });
+    
+    if (!file) {
+      console.log('No file provided');
+      return;
+    }
     
     if (!processingWeek) {
+      console.log('No processing week selected');
       alert('Vă rugăm să selectați săptămâna mai întâi!');
       return;
     }
     
+    console.log('Starting file upload for:', { file: file.name, type, week: processingWeek });
     setLoading(true);
     try {
       let data = [];
