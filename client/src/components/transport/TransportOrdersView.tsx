@@ -23,9 +23,11 @@ export function TransportOrdersView() {
   const [selectedOrder, setSelectedOrder] = useState<TransportOrder | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [companies, setCompanies] = useState<any[]>([]);
 
   useEffect(() => {
     loadTransportOrders();
+    loadCompanies();
   }, []);
 
   const loadTransportOrders = async () => {
@@ -40,6 +42,19 @@ export function TransportOrdersView() {
       console.error('Error loading transport orders:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCompanies = async () => {
+    try {
+      const response = await fetch('/api/companies');
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data);
+        console.log('Loaded companies:', data);
+      }
+    } catch (error) {
+      console.error('Error loading companies:', error);
     }
   };
 
@@ -72,66 +87,26 @@ export function TransportOrdersView() {
   };
 
   const getCompanyDetails = (companyName: string) => {
-    const companies: { [key: string]: any } = {
-      'Fast & Express S.R.L.': {
-        cif: 'RO35986465',
-        rc: 'J34/227/2016',
-        adresa: 'Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42',
-        localitate: 'Alexandria',
-        judet: 'Teleorman',
-        contact: ''
-      },
-      'Fast Express': {
-        cif: 'RO35986465',
-        rc: 'J34/227/2016',
-        adresa: 'Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42',
-        localitate: 'Alexandria',
-        judet: 'Teleorman',
-        contact: ''
-      },
-      'Stef Trans S.R.L.': {
-        cif: 'RO19075934',
-        rc: 'J34/570/2006',
-        adresa: '-, -',
-        localitate: 'Dobrotesti',
-        judet: 'Teleorman',
-        contact: '0729897775, scsteftrans@yahoo.com'
-      },
-      'Stef Trans': {
-        cif: 'RO19075934',
-        rc: 'J34/570/2006',
-        adresa: '-, -',
-        localitate: 'Dobrotesti',
-        judet: 'Teleorman',
-        contact: '0729897775, scsteftrans@yahoo.com'
-      },
-      'De Cargo Sped S.R.L.': {
-        cif: 'RO43642683',
-        rc: 'J34/70/2021',
-        adresa: 'Str. Iasomiei, 9',
-        localitate: 'Mavrodin',
-        judet: 'Teleorman',
-        contact: 'Ginel, 0763698696, decargosped@gmail.com'
-      },
-      'DE Cargo Speed': {
-        cif: 'RO43642683',
-        rc: 'J34/70/2021',
-        adresa: 'Str. Iasomiei, 9',
-        localitate: 'Mavrodin',
-        judet: 'Teleorman',
-        contact: 'Ginel, 0763698696, decargosped@gmail.com'
-      },
-      'Daniel Ontheroad S.R.L.': {
-        cif: 'RO40383134',
-        rc: 'J34/27/2019',
-        adresa: 'Str. Sos. Turnu Magurele, 4-6, Bl:601, Sc:a, Et:2, Ap:10',
-        localitate: 'Alexandria',
-        judet: 'Teleorman',
-        contact: 'Mariana, 0762653911, feleagadanut@gmail.com'
-      }
-    };
+    // Try to find company in database first
+    const dbCompany = companies.find(c => 
+      c.name === companyName || 
+      c.name.includes(companyName) || 
+      companyName.includes(c.name.split(' ')[0])
+    );
     
-    return companies[companyName] || {
+    if (dbCompany) {
+      return {
+        cif: dbCompany.cif,
+        rc: dbCompany.tradeRegisterNumber,
+        adresa: dbCompany.address,
+        localitate: dbCompany.location,
+        judet: dbCompany.county,
+        contact: dbCompany.contact
+      };
+    }
+    
+    // Fallback to hardcoded values if not found in DB
+    return {
       cif: '[Completati CIF]',
       rc: '[Completati]',
       adresa: '[Completati]',
