@@ -276,12 +276,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transport-orders", async (req, res) => {
     try {
-      const validatedData = insertTransportOrderSchema.parse(req.body);
+      console.log("Received transport order data:", req.body);
+      
+      // Convert orderDate string to Date object if needed
+      const orderData = {
+        ...req.body,
+        orderDate: new Date(req.body.orderDate)
+      };
+      
+      console.log("Processed order data:", orderData);
+      
+      const validatedData = insertTransportOrderSchema.parse(orderData);
       const order = await storage.createTransportOrder(validatedData);
       res.json(order);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating transport order:", error);
-      res.status(500).json({ error: "Failed to create transport order" });
+      console.error("Error details:", error.issues || error.message);
+      res.status(500).json({ 
+        error: "Failed to create transport order",
+        details: error.issues || error.message
+      });
     }
   });
 

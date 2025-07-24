@@ -47,10 +47,10 @@ export function TransportOrderModal({
         body: JSON.stringify({
           orderNumber: orderNumber.trim(),
           companyName: company,
-          orderDate: new Date(orderDate),
+          orderDate: new Date(orderDate).toISOString(),
           weekLabel: selectedWeek,
           vrids: vrids,
-          totalAmount: totalAmount,
+          totalAmount: totalAmount.toFixed(2),
           route: route,
           status: 'draft'
         }),
