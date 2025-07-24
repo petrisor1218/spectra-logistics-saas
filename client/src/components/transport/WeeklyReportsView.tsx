@@ -7,15 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Download, FileText, Calendar, TrendingUp, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-
-// Extend jsPDF type to include autoTable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
 import { useQuery } from '@tanstack/react-query';
 
 interface WeeklyReportsViewProps {
@@ -180,7 +173,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       ]);
     }
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [headers],
       body: data,
       startY: 35,
