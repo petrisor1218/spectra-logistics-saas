@@ -1,12 +1,15 @@
 import { motion } from "framer-motion";
-import { Building, DollarSign, Check, Clock, Plus } from "lucide-react";
+import { Building, DollarSign, Check, Clock, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PaymentModal } from "./PaymentModal";
+import { useState } from "react";
 
 interface ResultsDisplayProps {
   processedData: any;
   payments: any;
   paymentHistory: any[];
   recordPayment: (company: string, amount: number, description?: string) => void;
+  deletePayment: (paymentId: number) => void;
   getRemainingPayment: (company: string) => number;
 }
 
@@ -15,9 +18,23 @@ export function ResultsDisplay({
   payments,
   paymentHistory,
   recordPayment,
+  deletePayment,
   getRemainingPayment
 }: ResultsDisplayProps) {
   const companies = Object.keys(processedData);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  const openPaymentModal = (company: string) => {
+    setSelectedCompany(company);
+    setShowPaymentModal(true);
+  };
+
+  const handleConfirmPayment = (amount: number, description: string, type: 'partial' | 'full') => {
+    if (selectedCompany) {
+      recordPayment(selectedCompany, amount, description);
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -52,13 +69,28 @@ export function ResultsDisplay({
                 whileHover={{ y: -5 }}
               >
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <h4 className="font-medium text-white">{company}</h4>
                     <p className="text-gray-400 text-sm">{driversCount} șoferi</p>
+                    <div className="flex space-x-4 mt-1 text-xs">
+                      <span className="text-green-400">7z: €{data.Total_7_days.toFixed(0)}</span>
+                      <span className="text-blue-400">30z: €{data.Total_30_days.toFixed(0)}</span>
+                      <span className="text-red-400">Com: €{data.Total_comision.toFixed(0)}</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-green-400">€{totalAmount.toFixed(2)}</p>
-                    <p className="text-gray-400 text-sm">Comision {commissionRate}</p>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-green-400">€{totalAmount.toFixed(2)}</p>
+                      <p className="text-gray-400 text-sm">Comision {commissionRate}</p>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => openPaymentModal(company)}
+                      className="px-3 py-2 gradient-primary rounded-lg text-white text-sm font-medium hover-glow"
+                    >
+                      Plătește
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>
@@ -99,11 +131,24 @@ export function ResultsDisplay({
                   <div>
                     <p className="font-medium text-white">{payment.company}</p>
                     <p className="text-gray-400 text-sm">{payment.date}</p>
+                    {payment.description && (
+                      <p className="text-gray-500 text-xs">{payment.description}</p>
+                    )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-400">€{payment.amount}</p>
-                  <p className="text-gray-400 text-sm">Completed</p>
+                <div className="flex items-center space-x-3">
+                  <div className="text-right">
+                    <p className="font-bold text-green-400">€{payment.amount}</p>
+                    <p className="text-gray-400 text-sm">Completed</p>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => deletePayment(payment.id)}
+                    className="w-8 h-8 bg-red-500/20 hover:bg-red-500 rounded-lg flex items-center justify-center transition-colors"
+                  >
+                    <Trash2 className="text-red-400 hover:text-white" size={14} />
+                  </motion.button>
                 </div>
               </div>
             </motion.div>
@@ -125,13 +170,7 @@ export function ResultsDisplay({
             className="mt-6"
           >
             <Button
-              onClick={() => {
-                const company = companies[0];
-                const remaining = getRemainingPayment(company);
-                if (remaining > 0) {
-                  recordPayment(company, remaining, "Plată automată");
-                }
-              }}
+              onClick={() => openPaymentModal(companies[0])}
               className="w-full gradient-primary hover-glow"
               disabled={companies.length === 0}
             >
@@ -141,6 +180,27 @@ export function ResultsDisplay({
           </motion.div>
         )}
       </motion.div>
+
+      {/* Payment Modal */}
+      {selectedCompany && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedCompany(null);
+          }}
+          company={selectedCompany}
+          totalAmount={
+            processedData[selectedCompany]?.Total_7_days + 
+            processedData[selectedCompany]?.Total_30_days - 
+            processedData[selectedCompany]?.Total_comision || 0
+          }
+          sevenDaysAmount={processedData[selectedCompany]?.Total_7_days || 0}
+          thirtyDaysAmount={processedData[selectedCompany]?.Total_30_days || 0}
+          commission={processedData[selectedCompany]?.Total_comision || 0}
+          onConfirmPayment={handleConfirmPayment}
+        />
+      )}
     </div>
   );
 }

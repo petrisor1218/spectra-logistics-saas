@@ -1,0 +1,1104 @@
+import React, { useState, useRef } from 'react';
+import { Upload, Calculator, DollarSign, Plus, Check, Trash2, Search, AlertTriangle, FileText, X } from 'lucide-react';
+
+const FixedTransportApp = () => {
+  const [tripData, setTripData] = useState(null);
+  const [invoice7Data, setInvoice7Data] = useState(null);
+  const [invoice30Data, setInvoice30Data] = useState(null);
+  const [pdf7Files, setPdf7Files] = useState([]);
+  const [pdf30Files, setPdf30Files] = useState([]);
+  const [processedData, setProcessedData] = useState({});
+  const [payments, setPayments] = useState({});
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [unpairedVrids, setUnpairedVrids] = useState([]);
+  const [activeTab, setActiveTab] = useState('upload');
+  const [loading, setLoading] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState('');
+  const [processingWeek, setProcessingWeek] = useState('');
+  const [vridSearchTerm, setVridSearchTerm] = useState('');
+  
+  const fileRefs = {
+    trip: useRef(),
+    invoice7: useRef(),
+    invoice30: useRef(),
+    pdf7: useRef(),
+    pdf30: useRef()
+  };
+
+  // Maparea șoferilor
+  const DRIVER_COMPANY_MAP_ORIGINAL = {
+    "ADRIAN  MIRON": "Fast Express",
+    "Adrian miron": "Fast Express",
+    "Andrei Serban Badea": "Fast Express",
+    "Petrisor Besteala": "Fast Express",
+    "Georgian Florentin Moise": "Fast Express",
+    "Gabriel Marian Ivan": "Fast Express",
+    "Olteanu Ionut": "Fast Express",
+    "Marius Condila": "Fast Express",
+    "Teodor Petrișor Chiar": "Fast Express",
+    "Tiberiu Iulian  Ivan": "Fast Express",
+    "Marius Adrian Badea": "Fast Express",
+    "Florin Oprea": "Fast Express",
+    "George Mihaita Butnaru": "Fast Express",
+    "Dan Costinel Savu": "Fast Express",
+    "Iosip Ionel": "Fast Express",
+    "Andrei Tanase": "Fast Express",
+    "Pana Stefan Daniel": "Fast Express",
+    "Vasilică Roman": "Fast Express",
+    "Florin Nicolae Sanislai": "Fast Express",
+    "Costica Mihalcea": "Daniel Ontheroad",
+    "Adrian Budescu": "Daniel Ontheroad",
+    "Danut Feleaga": "Daniel Ontheroad",
+    "Razvan Jurubita": "Daniel Ontheroad",
+    "Feleagă Marian": "Daniel Ontheroad",
+    "Dimitrov F": "Daniel Ontheroad",
+    "Cernat Lucian Marian": "DE Cargo Speed",
+    "Draghici Marius Sorin": "DE Cargo Speed",
+    "Sorin petrisor Dumitrache": "DE Cargo Speed",
+    "Petre Iulian LEUCE": "DE Cargo Speed",
+    "Gorgos Adrian": "Stef Trans",
+    "Barbuceanu Anghel": "Stef Trans",
+    "Adi-Nicolae Gocea": "Stef Trans",
+    "Dumitru Ciobanu": "Stef Trans",
+    "Dimache Mihalache": "Stef Trans",
+    "Toma Alin Marian": "Bis General",
+    "Balanean Daniel": "Bis General"
+  };
+
+  const generateNameVariants = (name) => {
+    const cleaned = name.trim().replace(/\s+/g, ' ');
+    const variants = [cleaned.toLowerCase()];
+    
+    const parts = cleaned.split(' ');
+    if (parts.length > 1) {
+      const reversed = [...parts].reverse();
+      variants.push(reversed.join(' ').toLowerCase());
+    }
+    
+    return [...new Set(variants)];
+  };
+
+  const DRIVER_COMPANY_MAP = {};
+  Object.entries(DRIVER_COMPANY_MAP_ORIGINAL).forEach(([driver, company]) => {
+    const variants = generateNameVariants(driver);
+    variants.forEach(variant => {
+      DRIVER_COMPANY_MAP[variant] = company;
+    });
+  });
+
+  const extractAndFindDriver = (driverName) => {
+    if (!driverName || typeof driverName !== 'string') return "Unknown";
+    
+    const drivers = driverName.split(',').map(d => d.trim());
+    
+    for (const driver of drivers) {
+      if (!driver) continue;
+      
+      const normalized = driver.toLowerCase().trim().replace(/\s+/g, ' ');
+      
+      if (DRIVER_COMPANY_MAP[normalized]) {
+        return DRIVER_COMPANY_MAP[normalized];
+      }
+      
+      const variants = generateNameVariants(driver);
+      for (const variant of variants) {
+        if (DRIVER_COMPANY_MAP[variant]) {
+          return DRIVER_COMPANY_MAP[variant];
+        }
+      }
+    }
+    
+    return "Unknown";
+  };
+
+  const getCurrentWeekRange = () => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    const day = now.getDay();
+    const diff = now.getDate() - day;
+    startOfWeek.setDate(diff);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    
+    return {
+      start: startOfWeek,
+      end: endOfWeek,
+      label: `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`
+    };
+  };
+
+  const getWeekOptions = () => {
+    const weeks = [];
+    const currentWeek = getCurrentWeekRange();
+    
+    weeks.push({
+      value: currentWeek.label,
+      label: `Această săptămână (${currentWeek.label})`,
+      start: currentWeek.start,
+      end: currentWeek.end
+    });
+    
+    for (let i = 1; i <= 8; i++) {
+      const weekStart = new Date(currentWeek.start);
+      weekStart.setDate(weekStart.getDate() - (i * 7));
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
+      const label = `${weekStart.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`;
+      
+      weeks.push({
+        value: label,
+        label: label,
+        start: weekStart,
+        end: weekEnd
+      });
+    }
+    
+    return weeks;
+  };
+
+  const extractDataFromPDF = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const text = e.target.result;
+          const extractedData = [];
+          
+          // Simulare extragere PDF
+          const lines = text.split('\n');
+          lines.forEach(line => {
+            const match = line.match(/([A-Z0-9]{9,12}).*?€([\d,]+\.[\d]{2})/);
+            if (match) {
+              extractedData.push({
+                'Load ID': match[1],
+                'Tour ID': match[1],
+                'Gross Pay Amt (Excl. Tax)': parseFloat(match[2].replace(',', ''))
+              });
+            }
+          });
+          
+          console.log(`PDF procesat: ${extractedData.length} înregistrări`);
+          resolve(extractedData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  };
+
+  const parseCSV = (text) => {
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/['"]/g, ''));
+    
+    return lines.slice(1).map(line => {
+      const values = line.split(',').map(v => v.trim().replace(/['"]/g, ''));
+      const row = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+      return row;
+    }).filter(row => Object.values(row).some(val => val));
+  };
+
+  const handleFileUpload = async (file, type) => {
+    if (!file) return;
+    
+    setLoading(true);
+    try {
+      let data = [];
+      
+      if (type === 'pdf7' || type === 'pdf30') {
+        data = await extractDataFromPDF(file);
+        
+        if (type === 'pdf7') {
+          setPdf7Files(prev => [...prev, { file, data, name: file.name }]);
+        } else {
+          setPdf30Files(prev => [...prev, { file, data, name: file.name }]);
+        }
+      } else {
+        if (file.name.endsWith('.csv')) {
+          const text = await file.text();
+          data = parseCSV(text);
+        } else {
+          alert('Pentru moment acceptăm doar fișiere CSV.');
+          setLoading(false);
+          return;
+        }
+        
+        if (type === 'trip') {
+          setTripData(data);
+        } else if (type === 'invoice7') {
+          setInvoice7Data(data);
+        } else if (type === 'invoice30') {
+          setInvoice30Data(data);
+        }
+      }
+      
+    } catch (error) {
+      alert('Eroare la încărcarea fișierului: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeFile = (type, index) => {
+    if (type === 'pdf7') {
+      setPdf7Files(prev => prev.filter((_, i) => i !== index));
+    } else if (type === 'pdf30') {
+      setPdf30Files(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const processData = () => {
+    if (!tripData) {
+      alert('Vă rugăm să încărcați fișierul TRIP.');
+      return;
+    }
+
+    const has7DaysData = invoice7Data || pdf7Files.length > 0;
+    const has30DaysData = invoice30Data || pdf30Files.length > 0;
+
+    if (!has7DaysData || !has30DaysData) {
+      alert('Vă rugăm să încărcați facturile pentru 7 zile și 30 zile.');
+      return;
+    }
+
+    if (!processingWeek) {
+      alert('Vă rugăm să selectați săptămâna.');
+      return;
+    }
+
+    setLoading(true);
+    const results = {};
+    const unpairedList = [];
+
+    try {
+      const processInvoice = (invoiceData, invoiceType) => {
+        invoiceData.forEach((row, index) => {
+          let vrid = '';
+          if (row['Tour ID'] && row['Tour ID'].trim()) {
+            vrid = row['Tour ID'].trim();
+          } else if (row['Load ID'] && row['Load ID'].trim()) {
+            vrid = row['Load ID'].trim();
+          } else {
+            vrid = `UNKNOWN-${index}`;
+          }
+
+          const amount = parseFloat(row['Gross Pay Amt (Excl. Tax)'] || 0);
+          if (isNaN(amount) || amount === 0) return;
+
+          const tripRecord = tripData.find(trip => 
+            trip['Trip ID'] === vrid || trip['VR ID'] === vrid
+          );
+
+          let company = 'Unmatched';
+          if (tripRecord && tripRecord['Driver']) {
+            const foundCompany = extractAndFindDriver(tripRecord['Driver']);
+            if (foundCompany !== 'Unknown') {
+              company = foundCompany;
+            } else {
+              unpairedList.push({
+                vrid,
+                amount,
+                type: invoiceType,
+                reason: `Șofer negăsit: ${tripRecord['Driver']}`,
+                driver: tripRecord['Driver']
+              });
+            }
+          } else {
+            unpairedList.push({
+              vrid,
+              amount,
+              type: invoiceType,
+              reason: 'VRID nu există în datele TRIP',
+              driver: null
+            });
+          }
+
+          if (!results[company]) {
+            results[company] = {
+              Total_7_days: 0,
+              Total_30_days: 0,
+              Total_comision: 0,
+              VRID_details: {}
+            };
+          }
+
+          const commissionRate = company === "Fast Express" ? 0.02 : 0.04;
+          const commission = amount * commissionRate;
+
+          if (invoiceType === '7_days') {
+            results[company].Total_7_days += amount;
+          } else {
+            results[company].Total_30_days += amount;
+          }
+          
+          results[company].Total_comision += commission;
+
+          if (!results[company].VRID_details[vrid]) {
+            results[company].VRID_details[vrid] = {
+              '7_days': 0,
+              '30_days': 0,
+              'commission': 0
+            };
+          }
+
+          results[company].VRID_details[vrid][invoiceType] = amount;
+          results[company].VRID_details[vrid].commission += commission;
+        });
+      };
+
+      if (invoice7Data) {
+        processInvoice(invoice7Data, '7_days');
+      }
+      if (pdf7Files.length > 0) {
+        pdf7Files.forEach(pdfFile => {
+          processInvoice(pdfFile.data, '7_days');
+        });
+      }
+
+      if (invoice30Data) {
+        processInvoice(invoice30Data, '30_days');
+      }
+      if (pdf30Files.length > 0) {
+        pdf30Files.forEach(pdfFile => {
+          processInvoice(pdfFile.data, '30_days');
+        });
+      }
+
+      setProcessedData(results);
+      setUnpairedVrids(unpairedList);
+      setSelectedWeek(processingWeek);
+      setActiveTab('calculations');
+
+      if (unpairedList.length > 0) {
+        setTimeout(() => {
+          alert(`Atenție: ${unpairedList.length} VRID-uri neîmperecheate găsite.`);
+        }, 500);
+      }
+
+    } catch (error) {
+      alert('Eroare la procesarea datelor: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const recordPayment = (company, amount, description = '') => {
+    const currentWeek = selectedWeek || getCurrentWeekRange().label;
+    
+    const payment = {
+      id: Date.now(),
+      company,
+      amount: parseFloat(amount),
+      description,
+      date: new Date().toISOString().split('T')[0],
+      week: currentWeek
+    };
+
+    setPaymentHistory(prev => [payment, ...prev]);
+    setPayments(prev => ({
+      ...prev,
+      [company]: (prev[company] || 0) + payment.amount
+    }));
+  };
+
+  const deletePayment = (paymentId) => {
+    const payment = paymentHistory.find(p => p.id === paymentId);
+    if (!payment) return;
+
+    setPaymentHistory(prev => prev.filter(p => p.id !== paymentId));
+    setPayments(prev => ({
+      ...prev,
+      [payment.company]: Math.max(0, (prev[payment.company] || 0) - payment.amount)
+    }));
+  };
+
+  const getRemainingPayment = (company) => {
+    const data = processedData[company];
+    if (!data) return 0;
+
+    const total = data.Total_7_days + data.Total_30_days - data.Total_comision;
+    const paid = payments[company] || 0;
+    
+    return Math.max(0, total - paid);
+  };
+
+  const assignVridToCompany = (vrid, company) => {
+    const vridItem = unpairedVrids.find(item => item.vrid === vrid);
+    if (!vridItem) return;
+
+    setProcessedData(prev => {
+      const newData = { ...prev };
+      
+      if (!newData[company]) {
+        newData[company] = {
+          Total_7_days: 0,
+          Total_30_days: 0,
+          Total_comision: 0,
+          VRID_details: {}
+        };
+      }
+
+      const commissionRate = company === "Fast Express" ? 0.02 : 0.04;
+      const commission = vridItem.amount * commissionRate;
+
+      if (vridItem.type === '7_days') {
+        newData[company].Total_7_days += vridItem.amount;
+      } else {
+        newData[company].Total_30_days += vridItem.amount;
+      }
+      
+      newData[company].Total_comision += commission;
+
+      if (!newData[company].VRID_details[vrid]) {
+        newData[company].VRID_details[vrid] = {
+          '7_days': 0,
+          '30_days': 0,
+          'commission': 0
+        };
+      }
+
+      newData[company].VRID_details[vrid][vridItem.type] = vridItem.amount;
+      newData[company].VRID_details[vrid].commission += commission;
+
+      return newData;
+    });
+
+    setUnpairedVrids(prev => prev.filter(item => item.vrid !== vrid));
+  };
+
+  const filteredUnpairedVrids = unpairedVrids.filter(item => 
+    !vridSearchTerm || item.vrid.toLowerCase().includes(vridSearchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Sistem Transport cu Suport PDF și CSV
+          </h1>
+          <p className="text-gray-600">
+            Procesează facturi din PDF sau CSV, urmărește plăți și gestionează VRID-uri neîmperecheate
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
+              {[
+                { id: 'upload', label: 'Încărcare Date', icon: Upload },
+                { id: 'calculations', label: 'Calcule și Totale', icon: Calculator },
+                { id: 'payments', label: 'Evidența Plăților', icon: DollarSign },
+                { id: 'unpaired', label: `VRID Neîmperecheate ${unpairedVrids.length > 0 ? `(${unpairedVrids.length})` : ''}`, icon: AlertTriangle }
+              ].map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : unpairedVrids.length > 0 && tab.id === 'unpaired'
+                        ? 'border-transparent text-orange-500 hover:text-orange-700'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {activeTab === 'upload' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">Calcule și Totale</h2>
+                  {processingWeek && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                      <p className="text-blue-800 text-sm">
+                        📊 Date procesate pentru: <strong>{processingWeek}</strong>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {unpairedVrids.length > 0 && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <AlertTriangle className="h-5 w-5 text-orange-500 mr-2" />
+                      <span className="text-orange-800 text-sm font-medium">
+                        {unpairedVrids.length} VRID-uri neîmperecheate găsite
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('unpaired')}
+                        className="ml-auto text-orange-600 hover:text-orange-800 text-sm underline"
+                      >
+                        Vezi detalii →
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                {Object.keys(processedData).length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    Încărcați și procesați datele pentru a vedea calculele
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Companie</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">7 Zile</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">30 Zile</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Comision</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total de Plată</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Achitat</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Rest de Plată</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {Object.entries(processedData).map(([company, data]) => {
+                          const total = data.Total_7_days + data.Total_30_days - data.Total_comision;
+                          const paid = payments[company] || 0;
+                          const remaining = Math.max(0, total - paid);
+                          
+                          return (
+                            <tr key={company} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 text-sm font-medium text-gray-900">{company}</td>
+                              <td className="px-6 py-4 text-sm text-gray-900 text-right">€{data.Total_7_days.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-sm text-gray-900 text-right">€{data.Total_30_days.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-sm text-red-600 text-right">-€{data.Total_comision.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-sm font-semibold text-blue-600 text-right">€{total.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-sm text-green-600 text-right">€{paid.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-sm font-semibold text-right">
+                                <span className={remaining === 0 ? 'text-green-600' : 'text-red-600'}>
+                                  €{remaining.toFixed(2)}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'payments' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">Evidența Plăților</h2>
+                  
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">Perioada plăților:</label>
+                    <select 
+                      value={selectedWeek}
+                      onChange={(e) => setSelectedWeek(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Selectează săptămâna</option>
+                      {getWeekOptions().map(week => (
+                        <option key={week.value} value={week.value}>{week.label}</option>
+                      ))}
+                    </select>
+                    {processingWeek && selectedWeek !== processingWeek && (
+                      <button
+                        onClick={() => setSelectedWeek(processingWeek)}
+                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                      >
+                        Folosește {processingWeek}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {selectedWeek && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-blue-800 text-sm">
+                      📅 Evidența plăților pentru: <strong>{selectedWeek}</strong>
+                      {processingWeek && selectedWeek === processingWeek && (
+                        <span className="ml-2 text-green-600">✓ (aceeași cu datele procesate)</span>
+                      )}
+                    </p>
+                  </div>
+                )}
+                
+                {Object.keys(processedData).length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">
+                    Procesați datele pentru a putea înregistra plățile
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(processedData).map(([company, data]) => {
+                      const total = data.Total_7_days + data.Total_30_days - data.Total_comision;
+                      const paid = payments[company] || 0;
+                      const remaining = getRemainingPayment(company);
+                      
+                      return (
+                        <div key={company} className="bg-white border border-gray-200 rounded-lg p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900">{company}</h3>
+                              {selectedWeek && (
+                                <p className="text-sm text-gray-500">Săptămâna: {selectedWeek}</p>
+                              )}
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              remaining === 0 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {remaining === 0 ? 'Achitat Complet' : `Rest: €${remaining.toFixed(2)}`}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Plată 7 zile</label>
+                              <div className="text-lg font-semibold text-blue-600">€{data.Total_7_days.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Plată 30 zile</label>
+                              <div className="text-lg font-semibold text-purple-600">€{data.Total_30_days.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Comision</label>
+                              <div className="text-lg font-semibold text-red-600">-€{data.Total_comision.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Total de plată</label>
+                              <div className="text-lg font-semibold text-gray-900">€{total.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Rest de plată</label>
+                              <div className="text-lg font-semibold text-orange-600">€{remaining.toFixed(2)}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <div className="flex justify-between text-sm text-gray-600 mb-1">
+                              <span>Progres plată</span>
+                              <span>{total > 0 ? Math.round((paid / total) * 100) : 0}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                                style={{ width: `${total > 0 ? Math.min((paid / total) * 100, 100) : 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-end space-x-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Sumă plătită</label>
+                              <input
+                                type="number"
+                                placeholder="0.00"
+                                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                id={`payment-${company}`}
+                                step="0.01"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Descriere</label>
+                              <input
+                                type="text"
+                                placeholder="Ex: Plata 7 zile"
+                                className="w-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                id={`description-${company}`}
+                              />
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (!selectedWeek) {
+                                  alert('Vă rugăm să selectați o săptămână mai întâi!');
+                                  return;
+                                }
+                                
+                                const amountInput = document.getElementById(`payment-${company}`);
+                                const descInput = document.getElementById(`description-${company}`);
+                                const amount = parseFloat(amountInput.value);
+                                
+                                if (amount > 0) {
+                                  recordPayment(company, amount, descInput.value);
+                                  amountInput.value = '';
+                                  descInput.value = '';
+                                }
+                              }}
+                              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center space-x-2"
+                            >
+                              <Plus size={16} />
+                              <span>Înregistrează</span>
+                            </button>
+                          </div>
+
+                          {paymentHistory.filter(p => p.company === company && (!selectedWeek || p.week === selectedWeek)).length > 0 && (
+                            <div className="mt-4">
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">
+                                Istoric plăți {selectedWeek ? `(${selectedWeek})` : ''}:
+                              </h4>
+                              <div className="space-y-1">
+                                {paymentHistory
+                                  .filter(p => p.company === company && (!selectedWeek || p.week === selectedWeek))
+                                  .map(payment => (
+                                  <div key={payment.id} className="text-sm text-gray-600 flex justify-between items-center bg-gray-50 p-2 rounded">
+                                    <span>{payment.date} - {payment.description || 'Plată'}</span>
+                                    <div className="flex items-center space-x-2">
+                                      <span className="font-medium text-green-600">€{payment.amount.toFixed(2)}</span>
+                                      <button
+                                        onClick={() => deletePayment(payment.id)}
+                                        className="text-red-600 hover:text-red-800"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'unpaired' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <AlertTriangle className="h-6 w-6 text-orange-500 mr-2" />
+                    VRID-uri Neîmperecheate ({unpairedVrids.length})
+                  </h2>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Caută VRID..."
+                      value={vridSearchTerm}
+                      onChange={(e) => setVridSearchTerm(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {unpairedVrids.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="bg-green-50 rounded-lg p-6">
+                      <Check className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-green-900 mb-2">Excelent!</h3>
+                      <p className="text-green-700">Toate VRID-urile au fost împerecheate cu succes.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-orange-800 mb-2">Instrucțiuni:</h3>
+                      <ul className="text-sm text-orange-700 space-y-1">
+                        <li>• VRID-urile de mai jos nu au fost găsite în datele TRIP sau nu au șoferi identificați</li>
+                        <li>• Pot fi din săptămâni anterioare - verificați manual</li>
+                        <li>• Asignați-le manual la companiile corespunzătoare</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="min-w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">VRID</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sumă</th>
+                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Tip</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Motiv</th>
+                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Asignează la</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {filteredUnpairedVrids.map((item, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 text-sm font-mono text-gray-900">{item.vrid}</td>
+                              <td className="px-6 py-4 text-sm text-right font-semibold text-blue-600">€{item.amount.toFixed(2)}</td>
+                              <td className="px-6 py-4 text-center">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  item.type === '7_days' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                                }`}>
+                                  {item.type === '7_days' ? '7 zile' : '30 zile'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-600">
+                                <div className="max-w-xs">
+                                  {item.reason}
+                                  {item.driver && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Șofer: {item.driver}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <select
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      assignVridToCompany(item.vrid, e.target.value);
+                                    }
+                                  }}
+                                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  defaultValue=""
+                                >
+                                  <option value="">Selectează compania</option>
+                                  <option value="Fast Express">Fast Express</option>
+                                  <option value="Daniel Ontheroad">Daniel Ontheroad</option>
+                                  <option value="DE Cargo Speed">DE Cargo Speed</option>
+                                  <option value="Stef Trans">Stef Trans</option>
+                                  <option value="Bis General">Bis General</option>
+                                </select>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {filteredUnpairedVrids.length === 0 && vridSearchTerm && (
+                      <div className="text-center py-8 text-gray-500">
+                        Nu s-au găsit VRID-uri care să conțină "{vridSearchTerm}"
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {loading && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Se procesează...</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FixedTransportApp; items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">Încărcați Fișierele</h2>
+                  
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">Săptămâna procesată:</label>
+                    <select 
+                      value={processingWeek}
+                      onChange={(e) => setProcessingWeek(e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Selectează săptămâna</option>
+                      {getWeekOptions().map(week => (
+                        <option key={week.value} value={week.value}>{week.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {processingWeek && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-green-800 text-sm">
+                      📅 Procesați datele pentru săptămâna: <strong>{processingWeek}</strong>
+                    </p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Fișier TRIP</h3>
+                    <p className="text-sm text-gray-500 mb-4">CSV cu datele curselor</p>
+                    <input
+                      ref={fileRefs.trip}
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => handleFileUpload(e.target.files[0], 'trip')}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileRefs.trip.current?.click()}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md mb-2"
+                    >
+                      Selectați CSV
+                    </button>
+                    {tripData && (
+                      <div className="mt-2 flex items-center justify-center text-green-600">
+                        <Check size={16} className="mr-1" />
+                        <span className="text-sm">Încărcat ({tripData.length} curse)</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">Facturi 7 Zile</h3>
+                    
+                    <div className="mb-4">
+                      <div className="flex items-center justify-center mb-2">
+                        <FileText className="h-8 w-8 text-red-400 mr-2" />
+                        <span className="text-sm font-medium">PDF (Recomandat)</span>
+                      </div>
+                      <input
+                        ref={fileRefs.pdf7}
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => handleFileUpload(e.target.files[0], 'pdf7')}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileRefs.pdf7.current?.click()}
+                        className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
+                      >
+                        Încarcă PDF
+                      </button>
+                    </div>
+
+                    <div className="mb-4 pt-2 border-t">
+                      <div className="flex items-center justify-center mb-2">
+                        <Upload className="h-6 w-6 text-green-400 mr-2" />
+                        <span className="text-xs text-gray-600">Backup CSV</span>
+                      </div>
+                      <input
+                        ref={fileRefs.invoice7}
+                        type="file"
+                        accept=".csv"
+                        onChange={(e) => handleFileUpload(e.target.files[0], 'invoice7')}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileRefs.invoice7.current?.click()}
+                        className="w-full bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-xs"
+                      >
+                        CSV
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {pdf7Files.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-red-50 p-2 rounded text-xs">
+                          <span className="text-red-700">📄 {file.name}</span>
+                          <button
+                            onClick={() => removeFile('pdf7', index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {invoice7Data && (
+                        <div className="flex items-center justify-center bg-green-50 p-2 rounded text-xs">
+                          <Check size={14} className="mr-1 text-green-600" />
+                          <span className="text-green-700">CSV încărcat</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">Facturi 30 Zile</h3>
+                    
+                    <div className="mb-4">
+                      <div className="flex items-center justify-center mb-2">
+                        <FileText className="h-8 w-8 text-purple-400 mr-2" />
+                        <span className="text-sm font-medium">PDF (Multiple)</span>
+                      </div>
+                      <input
+                        ref={fileRefs.pdf30}
+                        type="file"
+                        accept=".pdf"
+                        multiple
+                        onChange={(e) => {
+                          Array.from(e.target.files).forEach(file => 
+                            handleFileUpload(file, 'pdf30')
+                          );
+                        }}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileRefs.pdf30.current?.click()}
+                        className="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md text-sm"
+                      >
+                        Încarcă PDF-uri
+                      </button>
+                    </div>
+
+                    <div className="mb-4 pt-2 border-t">
+                      <div className="flex items-center justify-center mb-2">
+                        <Upload className="h-6 w-6 text-blue-400 mr-2" />
+                        <span className="text-xs text-gray-600">Backup CSV</span>
+                      </div>
+                      <input
+                        ref={fileRefs.invoice30}
+                        type="file"
+                        accept=".csv"
+                        onChange={(e) => handleFileUpload(e.target.files[0], 'invoice30')}
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileRefs.invoice30.current?.click()}
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs"
+                      >
+                        CSV
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {pdf30Files.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-purple-50 p-2 rounded text-xs">
+                          <span className="text-purple-700">📄 {file.name}</span>
+                          <button
+                            onClick={() => removeFile('pdf30', index)}
+                            className="text-purple-500 hover:text-purple-700"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {invoice30Data && (
+                        <div className="flex items-center justify-center bg-blue-50 p-2 rounded text-xs">
+                          <Check size={14} className="mr-1 text-blue-600" />
+                          <span className="text-blue-700">CSV încărcat</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {tripData && ((invoice7Data || pdf7Files.length > 0) && (invoice30Data || pdf30Files.length > 0)) && processingWeek && (
+                  <div className="text-center">
+                    <button
+                      onClick={processData}
+                      disabled={loading}
+                      className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-md font-medium disabled:opacity-50"
+                    >
+                      {loading ? 'Se procesează...' : `Procesează Datele pentru ${processingWeek}`}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'calculations' && (
+              <div className="space-y-6">
+                <div className="flex justify-between

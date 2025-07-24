@@ -37,6 +37,7 @@ export default function Home() {
     handleFileUpload,
     processData,
     recordPayment,
+    deletePayment,
     
     // Computed
     getWeekOptions,
@@ -290,6 +291,7 @@ export default function Home() {
                   payments={payments}
                   paymentHistory={paymentHistory}
                   recordPayment={recordPayment}
+                  deletePayment={deletePayment}
                   getRemainingPayment={getRemainingPayment}
                 />
               </div>
