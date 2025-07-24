@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { History, Calendar, Eye, DollarSign, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
+import { History, Calendar, Eye, DollarSign, TrendingUp, ChevronDown, ChevronUp, ArrowUpDown, SortAsc, SortDesc } from "lucide-react";
 
 interface WeeklyHistorySectionProps {
   weeklyPaymentHistory: any;
@@ -21,6 +21,7 @@ export function WeeklyHistorySection({
   const [loading, setLoading] = useState(false);
   const [historicalData, setHistoricalData] = useState<any>({});
   const [weeklyProcessingData, setWeeklyProcessingData] = useState<any>({});
+  const [sortOrder, setSortOrder] = useState<'recent' | 'oldest'>('recent');
 
   useEffect(() => {
     loadHistoricalData();
@@ -83,45 +84,20 @@ export function WeeklyHistorySection({
 
   const weekOptions = getWeekOptions();
   
-  // Helper function to parse week string and get start date
-  const parseWeekString = (weekStr: string) => {
-    try {
-      // Extract the start date from "22 iun. - 28 iun." format
-      const parts = weekStr.split(' - ')[0].split(' ');
-      if (parts.length >= 2) {
-        const day = parseInt(parts[0]);
-        const monthAbbr = parts[1].replace('.', '');
-        
-        // Romanian month abbreviations to numbers
-        const monthMap: { [key: string]: number } = {
-          'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
-          'iul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
-        };
-        
-        const month = monthMap[monthAbbr];
-        if (month !== undefined) {
-          const currentYear = new Date().getFullYear();
-          const parsedDate = new Date(currentYear, month, day);
-          console.log(`Parsed week "${weekStr}" to date:`, parsedDate);
-          return parsedDate;
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing week string:', weekStr, error);
-    }
-    return new Date(0); // Fallback to epoch if parsing fails
-  };
-  
+  // Simple sorting based on user preference
   const availableWeeks = Object.keys(historicalData).sort((a, b) => {
-    // Sort by most recent first (reverse chronological order)
-    const dateA = parseWeekString(a);
-    const dateB = parseWeekString(b);
-    const result = dateB.getTime() - dateA.getTime();
-    console.log(`Comparing "${a}" (${dateA.toISOString()}) vs "${b}" (${dateB.toISOString()}) = ${result}`);
-    return result;
+    if (sortOrder === 'recent') {
+      // Recent first: reverse alphabetical order works for "DD mmm. - DD mmm." format
+      return b.localeCompare(a);
+    } else {
+      // Oldest first: normal alphabetical order
+      return a.localeCompare(b);
+    }
   });
 
-  console.log('Final sorted weeks:', availableWeeks);
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'recent' ? 'oldest' : 'recent');
+  };
 
   if (loading) {
     return (
@@ -151,15 +127,37 @@ export function WeeklyHistorySection({
           </div>
         </div>
         
-        <motion.button
-          onClick={loadHistoricalData}
-          className="glass-button px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-white/10"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <TrendingUp className="w-4 h-4" />
-          <span>Reîncarcă</span>
-        </motion.button>
+        <div className="flex items-center space-x-3">
+          <motion.button
+            onClick={toggleSortOrder}
+            className="glass-button px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-white/10"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title={sortOrder === 'recent' ? 'Schimbă la cele mai vechi prima' : 'Schimbă la cele mai recente prima'}
+          >
+            {sortOrder === 'recent' ? (
+              <>
+                <SortDesc className="w-4 h-4" />
+                <span>Recente Prima</span>
+              </>
+            ) : (
+              <>
+                <SortAsc className="w-4 h-4" />
+                <span>Vechi Prima</span>
+              </>
+            )}
+          </motion.button>
+          
+          <motion.button
+            onClick={loadHistoricalData}
+            className="glass-button px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-white/10"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Reîncarcă</span>
+          </motion.button>
+        </div>
       </div>
 
       {availableWeeks.length === 0 ? (
