@@ -69,8 +69,47 @@ export function TransportOrdersView() {
     }
   };
 
+  const getCompanyDetails = (companyName: string) => {
+    const companies: { [key: string]: any } = {
+      'Stef Trans': {
+        cif: 'RO12345678',
+        rc: 'J40/1234/2020',
+        adresa: 'Str. Transportatorilor Nr. 15',
+        localitate: 'Bucuresti',
+        judet: 'Bucuresti',
+        contact: '+40 123 456 789'
+      },
+      'DE Cargo Speed': {
+        cif: 'RO87654321',
+        rc: 'J05/5678/2019',
+        adresa: 'Str. Cargo Nr. 22',
+        localitate: 'Constanta',
+        judet: 'Constanta',
+        contact: '+40 987 654 321'
+      },
+      'Fast Express': {
+        cif: 'RO11223344',
+        rc: 'J10/9876/2021',
+        adresa: 'Str. Express Nr. 45',
+        localitate: 'Buzau',
+        judet: 'Buzau',
+        contact: '+40 555 123 456'
+      }
+    };
+    
+    return companies[companyName] || {
+      cif: '[Completati CIF]',
+      rc: '[Completati]',
+      adresa: '[Completati]',
+      localitate: '[Completati]',
+      judet: '[Completati]',
+      contact: '[Completati]'
+    };
+  };
+
   const generatePDF = (order: TransportOrder) => {
     const doc = new jsPDF();
+    const companyDetails = getCompanyDetails(order.companyName);
     
     // Company Header
     doc.setFontSize(14);
@@ -103,13 +142,13 @@ export function TransportOrdersView() {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text(`Denumire Companie: ${order.companyName}`, 20, 125);
-    doc.text('CIF: [Completati CIF]', 20, 132);
-    doc.text('Numar Registrul Comertului: [Completati]', 20, 139);
-    doc.text('Adresa Companiei: [Completati]', 20, 146);
-    doc.text('Localitate: [Completati]', 20, 153);
-    doc.text('Judet: [Completati]', 20, 160);
+    doc.text(`CIF: ${companyDetails.cif}`, 20, 132);
+    doc.text(`Numar Registrul Comertului: ${companyDetails.rc}`, 20, 139);
+    doc.text(`Adresa Companiei: ${companyDetails.adresa}`, 20, 146);
+    doc.text(`Localitate: ${companyDetails.localitate}`, 20, 153);
+    doc.text(`Judet: ${companyDetails.judet}`, 20, 160);
     doc.text('Tara: Romania', 20, 167);
-    doc.text('Contact: [Completati]', 20, 174);
+    doc.text(`Contact: ${companyDetails.contact}`, 20, 174);
     
     doc.setFont('helvetica', 'bold');
     doc.text(`Ruta: ${order.route}`, 20, 185);
@@ -179,15 +218,23 @@ export function TransportOrdersView() {
       'In cazul transportului cu asigurare CMR invalida, transportatorul isi asuma toate daunele, iar',
       'administratorul companiei este solidar responsabil cu bunurile personale. ATENTIE! - Inspectia',
       'cantitatii si calitatii marfii se face de catre soferul transportatorului la locul de incarcare.',
+      'Daca la descarcare marfa ajunge deteriorata sau lipsa, transportatorul este obligat sa plateasca',
+      'despagubiri pentru daune + 200 euro imagine A Z LOGISTIC EOOD in termen de 10 zile.',
       '',
       '2. Pentru incarcare, masina trebuie sa fie prezenta cu toate echipamentele necesare, cum ar fi',
       'chingi (24 bucati) care sa reziste la o tensiune de 500 DAN (STF = 500DAN) fara prindere,',
       'covoare antiderapante (4 bucati per palet), coltare (48 bucati), prelata in stare buna.',
+      'Daca la incarcare se constata ca chingile sunt sub standard, diferenta pana la 24 de chingi',
+      'va fi suportata de transportator.',
       '',
       '3. Transportatorul este direct responsabil de plasarea axelor si integritatea incarcaturii in',
-      'timpul transportului. Orice problema cu semnalele de greutate in timpul incarcarii.',
+      'timpul transportului. Orice problema cu semnalele de greutate in timpul incarcarii,',
+      'A Z LOGISTIC EOOD nu este responsabila pentru consecintele suplimentare comenzii.',
       '',
-      '4. Transportatorul este responsabil pentru rezervele de livrare inregistrate in CMR.'
+      '4. Transportatorul este responsabil pentru rezervele de livrare inregistrate in CMR.',
+      'Chiar daca CMR nu are rezerve, dar destinatarul revine in 5 zile cu obiectii privind',
+      'marfurile livrate, transportatorul este obligat sa plateasca daune materiale/dobanzi in',
+      'termen de 10 zile.'
     ];
     
     let condY = 65;
@@ -209,7 +256,7 @@ export function TransportOrdersView() {
     doc.text(`Transportator: ${order.companyName}`, 105, pageHeight2 - 10, { align: 'center' });
     
     // Save the PDF
-    doc.save(`Comanda_Transport_${order.companyName.replace(/\s+/g, '_')}_${order.orderNumber}.pdf`);
+    doc.save(`Comanda_Transport_${order.companyName.replace(/\s+/g, '_')}_${order.orderNumber}_${new Date().getTime()}.pdf`);
   };
 
   if (loading) {
