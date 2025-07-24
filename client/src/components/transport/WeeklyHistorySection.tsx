@@ -82,9 +82,39 @@ export function WeeklyHistorySection({
   };
 
   const weekOptions = getWeekOptions();
+  
+  // Helper function to parse week string and get start date
+  const parseWeekString = (weekStr: string) => {
+    try {
+      // Extract the start date from "22 iun. - 28 iun." format
+      const parts = weekStr.split(' - ')[0].split(' ');
+      if (parts.length >= 2) {
+        const day = parseInt(parts[0]);
+        const monthAbbr = parts[1].replace('.', '');
+        
+        // Romanian month abbreviations to numbers
+        const monthMap: { [key: string]: number } = {
+          'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
+          'iul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+        };
+        
+        const month = monthMap[monthAbbr];
+        if (month !== undefined) {
+          const currentYear = new Date().getFullYear();
+          return new Date(currentYear, month, day);
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing week string:', weekStr, error);
+    }
+    return new Date(0); // Fallback to epoch if parsing fails
+  };
+  
   const availableWeeks = Object.keys(historicalData).sort((a, b) => {
-    // Sort by most recent first
-    return new Date(b).getTime() - new Date(a).getTime();
+    // Sort by most recent first (reverse chronological order)
+    const dateA = parseWeekString(a);
+    const dateB = parseWeekString(b);
+    return dateB.getTime() - dateA.getTime();
   });
 
   if (loading) {
