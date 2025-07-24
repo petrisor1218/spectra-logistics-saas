@@ -72,99 +72,144 @@ export function TransportOrdersView() {
   const generatePDF = (order: TransportOrder) => {
     const doc = new jsPDF();
     
-    // Header
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('COMANDĂ DE TRANSPORT', 105, 20, { align: 'center' });
-    
-    // Order details
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    
-    // Company info
-    doc.setFont('helvetica', 'bold');
-    doc.text('Companie:', 20, 40);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.companyName, 60, 40);
-    
-    // Order number
-    doc.setFont('helvetica', 'bold');
-    doc.text('Număr Comandă:', 20, 50);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`#${order.orderNumber}`, 70, 50);
-    
-    // Date
-    doc.setFont('helvetica', 'bold');
-    doc.text('Data Comandă:', 20, 60);
-    doc.setFont('helvetica', 'normal');
-    doc.text(formatDate(order.orderDate), 65, 60);
-    
-    // Week
-    doc.setFont('helvetica', 'bold');
-    doc.text('Săptămâna:', 20, 70);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.weekLabel, 55, 70);
-    
-    // Route
-    doc.setFont('helvetica', 'bold');
-    doc.text('Ruta:', 20, 80);
-    doc.setFont('helvetica', 'normal');
-    doc.text(order.route, 40, 80);
-    
-    // Status
-    doc.setFont('helvetica', 'bold');
-    doc.text('Status:', 20, 90);
-    doc.setFont('helvetica', 'normal');
-    doc.text(getStatusText(order.status), 45, 90);
-    
-    // Total amount
+    // Company Header
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Total Comandă:', 20, 105);
-    doc.setTextColor(0, 128, 0);
-    doc.text(`€${parseFloat(order.totalAmount).toFixed(2)}`, 75, 105);
-    doc.setTextColor(0, 0, 0);
+    doc.text('A Z LOGISTIC EOOD', 20, 20);
     
-    // VRIDs table
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Billing Data: BG206507560, 206507560', 20, 30);
+    doc.text('Adress: Ruser, Ruse,', 20, 37);
+    doc.text('Bank: DSK BANK', 20, 44);
+    doc.text('Account Euro: BG22STSA93000028729251', 20, 51);
+    doc.text('VTA rate: 0%', 20, 58);
+    doc.text('Email: azlogistic8@gmail.com', 20, 65);
+    
+    // Main Title
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ORDIN DE TRANSPORT RUTIER', 105, 85, { align: 'center' });
+    
+    doc.setFontSize(12);
+    const orderDate = new Date(order.orderDate).toLocaleDateString('ro-RO');
+    doc.text(`Nr. ${order.orderNumber} din ${orderDate}`, 105, 95, { align: 'center' });
+    
+    // Transportator section
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('VRIDs Incluse:', 20, 120);
+    doc.text('Transportator:', 20, 115);
     
-    // Create table data
-    const tableData = order.vrids.map((vrid, index) => [
-      (index + 1).toString(),
-      vrid
-    ]);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Denumire Companie: ${order.companyName}`, 20, 125);
+    doc.text('CIF: [Completati CIF]', 20, 132);
+    doc.text('Numar Registrul Comertului: [Completati]', 20, 139);
+    doc.text('Adresa Companiei: [Completati]', 20, 146);
+    doc.text('Localitate: [Completati]', 20, 153);
+    doc.text('Judet: [Completati]', 20, 160);
+    doc.text('Tara: Romania', 20, 167);
+    doc.text('Contact: [Completati]', 20, 174);
     
-    // Add table
-    autoTable(doc, {
-      startY: 130,
-      head: [['Nr.', 'VRID']],
-      body: tableData,
-      theme: 'grid',
-      styles: {
-        fontSize: 10,
-        cellPadding: 3
-      },
-      headStyles: {
-        fillColor: [66, 139, 202],
-        textColor: 255
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { left: 20, right: 20 }
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Ruta: ${order.route}`, 20, 185);
+    
+    // Transport section
+    doc.setFont('helvetica', 'bold');
+    doc.text('Transport:', 20, 200);
+    
+    doc.setFont('helvetica', 'normal');
+    const vridsText = `VRID-uri: ${order.vrids.join(', ')}`;
+    
+    // Split VRIDs into multiple lines if too long
+    const splitText = doc.splitTextToSize(vridsText, 170);
+    let currentY = 210;
+    splitText.forEach((line: string) => {
+      doc.text(line, 20, currentY);
+      currentY += 7;
+    });
+    
+    doc.text('ADR: Non ADR', 20, currentY + 10);
+    
+    currentY += 25;
+    doc.text('Locatia si data incarcarii: _______________________________', 20, currentY);
+    doc.text('Locatia si data descarcarii: _______________________________', 20, currentY + 10);
+    doc.text('Telefon sofer si numar: _______________________________', 20, currentY + 20);
+    doc.text('Tip camion: _______________________________', 20, currentY + 30);
+    
+    // Price section
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Pret negociat: ${parseFloat(order.totalAmount).toFixed(2)} EUR + TVA: 0%`, 20, currentY + 45);
+    doc.text('Metoda de plata: Ordin de plata', 20, currentY + 55);
+    
+    // Notes
+    doc.setFont('helvetica', 'normal');
+    const notesText = 'Note: 7 zile, documente originale conform cerintelor (2 CMR originale, T1, CEMT, Certificat auto, Documente de descarcare, Note de transport, Nota de cantarire)';
+    const notesSplit = doc.splitTextToSize(notesText, 170);
+    let notesY = currentY + 70;
+    notesSplit.forEach((line: string) => {
+      doc.text(line, 20, notesY);
+      notesY += 7;
     });
     
     // Footer
+    doc.text('Intocmit de:', 20, notesY + 15);
+    doc.text('[Completati Nume]', 20, notesY + 25);
+    
+    // Page footer
     const pageHeight = doc.internal.pageSize.height;
+    doc.text('Pagina 1 din 2', 105, pageHeight - 20, { align: 'center' });
+    doc.text(`Transportator: ${order.companyName}`, 105, pageHeight - 10, { align: 'center' });
+    
+    // Add second page with conditions
+    doc.addPage();
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Transportator: ${order.companyName}`, 20, 20);
+    doc.text('Conditii generale:', 20, 35);
+    
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'italic');
-    doc.text('Generat automat de Sistemul de Management Transport', 105, pageHeight - 20, { align: 'center' });
-    doc.text(`Data generării: ${new Date().toLocaleDateString('ro-RO')}`, 105, pageHeight - 10, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text('Dupa confirmarea comenzii, transportatorul se angajeaza sa respecte urmatoarele:', 20, 50);
+    
+    // Conditions text
+    const conditions = [
+      '1. Transportul se va efectua cu asigurare CMR valida aferenta vehiculului transportatorului mentionat.',
+      'In cazul transportului cu asigurare CMR invalida, transportatorul isi asuma toate daunele, iar',
+      'administratorul companiei este solidar responsabil cu bunurile personale. ATENTIE! - Inspectia',
+      'cantitatii si calitatii marfii se face de catre soferul transportatorului la locul de incarcare.',
+      '',
+      '2. Pentru incarcare, masina trebuie sa fie prezenta cu toate echipamentele necesare, cum ar fi',
+      'chingi (24 bucati) care sa reziste la o tensiune de 500 DAN (STF = 500DAN) fara prindere,',
+      'covoare antiderapante (4 bucati per palet), coltare (48 bucati), prelata in stare buna.',
+      '',
+      '3. Transportatorul este direct responsabil de plasarea axelor si integritatea incarcaturii in',
+      'timpul transportului. Orice problema cu semnalele de greutate in timpul incarcarii.',
+      '',
+      '4. Transportatorul este responsabil pentru rezervele de livrare inregistrate in CMR.'
+    ];
+    
+    let condY = 65;
+    conditions.forEach(condition => {
+      doc.text(condition, 20, condY);
+      condY += 7;
+    });
+    
+    // Second page footer
+    doc.text('Intocmit de:', 20, condY + 20);
+    doc.text('[Completati Nume]', 20, condY + 30);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('A Z LOGISTIC EOOD', 20, condY + 45);
+    doc.text('azlogistic8@gmail.com', 20, condY + 55);
+    
+    const pageHeight2 = doc.internal.pageSize.height;
+    doc.text('Pagina 2 din 2', 105, pageHeight2 - 20, { align: 'center' });
+    doc.text(`Transportator: ${order.companyName}`, 105, pageHeight2 - 10, { align: 'center' });
     
     // Save the PDF
-    doc.save(`Comanda_${order.orderNumber}_${order.companyName.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Comanda_Transport_${order.companyName.replace(/\s+/g, '_')}_${order.orderNumber}.pdf`);
   };
 
   if (loading) {
