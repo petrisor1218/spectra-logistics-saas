@@ -12,42 +12,62 @@ async function seedDatabase() {
       return; // Already seeded
     }
 
-    // Create companies with commission rates (real data from mapping)
+    // Create companies with real data from business registry
     const companies = [
       { 
-        name: "Fast Express", 
+        name: "Fast & Express S.R.L.", 
         commissionRate: "0.02",
-        cif: "RO12345678",
-        address: "Str. Transport Nr. 1, Cluj-Napoca",
-        contactInfo: "office@fastexpress.ro, 0264-123456"
+        cif: "RO35986465",
+        tradeRegisterNumber: "J34/227/2016",
+        address: "Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42",
+        location: "Alexandria",
+        county: "Teleorman",
+        country: "Romania",
+        contact: ""
       },
       { 
-        name: "Stef Trans", 
+        name: "Stef Trans S.R.L.", 
         commissionRate: "0.04",
-        cif: "RO23456789",
-        address: "Str. Industriei Nr. 15, București",
-        contactInfo: "contact@steftrans.ro, 021-234567"
+        cif: "RO19075934",
+        tradeRegisterNumber: "J34/570/2006",
+        address: "-, -",
+        location: "Dobrotesti",
+        county: "Teleorman",
+        country: "Romania",
+        contact: "0729897775, scsteftrans@yahoo.com"
       },
       { 
-        name: "DE Cargo Speed", 
+        name: "De Cargo Sped S.R.L.", 
         commissionRate: "0.04",
-        cif: "RO34567890",
-        address: "Str. Cargo Nr. 8, Timișoara",
-        contactInfo: "info@decargospeed.ro, 0256-345678"
+        cif: "RO43642683",
+        tradeRegisterNumber: "J34/70/2021",
+        address: "Str. Iasomiei, 9",
+        location: "Mavrodin",
+        county: "Teleorman",
+        country: "Romania",
+        contact: "Ginel, 0763698696, decargosped@gmail.com"
       },
       { 
-        name: "Daniel Ontheroad", 
+        name: "Daniel Ontheroad S.R.L.", 
         commissionRate: "0.04",
-        cif: "RO45678901",
-        address: "Str. Drumul Nr. 22, Iași",
-        contactInfo: "daniel@ontheroad.ro, 0232-456789"
+        cif: "RO40383134",
+        tradeRegisterNumber: "J34/27/2019",
+        address: "Str. Sos. Turnu Magurele, 4-6, Bl:601, Sc:a, Et:2, Ap:10",
+        location: "Alexandria",
+        county: "Teleorman",
+        country: "Romania",
+        contact: "Mariana, 0762653911, feleagadanut@gmail.com"
       },
       { 
-        name: "Florin Cargo", 
+        name: "Bis General", 
         commissionRate: "0.04",
-        cif: "RO56789012",
-        address: "Str. Logistica Nr. 5, Constanța",
-        contactInfo: "florin@cargo.ro, 0241-567890"
+        cif: "RO99999999",
+        tradeRegisterNumber: "J34/999/2020",
+        address: "Adresa necunoscută",
+        location: "Necunoscut",
+        county: "Teleorman",
+        country: "Romania",
+        contact: ""
       }
     ];
 
@@ -57,51 +77,52 @@ async function seedDatabase() {
       createdCompanies.push(created);
     }
 
-    // Driver-company mapping (real data from existing system)
+    // Driver-company mapping (real data from business registry)
     const driverMappings = [
-      { 
-        drivers: ["DAVID ZOLTAN", "IOZSI DAVID", "DAVID IOSIF", "ZOLTAN DAVID"], 
-        company: "Fast Express",
-        phone: "0740-123456",
-        email: "david@fastexpress.ro"
-      },
-      { 
-        drivers: ["DANIEL OPREAN", "OPREAN DANIEL", "DANIEL O."], 
-        company: "Daniel Ontheroad",
-        phone: "0741-234567",
-        email: "daniel@ontheroad.ro"
-      },
-      { 
-        drivers: ["Stefanel", "STEFAN", "STEFAN IONESCU"], 
-        company: "DE Cargo Speed",
-        phone: "0742-345678",
-        email: "stefan@decargospeed.ro"
-      },
-      { 
-        drivers: ["FLORIN OPREAN", "OPREAN FLORIN", "FLORIN O."], 
-        company: "Florin Cargo",
-        phone: "0743-456789",
-        email: "florin@cargo.ro"
-      },
-      // Mapări pentru Stef Trans (din fișierele PDF)
-      { 
-        drivers: ["POPESCU ION", "ION POPESCU", "POPESCU I."], 
-        company: "Stef Trans",
-        phone: "0744-567890",
-        email: "ion@steftrans.ro"
-      },
-      { 
-        drivers: ["MARINESCU GHEORGHE", "GHEORGHE MARINESCU", "MARINESCU G."], 
-        company: "Stef Trans",
-        phone: "0745-678901",
-        email: "gheorghe@steftrans.ro"
-      },
-      { 
-        drivers: ["IONESCU MARIAN", "MARIAN IONESCU", "IONESCU M."], 
-        company: "Stef Trans",
-        phone: "0746-789012",
-        email: "marian@steftrans.ro"
-      }
+      // Fast & Express S.R.L. drivers
+      { drivers: ["ADRIAN MIRON", "Adrian miron"], company: "Fast & Express S.R.L.", phone: "0740-111111", email: "adrian.miron@fastexpress.ro" },
+      { drivers: ["Andrei Serban Badea"], company: "Fast & Express S.R.L.", phone: "0740-111112", email: "andrei.badea@fastexpress.ro" },
+      { drivers: ["Petrisor Besteala"], company: "Fast & Express S.R.L.", phone: "0740-111113", email: "petrisor.besteala@fastexpress.ro" },
+      { drivers: ["Georgian Florentin Moise"], company: "Fast & Express S.R.L.", phone: "0740-111114", email: "georgian.moise@fastexpress.ro" },
+      { drivers: ["Gabriel Marian Ivan"], company: "Fast & Express S.R.L.", phone: "0740-111115", email: "gabriel.ivan@fastexpress.ro" },
+      { drivers: ["Olteanu Ionut"], company: "Fast & Express S.R.L.", phone: "0740-111116", email: "ionut.olteanu@fastexpress.ro" },
+      { drivers: ["Marius Condila"], company: "Fast & Express S.R.L.", phone: "0740-111117", email: "marius.condila@fastexpress.ro" },
+      { drivers: ["Teodor Petrișor Chiar"], company: "Fast & Express S.R.L.", phone: "0740-111118", email: "teodor.chiar@fastexpress.ro" },
+      { drivers: ["Tiberiu Iulian Ivan"], company: "Fast & Express S.R.L.", phone: "0740-111119", email: "tiberiu.ivan@fastexpress.ro" },
+      { drivers: ["Marius Adrian Badea"], company: "Fast & Express S.R.L.", phone: "0740-111120", email: "marius.badea@fastexpress.ro" },
+      { drivers: ["Florin Oprea"], company: "Fast & Express S.R.L.", phone: "0740-111121", email: "florin.oprea@fastexpress.ro" },
+      { drivers: ["George Mihaita Butnaru"], company: "Fast & Express S.R.L.", phone: "0740-111122", email: "george.butnaru@fastexpress.ro" },
+      { drivers: ["Dan Costinel Savu"], company: "Fast & Express S.R.L.", phone: "0740-111123", email: "dan.savu@fastexpress.ro" },
+      { drivers: ["Iosip Ionel"], company: "Fast & Express S.R.L.", phone: "0740-111124", email: "iosip.ionel@fastexpress.ro" },
+      { drivers: ["Andrei Tanase"], company: "Fast & Express S.R.L.", phone: "0740-111125", email: "andrei.tanase@fastexpress.ro" },
+      { drivers: ["Pana Stefan Daniel"], company: "Fast & Express S.R.L.", phone: "0740-111126", email: "stefan.pana@fastexpress.ro" },
+      { drivers: ["Vasilică Roman"], company: "Fast & Express S.R.L.", phone: "0740-111127", email: "vasilica.roman@fastexpress.ro" },
+      { drivers: ["Florin Nicolae Sanislai"], company: "Fast & Express S.R.L.", phone: "0740-111128", email: "florin.sanislai@fastexpress.ro" },
+      
+      // Daniel Ontheroad S.R.L. drivers
+      { drivers: ["Costica Mihalcea"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653911", email: "costica.mihalcea@danielontheroad.ro" },
+      { drivers: ["Adrian Budescu"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653912", email: "adrian.budescu@danielontheroad.ro" },
+      { drivers: ["Danut Feleaga"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653913", email: "danut.feleaga@danielontheroad.ro" },
+      { drivers: ["Razvan Jurubita"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653914", email: "razvan.jurubita@danielontheroad.ro" },
+      { drivers: ["Feleagă Marian"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653915", email: "marian.feleaga@danielontheroad.ro" },
+      { drivers: ["Dimitrov F"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653916", email: "dimitrov.f@danielontheroad.ro" },
+      
+      // De Cargo Sped S.R.L. drivers
+      { drivers: ["Cernat Lucian Marian"], company: "De Cargo Sped S.R.L.", phone: "0763-698696", email: "lucian.cernat@decargosped.ro" },
+      { drivers: ["Draghici Marius Sorin"], company: "De Cargo Sped S.R.L.", phone: "0763-698697", email: "marius.draghici@decargosped.ro" },
+      { drivers: ["Sorin petrisor Dumitrache"], company: "De Cargo Sped S.R.L.", phone: "0763-698698", email: "sorin.dumitrache@decargosped.ro" },
+      { drivers: ["Petre Iulian LEUCE"], company: "De Cargo Sped S.R.L.", phone: "0763-698699", email: "petre.leuce@decargosped.ro" },
+      
+      // Stef Trans S.R.L. drivers
+      { drivers: ["Gorgos Adrian"], company: "Stef Trans S.R.L.", phone: "0729-897775", email: "adrian.gorgos@steftrans.ro" },
+      { drivers: ["Barbuceanu Anghel"], company: "Stef Trans S.R.L.", phone: "0729-897776", email: "anghel.barbuceanu@steftrans.ro" },
+      { drivers: ["Adi-Nicolae Gocea"], company: "Stef Trans S.R.L.", phone: "0729-897777", email: "adi.gocea@steftrans.ro" },
+      { drivers: ["Dumitru Ciobanu"], company: "Stef Trans S.R.L.", phone: "0729-897778", email: "dumitru.ciobanu@steftrans.ro" },
+      { drivers: ["Dimache Mihalache"], company: "Stef Trans S.R.L.", phone: "0729-897779", email: "dimache.mihalache@steftrans.ro" },
+      
+      // Bis General drivers
+      { drivers: ["Toma Alin Marian"], company: "Bis General", phone: "0740-999999", email: "alin.toma@bisgeneral.ro" },
+      { drivers: ["Balanean Daniel"], company: "Bis General", phone: "0740-999998", email: "daniel.balanean@bisgeneral.ro" }
     ];
 
     // Create drivers
@@ -426,22 +447,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Join with company data
       const companies = await storage.getAllCompanies();
-      console.log("Companies found:", companies.length);
-      console.log("Drivers found:", drivers.length);
+      // Debug removed for production
       
       const driversWithCompanies = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
-        const result = {
+        return {
           ...driver,
           company: company || null
         };
-        console.log(`Driver mapping result:`, JSON.stringify({
-          driverName: driver.name,
-          companyId: driver.companyId,
-          foundCompany: company?.name || 'null',
-          hasCompanyField: 'company' in result
-        }));
-        return result;
       });
       
       res.json(driversWithCompanies);

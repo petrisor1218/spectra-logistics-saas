@@ -1,0 +1,78 @@
+COMPANY_DETAILS = {
+    "Fast & Express S.R.L.": {
+        "CIF": "RO35986465",
+        "Trade register number": "J34/227/2016",
+        "Company Address": "Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42, -",
+        "Location": "Alexandria",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": ""
+    },
+    "Stef Trans S.R.L.": {
+        "CIF": "RO19075934",
+        "Trade register number": "J34/570/2006",
+        "Company Address": "-, -",
+        "Location": "Dobrotesti",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": "0729897775, scsteftrans@yahoo.com"
+    },
+    "De Cargo Sped S.R.L.": {
+        "CIF": "RO43642683",
+        "Trade register number": "J34/70/2021",
+        "Company Address": "Str. Iasomiei, 9, -",
+        "Location": "Mavrodin",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": "Ginel, 0763698696, decargosped@gmail.com"
+    },
+    "Daniel Ontheroad S.R.L.": {
+        "CIF": "RO40383134",
+        "Trade register number": "J34/27/2019",
+        "Company Address": "Str. Sos. Turnu Magurele, 4-6, Bl:601, Sc:a, Et:2, Ap:10, -",
+        "Location": "Alexandria",
+        "County": "Teleorman",
+        "Country": "Romania",
+        "Contact": "Mariana, 0762653911, feleagadanut@gmail.com"
+    }
+}
+
+# Dicionarul original cu șoferii și companiile lor
+DRIVER_COMPANY_MAP_ORIGINAL = {
+    "ADRIAN  MIRON": "Fast Express",
+    "Adrian miron": "Fast Express",
+    "Andrei Serban Badea": "Fast Express",
+    "Petrisor Besteala": "Fast Express",
+    "Georgian Florentin Moise": "Fast Express",
+    "Gabriel Marian Ivan": "Fast Express",
+    "Olteanu Ionut": "Fast Express",
+    "Marius Condila": "Fast Express",
+    "Teodor Petrișor Chiar": "Fast Express",
+    "Tiberiu Iulian  Ivan": "Fast Express",
+    "Marius Adrian Badea": "Fast Express",
+    "Florin Oprea": "Fast Express",
+    "George Mihaita Butnaru": "Fast Express",
+    "Dan Costinel Savu": "Fast Express",
+    "Iosip Ionel": "Fast Express",
+    "Andrei Tanase": "Fast Express",
+    "Pana Stefan Daniel": "Fast Express",
+    "Vasilică Roman": "Fast Express",
+    "Florin Nicolae Sanislai": "Fast Express",
+    "Costica Mihalcea": "Daniel Ontheroad",
+    "Adrian Budescu": "Daniel Ontheroad",
+    "Danut Feleaga": "Daniel Ontheroad",
+    "Razvan Jurubita": "Daniel Ontheroad",
+    "Feleagă Marian": "Daniel Ontheroad",
+    "Dimitrov F": "Daniel Ontheroad",
+    "Cernat Lucian Marian": "DE Cargo Speed",
+    "Draghici Marius Sorin": "DE Cargo Speed",
+    "Sorin petrisor Dumitrache": "DE Cargo Speed",
+    "Petre Iulian LEUCE": "DE Cargo Speed",
+    "Gorgos Adrian": "Stef Trans",
+    "Barbuceanu Anghel": "Stef Trans",
+    "Adi-Nicolae Gocea": "Stef Trans",
+    "Dumitru Ciobanu": "Stef Trans",
+    "Dimache Mihalache": "Stef Trans",
+    "Toma Alin Marian": "Bis General",
+    "Balanean Daniel": "Bis General"
+}
