@@ -440,7 +440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver management routes with company join
+  // Driver management routes with company join  
   app.get("/api/drivers", async (req, res) => {
     try {
       const drivers = await storage.getAllDrivers();
@@ -448,18 +448,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
-        return {
+        const driverWithCompany = {
           id: driver.id,
           name: driver.name,
           companyId: driver.companyId,
           nameVariants: driver.nameVariants,
           phone: driver.phone,
           email: driver.email,
-          createdAt: driver.createdAt,
-          company: company
+          createdAt: driver.createdAt
         };
+        
+        // Explicitly add company field
+        (driverWithCompany as any).company = company || null;
+        
+        return driverWithCompany;
       });
       
+      res.set('Cache-Control', 'no-cache');
       res.json(result);
     } catch (error) {
       console.error("Error fetching drivers:", error);

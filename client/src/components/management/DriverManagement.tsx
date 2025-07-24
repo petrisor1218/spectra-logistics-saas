@@ -186,7 +186,7 @@ export function DriverManagement() {
             type="text"
             value={data.name || ''}
             onChange={(e) => onChange('name', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="Introduceti numele complet al soferului"
           />
         </div>
@@ -198,11 +198,11 @@ export function DriverManagement() {
           <select
             value={data.companyId || ''}
             onChange={(e) => onChange('companyId', e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
           >
-            <option value="">Selectați compania</option>
+            <option value="" className="bg-gray-800 text-white">Selectați compania</option>
             {companies.map((company) => (
-              <option key={company.id} value={company.id}>
+              <option key={company.id} value={company.id} className="bg-gray-800 text-white">
                 {company.name}
               </option>
             ))}
