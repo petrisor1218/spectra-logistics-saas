@@ -43,6 +43,12 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
   // Încărcăm datele pentru săptămâna selectată
   const { data: weekData, isLoading: loadingWeekData, refetch: refetchWeekData } = useQuery({
     queryKey: ['/api/weekly-processing', selectedReportWeek],
+    queryFn: async () => {
+      if (!selectedReportWeek) return null;
+      const response = await fetch(`/api/weekly-processing/${encodeURIComponent(selectedReportWeek)}`);
+      if (!response.ok) throw new Error('Failed to fetch week data');
+      return response.json();
+    },
     enabled: !!selectedReportWeek
   });
 
@@ -55,11 +61,16 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
   }, [weeklyProcessingData]);
 
   const processedData = useMemo(() => {
-    if (!weekData || !weekData.processedData) return {};
+    if (!weekData || !weekData.processedData) {
+      console.log('No week data or processedData:', weekData);
+      return {};
+    }
     try {
-      return typeof weekData.processedData === 'string' 
+      const parsed = typeof weekData.processedData === 'string' 
         ? JSON.parse(weekData.processedData) 
         : weekData.processedData;
+      console.log('Parsed processed data:', parsed);
+      return parsed;
     } catch (e) {
       console.error('Error parsing processed data:', e);
       return {};
@@ -217,7 +228,20 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     XLSX.writeFile(wb, fileName);
   };
 
-  if (!processedData || Object.keys(processedData).length === 0) {
+  if (loadingWeekly) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center p-8 text-gray-500 dark:text-gray-400"
+      >
+        <RefreshCw className="w-16 h-16 mx-auto mb-4 opacity-50 animate-spin" />
+        <p className="text-lg">Se încarcă săptămânile disponibile...</p>
+      </motion.div>
+    );
+  }
+
+  if (!weeklyProcessingData || weeklyProcessingData.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -225,8 +249,21 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         className="text-center p-8 text-gray-500 dark:text-gray-400"
       >
         <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
-        <p className="text-lg">Nu există date procesate pentru rapoarte săptămânale</p>
-        <p className="text-sm mt-2">Încărcați și procesați datele pentru a genera rapoarte</p>
+        <p className="text-lg">Nu există săptămâni procesate în baza de date</p>
+        <p className="text-sm mt-2">Procesați datele în tab-ul "Calcule și Totale" pentru a genera rapoarte</p>
+      </motion.div>
+    );
+  }
+
+  if (loadingWeekData && selectedReportWeek) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center p-8 text-gray-500 dark:text-gray-400"
+      >
+        <RefreshCw className="w-16 h-16 mx-auto mb-4 opacity-50 animate-spin" />
+        <p className="text-lg">Se încarcă datele pentru săptămâna {selectedReportWeek}...</p>
       </motion.div>
     );
   }
