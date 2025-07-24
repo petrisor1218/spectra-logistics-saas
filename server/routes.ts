@@ -1,7 +1,27 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema } from "@shared/schema";
+import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema } from "@shared/schema";
+import bcrypt from 'bcryptjs';
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+
+// Create default user if it doesn't exist
+async function createDefaultUser() {
+  try {
+    const existingUser = await storage.getUserByUsername('Fastexpress');
+    if (!existingUser) {
+      const hashedPassword = await bcrypt.hash('Olanda99', 10);
+      await storage.createUser({
+        username: 'Fastexpress',
+        password: hashedPassword
+      });
+      console.log('Default user created successfully');
+    }
+  } catch (error) {
+    console.error('Error creating default user:', error);
+  }
+}
 
 // Seed initial companies and drivers
 async function seedDatabase() {
@@ -148,12 +168,91 @@ async function seedDatabase() {
   }
 }
 
+// Authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  if (req.session?.userId) {
+    next();
+  } else {
+    res.status(401).json({ error: 'Authentication required' });
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure session middleware
+  const pgStore = connectPg(session);
+  app.use(session({
+    store: new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || 'transport-app-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      secure: false // Set to true in production with HTTPS
+    }
+  }));
+
   // Seed database on startup
+  await createDefaultUser();
   await seedDatabase();
 
+  // Authentication routes
+  app.post('/api/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password required' });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+
+      req.session.userId = user.id;
+      res.json({ message: 'Login successful', user: { id: user.id, username: user.username } });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/logout', (req, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        return res.status(500).json({ error: 'Could not log out' });
+      }
+      res.json({ message: 'Logout successful' });
+    });
+  });
+
+  app.get('/api/auth/user', (req: any, res) => {
+    if (req.session?.userId) {
+      storage.getUser(req.session.userId).then(user => {
+        if (user) {
+          res.json({ id: user.id, username: user.username });
+        } else {
+          res.status(401).json({ error: 'User not found' });
+        }
+      }).catch(() => {
+        res.status(500).json({ error: 'Internal server error' });
+      });
+    } else {
+      res.status(401).json({ error: 'Not authenticated' });
+    }
+  });
+
   // Company routes
-  app.get("/api/companies", async (req, res) => {
+  app.get("/api/companies", requireAuth, async (req, res) => {
     try {
       const companies = await storage.getAllCompanies();
       res.json(companies);
@@ -163,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Driver routes
-  app.get("/api/drivers", async (req, res) => {
+  app.get("/api/drivers", requireAuth, async (req, res) => {
     try {
       const drivers = await storage.getAllDrivers();
       res.json(drivers);
@@ -285,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment history routes
-  app.get("/api/payment-history", async (req, res) => {
+  app.get("/api/payment-history", requireAuth, async (req, res) => {
     try {
       const { paymentId } = req.query;
       const history = await storage.getPaymentHistory(
@@ -298,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Weekly processing routes
-  app.post("/api/weekly-processing", async (req, res) => {
+  app.post("/api/weekly-processing", requireAuth, async (req, res) => {
     try {
       const { weekLabel, data, processedAt } = req.body;
       
@@ -319,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/weekly-processing", async (req, res) => {
+  app.get("/api/weekly-processing", requireAuth, async (req, res) => {
     try {
       const { weekLabel } = req.query;
       
@@ -336,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transport orders routes
-  app.get("/api/transport-orders", async (req, res) => {
+  app.get("/api/transport-orders", requireAuth, async (req, res) => {
     try {
       const { weekLabel, companyName } = req.query;
       

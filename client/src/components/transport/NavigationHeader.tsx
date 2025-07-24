@@ -1,10 +1,13 @@
 import { motion } from "framer-motion";
-import { Truck, Bell } from "lucide-react";
+import { Truck, Bell, LogOut, User } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 export function NavigationHeader() {
   const { theme, toggleTheme } = useTheme();
+  const { user, logout, isLoggingOut } = useAuth();
 
   return (
     <motion.header 
@@ -47,6 +50,12 @@ export function NavigationHeader() {
               <span className="text-sm text-gray-400">☀️</span>
             </div>
             
+            {/* User Info */}
+            <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-300">
+              <User size={16} />
+              <span>{user?.username}</span>
+            </div>
+
             {/* Notifications */}
             <motion.div 
               className="relative"
@@ -58,6 +67,18 @@ export function NavigationHeader() {
               </button>
               <span className="notification-badge absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
             </motion.div>
+
+            {/* Logout Button */}
+            <Button
+              onClick={logout}
+              disabled={isLoggingOut}
+              variant="outline"
+              size="sm"
+              className="glass-effect-card border-white/10 hover:border-red-500/30 text-gray-600 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400"
+            >
+              <LogOut size={16} className="mr-2" />
+              {isLoggingOut ? 'Se deconectează...' : 'Ieșire'}
+            </Button>
           </motion.div>
         </div>
       </div>
