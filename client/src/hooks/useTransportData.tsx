@@ -303,41 +303,37 @@ export function useTransportData() {
     try {
       let data = [];
       
-      // Handle PDF, CSV, and Excel files
+      // Use API for all file types to ensure consistent backend storage
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileType', type);
+      formData.append('weekLabel', processingWeek);
+      
+      const response = await fetch('/api/upload-file', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Eroare la încărcarea fișierului');
+      }
+      
+      const result = await response.json();
+      data = result.data;
+      
       if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
-        // Use API for PDF processing
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('fileType', type);
-        formData.append('weekLabel', processingWeek);
-        
-        const response = await fetch('/api/upload-file', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Eroare la încărcarea PDF-ului');
-        }
-        
-        const result = await response.json();
-        data = result.data;
-        
         console.log(`PDF ${type} procesat:`, {
           nume: file.name,
           randuri: data.length,
           tipPlata: data[0]?.['Invoice Type'] || 'necunoscut'
         });
-        
-      } else if (file.name.endsWith('.csv')) {
-        const text = await file.text();
-        data = parseCSV(text);
-      } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        const arrayBuffer = await file.arrayBuffer();
-        data = parseExcel(arrayBuffer);
       } else {
-        throw new Error('Format de fișier nesuportat. Acceptăm PDF, CSV și Excel.');
+        console.log(`Fișier ${type} procesat prin API:`, {
+          nume: file.name,
+          randuri: data.length,
+          format: file.name.split('.').pop()?.toUpperCase()
+        });
       }
       
       console.log(`Fișier ${type} încărcat:`, {
@@ -347,16 +343,17 @@ export function useTransportData() {
         primeleRanduri: data.slice(0, 2)
       });
       
+      // Update local state to reflect successful upload
       if (type === 'trip') {
         setTripData(data);
       } else if (type === 'invoice7') {
         setInvoice7Data(prev => {
-          // Handle multiple PDF files for invoice7
+          // Handle multiple files for invoice7
           return prev ? [...prev, ...data] : data;
         });
       } else if (type === 'invoice30') {
         setInvoice30Data(prev => {
-          // Handle multiple PDF files for invoice30
+          // Handle multiple files for invoice30
           return prev ? [...prev, ...data] : data;
         });
       }
