@@ -34,11 +34,15 @@ export interface IStorage {
   getAllCompanies(): Promise<Company[]>;
   getCompanyByName(name: string): Promise<Company | undefined>;
   createCompany(company: InsertCompany): Promise<Company>;
+  updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
+  deleteCompany(id: number): Promise<void>;
   
   // Driver methods
   getAllDrivers(): Promise<Driver[]>;
   getDriversByCompany(companyId: number): Promise<Driver[]>;
   createDriver(driver: InsertDriver): Promise<Driver>;
+  updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver>;
+  deleteDriver(id: number): Promise<void>;
   
   // Weekly processing methods
   getWeeklyProcessing(weekLabel: string): Promise<WeeklyProcessing | undefined>;
@@ -105,6 +109,19 @@ export class DatabaseStorage implements IStorage {
     return company;
   }
 
+  async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
+    const [company] = await db
+      .update(companies)
+      .set(companyData)
+      .where(eq(companies.id, id))
+      .returning();
+    return company;
+  }
+
+  async deleteCompany(id: number): Promise<void> {
+    await db.delete(companies).where(eq(companies.id, id));
+  }
+
   // Driver methods
   async getAllDrivers(): Promise<Driver[]> {
     return await db.select().from(drivers);
@@ -120,6 +137,19 @@ export class DatabaseStorage implements IStorage {
       .values(insertDriver)
       .returning();
     return driver;
+  }
+
+  async updateDriver(id: number, driverData: Partial<InsertDriver>): Promise<Driver> {
+    const [driver] = await db
+      .update(drivers)
+      .set(driverData)
+      .where(eq(drivers.id, id))
+      .returning();
+    return driver;
+  }
+
+  async deleteDriver(id: number): Promise<void> {
+    await db.delete(drivers).where(eq(drivers.id, id));
   }
 
   // Weekly processing methods

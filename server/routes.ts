@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema } from "@shared/schema";
+import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema } from "@shared/schema";
 
 // Seed initial companies and drivers
 async function seedDatabase() {
@@ -311,6 +311,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting transport order:", error);
       res.status(500).json({ error: "Failed to delete transport order" });
+    }
+  });
+
+  // Company management routes
+  app.get("/api/companies", async (req, res) => {
+    try {
+      const companies = await storage.getAllCompanies();
+      res.json(companies);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
+      res.status(500).json({ error: "Failed to fetch companies" });
+    }
+  });
+
+  app.post("/api/companies", async (req, res) => {
+    try {
+      const validatedData = insertCompanySchema.parse(req.body);
+      const company = await storage.createCompany(validatedData);
+      res.json(company);
+    } catch (error) {
+      console.error("Error creating company:", error);
+      res.status(500).json({ error: "Failed to create company" });
+    }
+  });
+
+  app.put("/api/companies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertCompanySchema.partial().parse(req.body);
+      const company = await storage.updateCompany(id, validatedData);
+      res.json(company);
+    } catch (error) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ error: "Failed to update company" });
+    }
+  });
+
+  app.delete("/api/companies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteCompany(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      res.status(500).json({ error: "Failed to delete company" });
+    }
+  });
+
+  // Driver management routes
+  app.get("/api/drivers", async (req, res) => {
+    try {
+      const drivers = await storage.getAllDrivers();
+      
+      // Join with company data
+      const companies = await storage.getAllCompanies();
+      const driversWithCompanies = drivers.map(driver => ({
+        ...driver,
+        company: companies.find(c => c.id === driver.companyId)
+      }));
+      
+      res.json(driversWithCompanies);
+    } catch (error) {
+      console.error("Error fetching drivers:", error);
+      res.status(500).json({ error: "Failed to fetch drivers" });
+    }
+  });
+
+  app.post("/api/drivers", async (req, res) => {
+    try {
+      const validatedData = insertDriverSchema.parse(req.body);
+      const driver = await storage.createDriver(validatedData);
+      res.json(driver);
+    } catch (error) {
+      console.error("Error creating driver:", error);
+      res.status(500).json({ error: "Failed to create driver" });
+    }
+  });
+
+  app.put("/api/drivers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertDriverSchema.partial().parse(req.body);
+      const driver = await storage.updateDriver(id, validatedData);
+      res.json(driver);
+    } catch (error) {
+      console.error("Error updating driver:", error);
+      res.status(500).json({ error: "Failed to update driver" });
+    }
+  });
+
+  app.delete("/api/drivers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteDriver(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting driver:", error);
+      res.status(500).json({ error: "Failed to delete driver" });
     }
   });
 
