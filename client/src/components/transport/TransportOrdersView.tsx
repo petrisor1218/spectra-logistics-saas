@@ -313,6 +313,16 @@ export function TransportOrdersView() {
     
     currentY = vridY + 20;
     
+    // Check if we need new page for form fields
+    if (currentY + 45 > docPageHeight - pageMargin) {
+      doc.addPage();
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Transportator: ${order.companyName} - Detalii Comanda`, 15, 15);
+      currentY = 25;
+    }
+    
     // Form Fields Section
     doc.setFillColor(255, 251, 235);
     doc.setDrawColor(251, 191, 36);
@@ -332,6 +342,16 @@ export function TransportOrdersView() {
     
     currentY += 45;
     
+    // Check if we need new page for price section
+    if (currentY + 30 > docPageHeight - pageMargin) {
+      doc.addPage();
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Transportator: ${order.companyName} - Preț și Plată`, 15, 15);
+      currentY = 25;
+    }
+    
     // Price Section with Highlight
     doc.setFillColor(220, 252, 231);
     doc.setDrawColor(16, 185, 129);
@@ -348,6 +368,16 @@ export function TransportOrdersView() {
     
     currentY += 30;
     
+    // Check if we need new page for notes section
+    if (currentY + 35 > docPageHeight - pageMargin) {
+      doc.addPage();
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Transportator: ${order.companyName} - Note Importante`, 15, 15);
+      currentY = 25;
+    }
+    
     // Notes Section
     doc.setFillColor(254, 243, 199);
     doc.setDrawColor(245, 158, 11);
@@ -362,6 +392,30 @@ export function TransportOrdersView() {
     const notesText = '7 zile termen plata • Documente originale obligatorii: 2 CMR originale, T1, CEMT, Certificat auto, Documente descarcare, Note transport, Nota cantarire';
     const notesSplit = doc.splitTextToSize(notesText, 170);
     let notesY = currentY + 13;
+    
+    // Check if notes will overflow current page
+    if (notesY + (notesSplit.length * 4) + 15 > docPageHeight - pageMargin) {
+      doc.addPage();
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Transportator: ${order.companyName} - Note și Semnătură`, 15, 15);
+      currentY = 25;
+      
+      // Redraw notes section on new page
+      doc.setFillColor(254, 243, 199);
+      doc.setDrawColor(245, 158, 11);
+      doc.roundedRect(15, currentY, 180, 25, 2, 2, 'FD');
+      
+      doc.setTextColor(146, 64, 14);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('NOTA IMPORTANTA:', 20, currentY + 8);
+      
+      doc.setFont('helvetica', 'normal');
+      notesY = currentY + 13;
+    }
+    
     notesSplit.forEach((line: string) => {
       doc.text(line, 20, notesY);
       notesY += 4;
