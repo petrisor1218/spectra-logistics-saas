@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { FileText, Eye, Calendar, Truck, Package, AlertCircle, Loader2 } from "lucide-react";
+import { FileText, Eye, Calendar, Truck, Package, AlertCircle, Loader2, Download } from "lucide-react";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface TransportOrder {
   id: number;
@@ -65,6 +67,104 @@ export function TransportOrdersView() {
       case 'confirmed': return 'Confirmat';
       default: return status;
     }
+  };
+
+  const generatePDF = (order: TransportOrder) => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('COMANDĂ DE TRANSPORT', 105, 20, { align: 'center' });
+    
+    // Order details
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    
+    // Company info
+    doc.setFont('helvetica', 'bold');
+    doc.text('Companie:', 20, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.companyName, 60, 40);
+    
+    // Order number
+    doc.setFont('helvetica', 'bold');
+    doc.text('Număr Comandă:', 20, 50);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`#${order.orderNumber}`, 70, 50);
+    
+    // Date
+    doc.setFont('helvetica', 'bold');
+    doc.text('Data Comandă:', 20, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatDate(order.orderDate), 65, 60);
+    
+    // Week
+    doc.setFont('helvetica', 'bold');
+    doc.text('Săptămâna:', 20, 70);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.weekLabel, 55, 70);
+    
+    // Route
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ruta:', 20, 80);
+    doc.setFont('helvetica', 'normal');
+    doc.text(order.route, 40, 80);
+    
+    // Status
+    doc.setFont('helvetica', 'bold');
+    doc.text('Status:', 20, 90);
+    doc.setFont('helvetica', 'normal');
+    doc.text(getStatusText(order.status), 45, 90);
+    
+    // Total amount
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Comandă:', 20, 105);
+    doc.setTextColor(0, 128, 0);
+    doc.text(`€${parseFloat(order.totalAmount).toFixed(2)}`, 75, 105);
+    doc.setTextColor(0, 0, 0);
+    
+    // VRIDs table
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('VRIDs Incluse:', 20, 120);
+    
+    // Create table data
+    const tableData = order.vrids.map((vrid, index) => [
+      (index + 1).toString(),
+      vrid
+    ]);
+    
+    // Add table
+    (doc as any).autoTable({
+      startY: 130,
+      head: [['Nr.', 'VRID']],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 10,
+        cellPadding: 3
+      },
+      headStyles: {
+        fillColor: [66, 139, 202],
+        textColor: 255
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      margin: { left: 20, right: 20 }
+    });
+    
+    // Footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Generat automat de Sistemul de Management Transport', 105, pageHeight - 20, { align: 'center' });
+    doc.text(`Data generării: ${new Date().toLocaleDateString('ro-RO')}`, 105, pageHeight - 10, { align: 'center' });
+    
+    // Save the PDF
+    doc.save(`Comanda_${order.orderNumber}_${order.companyName.replace(/\s+/g, '_')}.pdf`);
   };
 
   if (loading) {
@@ -162,15 +262,27 @@ export function TransportOrdersView() {
                       </div>
                     </div>
                     
-                    <motion.button
-                      onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
-                      className="glass-button p-2 rounded-lg hover:bg-white/10"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      title="Vezi detalii"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </motion.button>
+                    <div className="flex items-center space-x-2">
+                      <motion.button
+                        onClick={() => generatePDF(order)}
+                        className="glass-button p-2 rounded-lg hover:bg-white/10"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        title="Descarcă PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </motion.button>
+                      
+                      <motion.button
+                        onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
+                        className="glass-button p-2 rounded-lg hover:bg-white/10"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        title="Vezi detalii"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </motion.button>
+                    </div>
                   </div>
                 </div>
 
