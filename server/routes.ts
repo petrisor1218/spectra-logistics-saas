@@ -312,12 +312,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let parsedData: any[] = [];
 
+      console.log(`Processing file: ${req.file.originalname}, type: ${fileType}, mimetype: ${req.file.mimetype}`);
+
       if (req.file.mimetype === 'application/pdf' || req.file.originalname.toLowerCase().endsWith('.pdf')) {
         parsedData = await parsePdfInvoice(req.file.buffer);
       } else if (req.file.mimetype === 'text/csv' || req.file.originalname.toLowerCase().endsWith('.csv')) {
+        console.log('Processing CSV file...');
         const csvText = req.file.buffer.toString('utf-8');
         parsedData = parseCSV(csvText);
+        console.log(`CSV parsed: ${parsedData.length} records`);
       } else {
+        console.log(`Unsupported file type: ${req.file.mimetype}, filename: ${req.file.originalname}`);
         return res.status(400).json({ error: "Format de fișier nesuportat" });
       }
 
