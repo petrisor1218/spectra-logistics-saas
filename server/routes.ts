@@ -440,18 +440,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver management routes
+  // Driver management routes with company join
   app.get("/api/drivers", async (req, res) => {
     try {
-      console.log('=== DRIVERS API CALLED ===');
       const drivers = await storage.getAllDrivers();
       const companies = await storage.getAllCompanies();
       
-      console.log(`Found ${drivers.length} drivers and ${companies.length} companies`);
-      
-      const driversWithCompanies = drivers.map(driver => {
+      const result = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
-        const result = {
+        return {
           id: driver.id,
           name: driver.name,
           companyId: driver.companyId,
@@ -459,26 +456,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: driver.phone,
           email: driver.email,
           createdAt: driver.createdAt,
-          company: company || null
+          company: company
         };
-        
-        if (driver.name === 'ADRIAN MIRON') {
-          console.log('ADRIAN MIRON debug:', {
-            driverCompanyId: driver.companyId,
-            foundCompany: company?.name || 'NOT FOUND',
-            resultHasCompany: !!result.company,
-            companyData: company
-          });
-        }
-        
-        return result;
       });
       
-      console.log('First driver result:', JSON.stringify(driversWithCompanies[0], null, 2));
-      res.json(driversWithCompanies);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching drivers:", error);
       res.status(500).json({ error: "Failed to fetch drivers" });
+    }
+  });
+
+  // TEST ENDPOINT to verify company join works
+  app.get("/api/test-drivers", async (req, res) => {
+    try {
+      const drivers = await storage.getAllDrivers();
+      const companies = await storage.getAllCompanies();
+      
+      const result = drivers.map(driver => {
+        const company = companies.find(c => c.id === driver.companyId);
+        return {
+          id: driver.id,
+          name: driver.name,
+          companyId: driver.companyId,
+          nameVariants: driver.nameVariants,
+          phone: driver.phone,
+          email: driver.email,
+          createdAt: driver.createdAt,
+          company: company
+        };
+      });
+      
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Test failed" });
     }
   });
 
