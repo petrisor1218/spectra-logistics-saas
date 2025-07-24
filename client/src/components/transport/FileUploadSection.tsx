@@ -33,32 +33,29 @@ export function FileUploadSection({
       data: tripData,
       ref: tripFileRef,
       gradientClass: 'gradient-primary',
-      fileName: 'trip_data.csv',
-      multiple: false
+      fileName: 'trip_data.csv'
     },
     {
       type: 'invoice7',
-      title: 'Facturi 7 Zile (PDF)',
-      description: 'Încarcă facturile PDF cu plată la 7 zile - poți încărca multiple',
+      title: 'Facturi 7 Zile',
+      description: 'Încarcă facturile cu plată la 7 zile',
       icon: FileSpreadsheet,
-      accept: '.pdf,.xlsx,.xls,.csv',
+      accept: '.xlsx,.xls,.csv',
       data: invoice7Data,
       ref: invoice7FileRef,
       gradientClass: 'bg-green-500',
-      fileName: 'Net 7 invoices',
-      multiple: true
+      fileName: 'invoices_7days.xlsx'
     },
     {
       type: 'invoice30',
-      title: 'Facturi 30 Zile (PDF)',
-      description: 'Încarcă facturile PDF cu plată la 30 zile - poți încărca multiple',
+      title: 'Facturi 30 Zile',
+      description: 'Încarcă facturile cu plată la 30 zile',
       icon: FileSpreadsheet,
-      accept: '.pdf,.xlsx,.xls,.csv',
+      accept: '.xlsx,.xls,.csv',
       data: invoice30Data,
       ref: invoice30FileRef,
       gradientClass: 'bg-orange-500',
-      fileName: 'Net 30 invoices',
-      multiple: true
+      fileName: 'invoices_30days.xlsx'
     }
   ];
 
@@ -109,17 +106,9 @@ export function FileUploadSection({
                 type="file"
                 className="hidden"
                 accept={section.accept}
-                multiple={section.multiple}
                 onChange={(e) => {
-                  console.log(`File input changed for ${section.type}:`, e.target.files?.length, 'files');
-                  const files = Array.from(e.target.files || []);
-                  console.log('Files selected:', files.map(f => f.name));
-                  files.forEach(file => {
-                    if (file) {
-                      console.log(`Calling handleFileUpload: ${file.name}, type: ${section.type}`);
-                      handleFileUpload(file, section.type);
-                    }
-                  });
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file, section.type);
                 }}
               />
             </motion.div>
@@ -133,15 +122,7 @@ export function FileUploadSection({
               >
                 <div className="flex items-center text-green-400">
                   <CheckCircle size={16} className="mr-2" />
-                  <span className="text-sm">
-                    {section.multiple ? `${Array.isArray(section.data) ? section.data.length : 0} date încărcate` : `${section.fileName} uploaded`}
-                  </span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {Array.isArray(section.data) ? section.data.length : 0} înregistrări găsite
-                  {section.multiple && section.data && Array.isArray(section.data) && (
-                    <span className="ml-2">• Pentru mai multe fișiere, selectați din nou</span>
-                  )}
+                  <span className="text-sm">{section.fileName} uploaded</span>
                 </div>
               </motion.div>
             )}
