@@ -27,7 +27,24 @@ export function TransportOrderModal({
   const companyData = processedData[company];
   if (!companyData) return null;
 
-  const vrids = Object.keys(companyData.VRID_details || {});
+  // Get all VRIDs that have any value (7_days or 30_days) for this company
+  const allVrids = Object.keys(companyData.VRID_details || {});
+  
+  // Also check if there are any VRIDs from other companies that should be included
+  // This is a fallback to include more VRIDs if needed
+  const additionalVrids: string[] = [];
+  
+  // Check all companies for VRIDs that might belong to this company but weren't included
+  Object.values(processedData).forEach((otherCompanyData: any) => {
+    if (otherCompanyData && otherCompanyData.VRID_details) {
+      Object.keys(otherCompanyData.VRID_details).forEach((vrid: string) => {
+        // Add logic here if you want to include VRIDs from other processing
+        // For now, we stick to the company's own VRIDs
+      });
+    }
+  });
+
+  const vrids = [...allVrids, ...additionalVrids];
   const totalAmount = companyData.Total_7_days + companyData.Total_30_days - companyData.Total_comision;
 
   const handleGenerateOrder = async () => {
