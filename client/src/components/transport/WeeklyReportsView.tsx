@@ -252,7 +252,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     );
   }
 
-  if (!weeklyProcessingData || weeklyProcessingData.length === 0) {
+  if (!weeklyProcessingData || (Array.isArray(weeklyProcessingData) && weeklyProcessingData.length === 0)) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}

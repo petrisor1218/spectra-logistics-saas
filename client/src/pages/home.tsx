@@ -354,7 +354,6 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 <WeeklyReportsView 
-                  processedData={processedData}
                   selectedWeek={selectedWeek || processingWeek || ''}
                 />
               </motion.div>
