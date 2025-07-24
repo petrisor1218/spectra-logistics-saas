@@ -45,7 +45,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     queryKey: ['/api/weekly-processing', selectedReportWeek],
     queryFn: async () => {
       if (!selectedReportWeek) return null;
-      const response = await fetch(`/api/weekly-processing/${encodeURIComponent(selectedReportWeek)}`);
+      const response = await fetch(`/api/weekly-processing?weekLabel=${encodeURIComponent(selectedReportWeek)}`);
       if (!response.ok) throw new Error('Failed to fetch week data');
       return response.json();
     },
@@ -61,14 +61,22 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
   }, [weeklyProcessingData]);
 
   const processedData = useMemo(() => {
-    if (!weekData || !weekData.processedData) {
-      console.log('No week data or processedData:', weekData);
+    if (!weekData) {
+      console.log('No week data:', weekData);
       return {};
     }
+    
+    // Check for processedData or data field
+    const dataToProcess = weekData.processedData || weekData.data;
+    if (!dataToProcess) {
+      console.log('No processedData or data field:', weekData);
+      return {};
+    }
+    
     try {
-      const parsed = typeof weekData.processedData === 'string' 
-        ? JSON.parse(weekData.processedData) 
-        : weekData.processedData;
+      const parsed = typeof dataToProcess === 'string' 
+        ? JSON.parse(dataToProcess) 
+        : dataToProcess;
       console.log('Parsed processed data:', parsed);
       return parsed;
     } catch (e) {
