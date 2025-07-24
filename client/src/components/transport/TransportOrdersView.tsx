@@ -73,29 +73,61 @@ export function TransportOrdersView() {
 
   const getCompanyDetails = (companyName: string) => {
     const companies: { [key: string]: any } = {
-      'Stef Trans': {
-        cif: 'RO12345678',
-        rc: 'J40/1234/2020',
-        adresa: 'Str. Transportatorilor Nr. 15',
-        localitate: 'Bucuresti',
-        judet: 'Bucuresti',
-        contact: '+40 123 456 789'
-      },
-      'DE Cargo Speed': {
-        cif: 'RO87654321',
-        rc: 'J05/5678/2019',
-        adresa: 'Str. Cargo Nr. 22',
-        localitate: 'Constanta',
-        judet: 'Constanta',
-        contact: '+40 987 654 321'
+      'Fast & Express S.R.L.': {
+        cif: 'RO35986465',
+        rc: 'J34/227/2016',
+        adresa: 'Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42',
+        localitate: 'Alexandria',
+        judet: 'Teleorman',
+        contact: ''
       },
       'Fast Express': {
-        cif: 'RO11223344',
-        rc: 'J10/9876/2021',
-        adresa: 'Str. Express Nr. 45',
-        localitate: 'Buzau',
-        judet: 'Buzau',
-        contact: '+40 555 123 456'
+        cif: 'RO35986465',
+        rc: 'J34/227/2016',
+        adresa: 'Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42',
+        localitate: 'Alexandria',
+        judet: 'Teleorman',
+        contact: ''
+      },
+      'Stef Trans S.R.L.': {
+        cif: 'RO19075934',
+        rc: 'J34/570/2006',
+        adresa: '-, -',
+        localitate: 'Dobrotesti',
+        judet: 'Teleorman',
+        contact: '0729897775, scsteftrans@yahoo.com'
+      },
+      'Stef Trans': {
+        cif: 'RO19075934',
+        rc: 'J34/570/2006',
+        adresa: '-, -',
+        localitate: 'Dobrotesti',
+        judet: 'Teleorman',
+        contact: '0729897775, scsteftrans@yahoo.com'
+      },
+      'De Cargo Sped S.R.L.': {
+        cif: 'RO43642683',
+        rc: 'J34/70/2021',
+        adresa: 'Str. Iasomiei, 9',
+        localitate: 'Mavrodin',
+        judet: 'Teleorman',
+        contact: 'Ginel, 0763698696, decargosped@gmail.com'
+      },
+      'DE Cargo Speed': {
+        cif: 'RO43642683',
+        rc: 'J34/70/2021',
+        adresa: 'Str. Iasomiei, 9',
+        localitate: 'Mavrodin',
+        judet: 'Teleorman',
+        contact: 'Ginel, 0763698696, decargosped@gmail.com'
+      },
+      'Daniel Ontheroad S.R.L.': {
+        cif: 'RO40383134',
+        rc: 'J34/27/2019',
+        adresa: 'Str. Sos. Turnu Magurele, 4-6, Bl:601, Sc:a, Et:2, Ap:10',
+        localitate: 'Alexandria',
+        judet: 'Teleorman',
+        contact: 'Mariana, 0762653911, feleagadanut@gmail.com'
       }
     };
     
