@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -11,6 +11,7 @@ import { LoadingOverlay } from "@/components/transport/LoadingOverlay";
 import { WeeklyHistorySection } from "@/components/transport/WeeklyHistorySection";
 import { SavedDataCalendar } from "@/components/transport/SavedDataCalendar";
 import { UnmatchedVRIDModal } from "@/components/transport/UnmatchedVRIDModal";
+import { TransportOrdersView } from "@/components/transport/TransportOrdersView";
 import { useTransportData } from "@/hooks/useTransportData";
 
 export default function Home() {
@@ -67,6 +68,7 @@ export default function Home() {
     { id: 'upload', label: 'Încărcare Fișiere', icon: Upload },
     { id: 'calculations', label: 'Calcule și Totale', icon: Calculator },
     { id: 'payments', label: 'Evidența Plăților', icon: DollarSign },
+    { id: 'orders', label: 'Comenzi Transport', icon: Truck },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'history', label: 'Istoric Săptămânal', icon: History }
   ];
@@ -338,6 +340,11 @@ export default function Home() {
                   selectedWeek={selectedWeek || ''}
                 />
               </div>
+            )}
+
+            {/* Transport Orders Tab */}
+            {activeTab === 'orders' && (
+              <TransportOrdersView />
             )}
 
             {/* Calendar Tab */}
