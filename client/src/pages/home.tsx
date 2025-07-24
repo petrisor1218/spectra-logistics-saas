@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -8,6 +8,7 @@ import { DataProcessingSection } from "@/components/transport/DataProcessingSect
 import { ResultsDisplay } from "@/components/transport/ResultsDisplay";
 import { CalendarModal } from "@/components/transport/CalendarModal";
 import { LoadingOverlay } from "@/components/transport/LoadingOverlay";
+import { WeeklyHistorySection } from "@/components/transport/WeeklyHistorySection";
 import { useTransportData } from "@/hooks/useTransportData";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
     processedData,
     payments,
     paymentHistory,
+    weeklyPaymentHistory,
     activeTab,
     loading,
     selectedWeek,
@@ -38,6 +40,8 @@ export default function Home() {
     processData,
     recordPayment,
     deletePayment,
+    loadAllPaymentHistory,
+    loadPaymentsForWeek,
     
     // Computed
     getWeekOptions,
@@ -55,7 +59,8 @@ export default function Home() {
     { id: 'upload', label: 'Încărcare Fișiere', icon: Upload },
     { id: 'calculations', label: 'Calcule și Totale', icon: Calculator },
     { id: 'payments', label: 'Evidența Plăților', icon: DollarSign },
-    { id: 'calendar', label: 'Calendar', icon: Calendar }
+    { id: 'calendar', label: 'Calendar', icon: Calendar },
+    { id: 'history', label: 'Istoric Săptămânal', icon: History }
   ];
 
   return (
@@ -316,6 +321,16 @@ export default function Home() {
                   Deschide Calendarul
                 </motion.button>
               </motion.div>
+            )}
+
+            {/* Weekly History Tab */}
+            {activeTab === 'history' && (
+              <WeeklyHistorySection
+                weeklyPaymentHistory={weeklyPaymentHistory}
+                loadAllPaymentHistory={loadAllPaymentHistory}
+                loadPaymentsForWeek={loadPaymentsForWeek}
+                getWeekOptions={getWeekOptions}
+              />
             )}
           </motion.div>
         </div>

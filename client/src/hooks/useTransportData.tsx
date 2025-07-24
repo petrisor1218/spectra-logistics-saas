@@ -48,6 +48,7 @@ export function useTransportData() {
   const [processedData, setProcessedData] = useState<any>({});
   const [payments, setPayments] = useState<any>({});
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [weeklyPaymentHistory, setWeeklyPaymentHistory] = useState<any>({});
   const [activeTab, setActiveTab] = useState('upload');
   const [loading, setLoading] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState('');
@@ -424,35 +425,158 @@ export function useTransportData() {
     }
   };
 
-  // Payment tracking - DO NOT MODIFY!
-  const recordPayment = (company: string, amount: number, description = '') => {
+  // Payment tracking with database integration
+  const recordPayment = async (company: string, amount: number, description = '') => {
     const currentWeek = selectedWeek || getCurrentWeekRange().label;
     
-    const payment = {
-      id: Date.now(),
-      company,
-      amount: parseFloat(amount.toString()),
-      description,
-      date: new Date().toISOString().split('T')[0],
-      week: currentWeek
-    };
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          companyName: company,
+          amount: amount.toString(),
+          description,
+          weekLabel: currentWeek,
+          paymentType: 'partial'
+        }),
+      });
 
-    setPaymentHistory(prev => [payment, ...prev]);
-    setPayments((prev: any) => ({
-      ...prev,
-      [company]: (prev[company] || 0) + payment.amount
-    }));
+      if (response.ok) {
+        const savedPayment = await response.json();
+        
+        // Update local state
+        const payment = {
+          id: savedPayment.id,
+          company,
+          amount: parseFloat(amount.toString()),
+          description,
+          date: new Date().toISOString().split('T')[0],
+          week: currentWeek
+        };
+
+        setPaymentHistory(prev => [payment, ...prev]);
+        setPayments((prev: any) => ({
+          ...prev,
+          [company]: (prev[company] || 0) + payment.amount
+        }));
+
+        // Update weekly history locally
+        if (!weeklyPaymentHistory[currentWeek]) {
+          setWeeklyPaymentHistory((prev: any) => ({
+            ...prev,
+            [currentWeek]: []
+          }));
+        }
+      } else {
+        throw new Error('Failed to save payment');
+      }
+    } catch (error) {
+      console.error('Error saving payment:', error);
+      alert('Eroare la salvarea plății în baza de date');
+    }
   };
 
-  const deletePayment = (paymentId: number) => {
-    const payment = paymentHistory.find(p => p.id === paymentId);
-    if (!payment) return;
+  const deletePayment = async (paymentId: number) => {
+    try {
+      const response = await fetch(`/api/payments/${paymentId}`, {
+        method: 'DELETE',
+      });
 
-    setPaymentHistory(prev => prev.filter(p => p.id !== paymentId));
-    setPayments((prev: any) => ({
-      ...prev,
-      [payment.company]: Math.max(0, (prev[payment.company] || 0) - payment.amount)
+      if (response.ok) {
+        const payment = paymentHistory.find(p => p.id === paymentId);
+        if (payment) {
+          setPaymentHistory(prev => prev.filter(p => p.id !== paymentId));
+          setPayments((prev: any) => ({
+            ...prev,
+            [payment.company]: Math.max(0, (prev[payment.company] || 0) - payment.amount)
+          }));
+        }
+      } else {
+        throw new Error('Failed to delete payment');
+      }
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      alert('Eroare la ștergerea plății din baza de date');
+    }
+  };
+
+  // Load weekly payment history
+  const loadWeeklyPaymentHistory = async (weekLabel: string) => {
+    try {
+      const response = await fetch(`/api/payments?weekLabel=${encodeURIComponent(weekLabel)}`);
+      if (response.ok) {
+        const payments = await response.json();
+        setWeeklyPaymentHistory((prev: any) => ({
+          ...prev,
+          [weekLabel]: payments
+        }));
+        return payments;
+      }
+    } catch (error) {
+      console.error('Error loading weekly payment history:', error);
+    }
+    return [];
+  };
+
+  // Load all payment history for historical view
+  const loadAllPaymentHistory = async () => {
+    try {
+      const response = await fetch('/api/payments');
+      if (response.ok) {
+        const allPayments = await response.json();
+        
+        // Group by week
+        const groupedByWeek = allPayments.reduce((acc: any, payment: any) => {
+          const week = payment.weekLabel;
+          if (!acc[week]) {
+            acc[week] = [];
+          }
+          acc[week].push({
+            id: payment.id,
+            company: payment.companyName,
+            amount: parseFloat(payment.amount),
+            description: payment.description || '',
+            date: payment.paymentDate.split('T')[0],
+            week: payment.weekLabel
+          });
+          return acc;
+        }, {});
+
+        setWeeklyPaymentHistory(groupedByWeek);
+        return groupedByWeek;
+      }
+    } catch (error) {
+      console.error('Error loading all payment history:', error);
+    }
+    return {};
+  };
+
+  // Load payments for selected week
+  const loadPaymentsForWeek = async (weekLabel: string) => {
+    const payments = await loadWeeklyPaymentHistory(weekLabel);
+    
+    // Update current payment tracking for the selected week
+    const weekPayments = payments.reduce((acc: any, payment: any) => {
+      const company = payment.companyName;
+      acc[company] = (acc[company] || 0) + parseFloat(payment.amount);
+      return acc;
+    }, {});
+
+    setPayments(weekPayments);
+    
+    const formattedPayments = payments.map((payment: any) => ({
+      id: payment.id,
+      company: payment.companyName,
+      amount: parseFloat(payment.amount),
+      description: payment.description || '',
+      date: payment.paymentDate.split('T')[0],
+      week: payment.weekLabel
     }));
+
+    setPaymentHistory(formattedPayments);
   };
 
   const getRemainingPayment = (company: string) => {
@@ -473,6 +597,7 @@ export function useTransportData() {
     processedData,
     payments,
     paymentHistory,
+    weeklyPaymentHistory,
     activeTab,
     loading,
     selectedWeek,
@@ -493,6 +618,9 @@ export function useTransportData() {
     processData,
     recordPayment,
     deletePayment,
+    loadWeeklyPaymentHistory,
+    loadAllPaymentHistory,
+    loadPaymentsForWeek,
     
     // Computed
     getCurrentWeekRange,
