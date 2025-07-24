@@ -149,7 +149,7 @@ export function CompanyManagement() {
             type="text"
             value={data.name || ''}
             onChange={(e) => onChange('name', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="Introduceti numele companiei"
           />
         </div>
@@ -163,7 +163,7 @@ export function CompanyManagement() {
             step="0.0001"
             value={data.commissionRate || ''}
             onChange={(e) => onChange('commissionRate', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="0.04"
           />
         </div>
@@ -176,7 +176,7 @@ export function CompanyManagement() {
             type="text"
             value={data.cif || ''}
             onChange={(e) => onChange('cif', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="RO12345678"
           />
         </div>
@@ -189,7 +189,7 @@ export function CompanyManagement() {
             type="text"
             value={data.tradeRegisterNumber || ''}
             onChange={(e) => onChange('tradeRegisterNumber', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="J40/1234/2020"
           />
         </div>
@@ -202,7 +202,7 @@ export function CompanyManagement() {
             type="text"
             value={data.address || ''}
             onChange={(e) => onChange('address', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="Str. Exemplu, Nr. 1"
           />
         </div>
@@ -215,7 +215,7 @@ export function CompanyManagement() {
             type="text"
             value={data.location || ''}
             onChange={(e) => onChange('location', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="București"
           />
         </div>
@@ -228,7 +228,7 @@ export function CompanyManagement() {
             type="text"
             value={data.county || ''}
             onChange={(e) => onChange('county', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="București"
           />
         </div>
@@ -241,7 +241,7 @@ export function CompanyManagement() {
             type="text"
             value={data.country || ''}
             onChange={(e) => onChange('country', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="România"
           />
         </div>
@@ -254,7 +254,7 @@ export function CompanyManagement() {
             type="text"
             value={data.contact || ''}
             onChange={(e) => onChange('contact', e.target.value)}
-            className="w-full px-3 py-2 glass-input rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="+40 123 456 789, email@company.com"
           />
         </div>
