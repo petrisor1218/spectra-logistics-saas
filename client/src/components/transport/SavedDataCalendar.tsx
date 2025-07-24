@@ -46,9 +46,20 @@ export function SavedDataCalendar({
     }
   };
 
-  const loadWeekForEdit = (weekLabel: string) => {
-    setProcessingWeek(weekLabel);
-    setActiveTab('calculations');
+  const loadWeekForEdit = async (weekLabel: string) => {
+    try {
+      setLoading(true);
+      // Load the week data first
+      await loadWeeklyProcessingByWeek(weekLabel);
+      // Set the processing week
+      setProcessingWeek(weekLabel);
+      // Switch to payments tab where user can manage payments
+      setActiveTab('payments');
+    } catch (error) {
+      console.error('Error loading week for edit:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -180,7 +191,7 @@ export function SavedDataCalendar({
                           className="glass-button p-2 rounded-lg hover:bg-white/10"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          title="Încarcă pentru editare"
+                          title="Încarcă pentru gestionarea plăților"
                         >
                           <Eye className="w-4 h-4" />
                         </motion.button>

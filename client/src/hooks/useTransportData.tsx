@@ -681,11 +681,21 @@ export function useTransportData() {
     try {
       const response = await fetch(`/api/weekly-processing?weekLabel=${encodeURIComponent(weekLabel)}`);
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        if (data) {
+          console.log('Loaded processed data for week:', data.processedData);
+          setProcessedData(data.processedData || {});
+          setSelectedWeek(weekLabel);
+          setProcessingWeek(weekLabel);
+          // Also load existing payments for this week
+          await loadPaymentsForWeek(weekLabel);
+          return data;
+        }
       }
     } catch (error) {
       console.error('Error loading weekly processing for week:', error);
     }
+    setProcessedData({});
     return null;
   };
 
