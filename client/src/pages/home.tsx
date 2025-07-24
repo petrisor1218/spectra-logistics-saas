@@ -9,6 +9,7 @@ import { ResultsDisplay } from "@/components/transport/ResultsDisplay";
 import { CalendarModal } from "@/components/transport/CalendarModal";
 import { LoadingOverlay } from "@/components/transport/LoadingOverlay";
 import { WeeklyHistorySection } from "@/components/transport/WeeklyHistorySection";
+import { SavedDataCalendar } from "@/components/transport/SavedDataCalendar";
 import { useTransportData } from "@/hooks/useTransportData";
 
 export default function Home() {
@@ -43,6 +44,8 @@ export default function Home() {
     loadAllPaymentHistory,
     loadPaymentsForWeek,
     saveProcessedData,
+    loadAllWeeklyProcessing,
+    loadWeeklyProcessingByWeek,
     
     // Computed
     getWeekOptions,
@@ -319,23 +322,12 @@ export default function Home() {
 
             {/* Calendar Tab */}
             {activeTab === 'calendar' && (
-              <motion.div 
-                className="glass-effect rounded-2xl p-8 text-center"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-              >
-                <Calendar size={64} className="mx-auto mb-4 text-primary" />
-                <h3 className="text-xl font-bold text-white mb-2">Calendar de Procesare</h3>
-                <p className="text-gray-400 mb-6">Selectează săptămâna pentru care vrei să procesezi datele</p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowCalendar(true)}
-                  className="gradient-primary px-8 py-4 rounded-xl text-white font-medium hover-glow"
-                >
-                  Deschide Calendarul
-                </motion.button>
-              </motion.div>
+              <SavedDataCalendar
+                loadAllWeeklyProcessing={loadAllWeeklyProcessing}
+                loadWeeklyProcessingByWeek={loadWeeklyProcessingByWeek}
+                setProcessingWeek={setProcessingWeek}
+                setActiveTab={setActiveTab}
+              />
             )}
 
             {/* Weekly History Tab */}

@@ -623,6 +623,32 @@ export function useTransportData() {
     }
   };
 
+  // Load all weekly processing data
+  const loadAllWeeklyProcessing = async () => {
+    try {
+      const response = await fetch('/api/weekly-processing');
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Error loading weekly processing data:', error);
+    }
+    return [];
+  };
+
+  // Load weekly processing for specific week
+  const loadWeeklyProcessingByWeek = async (weekLabel: string) => {
+    try {
+      const response = await fetch(`/api/weekly-processing?weekLabel=${encodeURIComponent(weekLabel)}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Error loading weekly processing for week:', error);
+    }
+    return null;
+  };
+
   return {
     // State
     tripData,
@@ -656,6 +682,8 @@ export function useTransportData() {
     loadAllPaymentHistory,
     loadPaymentsForWeek,
     saveProcessedData,
+    loadAllWeeklyProcessing,
+    loadWeeklyProcessingByWeek,
     
     // Computed
     getCurrentWeekRange,
