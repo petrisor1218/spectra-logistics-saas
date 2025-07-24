@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3 } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -12,6 +12,7 @@ import { WeeklyHistorySection } from "@/components/transport/WeeklyHistorySectio
 import { SavedDataCalendar } from "@/components/transport/SavedDataCalendar";
 import { UnmatchedVRIDModal } from "@/components/transport/UnmatchedVRIDModal";
 import { TransportOrdersView } from "@/components/transport/TransportOrdersView";
+import WeeklyReportsView from "@/components/transport/WeeklyReportsView";
 import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { useTransportData } from "@/hooks/useTransportData";
 
@@ -69,6 +70,7 @@ export default function Home() {
     { id: 'upload', label: 'Încărcare Fișiere', icon: Upload },
     { id: 'calculations', label: 'Calcule și Totale', icon: Calculator },
     { id: 'payments', label: 'Evidența Plăților', icon: DollarSign },
+    { id: 'reports', label: 'Rapoarte Săptămânale', icon: BarChart3 },
     { id: 'orders', label: 'Comenzi Transport', icon: Truck },
     { id: 'management', label: 'Gestionare', icon: Settings },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
@@ -342,6 +344,20 @@ export default function Home() {
                   selectedWeek={selectedWeek || ''}
                 />
               </div>
+            )}
+
+            {/* Weekly Reports Tab */}
+            {activeTab === 'reports' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <WeeklyReportsView 
+                  processedData={processedData}
+                  selectedWeek={selectedWeek || processingWeek || ''}
+                />
+              </motion.div>
             )}
 
             {/* Transport Orders Tab */}

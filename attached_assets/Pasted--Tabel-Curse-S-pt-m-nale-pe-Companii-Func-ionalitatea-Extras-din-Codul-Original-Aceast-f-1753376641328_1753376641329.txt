@@ -1,0 +1,349 @@
+# Tabel Curse Săptămânale pe Companii
+
+## Funcționalitatea Extrasă din Codul Original
+
+Această funcționalitate creează tabele detaliate cu cursele săptămânale pentru fiecare companie, incluzând VRID-uri individuale și calculele complete.
+
+## Funcția Principală pentru Tabelul Săptămânal
+
+```python
+def download_pdf_per_company(self):
+    """Generează PDF cu tabelul curselor săptămânale pentru fiecare companie"""
+    if not self.processed_data:
+        messagebox.showwarning("Avertisment", "Nu există date procesate pentru generarea raportului.")
+        return
+
+    output_dir = filedialog.askdirectory(title="Selectați directorul pentru salvarea rapoartelor PDF")
+    if not output_dir:
+        return
+
+    # Solicităm utilizatorului să introducă o dată din săptămâna dorită
+    date_string = simpledialog.askstring("Data", "Introduceți o dată din săptămâna dorită (format: YYYY-MM-DD):")
+    if not date_string:
+        return
+
+    try:
+        selected_date = datetime.datetime.strptime(date_string, "%Y-%m-%d")
+    except ValueError:
+        messagebox.showerror("Eroare", "Format de dată invalid. Vă rugăm să folosiți formatul YYYY-MM-DD.")
+        return
+
+    # Calculăm prima zi (duminică) și ultima zi (sâmbătă) a săptămânii
+    start_of_week = selected_date - timedelta(days=selected_date.weekday() + 1)
+    end_of_week = start_of_week + timedelta(days=6)
+
+    # Formatăm datele pentru numele fișierului și titlu
+    date_range = f"{start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b %Y')}"
+
+    for company, data in self.processed_data.items():
+        # Verificare date pentru debugging
+        print(f"Verificare date pentru {company}:")
+        print(f"Total 7 zile: {data['Total_7_days']}")
+        print(f"Total 30 zile: {data['Total_30_days']}")
+        print(f"Total comision: {data['Total_comision']}")
+        print(f"Număr de VRID-uri: {len(data.get('VRID_details', {}))}")
+
+        filename = f"{output_dir}/{company} {date_range}.pdf"
+        doc = SimpleDocTemplate(filename, pagesize=landscape(letter))
+        elements = []
+        
+        # Titlul cu intervalul de date
+        title_style = ParagraphStyle(
+            'TitleStyle',
+            parent=getSampleStyleSheet()['Title'],
+            alignment=TA_CENTER,
+            spaceAfter=20
+        )
+        title = Paragraph(f"Raport pentru {company}<br/>{date_range}", title_style)
+        elements.append(title)
+
+        # PARTEA PRINCIPALĂ - Tabelul cu cursele săptămânale
+        table_data = [['VRID', '7 zile', '30 zile', 'Total de facturat', 'Comision', 'Total net']]
+        
+        # Calculele pentru totaluri
+        total_7_days = data['Total_7_days']
+        total_30_days = data['Total_30_days']
+        total_commission = data['Total_comision']
+        total_to_invoice = total_7_days + total_30_days
+        total_net = total_to_invoice - total_commission
+
+        # Adăugăm fiecare VRID (cursă) cu sumele asociate
+        for vrid, amounts in data.get('VRID_details', {}).items():
+            sum_7_days = amounts['7_days']
+            sum_30_days = amounts['30_days']
+            total = sum_7_days + sum_30_days
+            commission = amounts['commission']
+            net = total - commission
+            
+            row = [
+                vrid,                    # VRID-ul cursei
+                f"{sum_7_days:.2f}",     # Suma la 7 zile
+                f"{sum_30_days:.2f}",    # Suma la 30 zile
+                f"{total:.2f}",          # Total de facturat
+                f"{commission:.2f}",     # Comision
+                f"{net:.2f}"             # Total net
+            ]
+            table_data.append(row)
+
+        # Rândul cu totalurile finale
+        table_data.append([
+            'TOTAL',
+            f"{total_7_days:.2f}",
+            f"{total_30_days:.2f}",
+            f"{total_to_invoice:.2f}",
+            f"{total_commission:.2f}",
+            f"{total_net:.2f}"
+        ])
+
+        # Crearea și stilizarea tabelului
+        t = Table(table_data)
+        t.setStyle(TableStyle([
+            # Header styling
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            
+            # Data rows styling
+            ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('TOPPADDING', (0, 1), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            
+            # Grid and total row styling
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.grey),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ]))
+
+        elements.append(t)
+        doc.build(elements)
+
+    messagebox.showinfo("Succes", f"Rapoartele PDF au fost generate în {output_dir}")
+```
+
+## Funcția pentru Excel cu Curse Săptămânale
+
+```python
+def download_excel_per_company(self):
+    """Generează Excel cu tabelul curselor săptămânale pentru fiecare companie"""
+    if not self.processed_data:
+        messagebox.showwarning("Avertisment", "Nu există date procesate pentru generarea raportului.")
+        return
+
+    output_dir = filedialog.askdirectory(title="Selectați directorul pentru salvarea rapoartelor Excel")
+    if not output_dir:
+        return
+
+    # Solicităm data pentru săptămână
+    date_string = simpledialog.askstring("Data", "Introduceți o dată din săptămâna dorită (format: YYYY-MM-DD):")
+    if not date_string:
+        return
+
+    try:
+        selected_date = datetime.datetime.strptime(date_string, "%Y-%m-%d")
+    except ValueError:
+        messagebox.showerror("Eroare", "Format de dată invalid. Vă rugăm să folosiți formatul YYYY-MM-DD.")
+        return
+
+    # Calculăm intervalul săptămânii
+    start_of_week = selected_date - timedelta(days=selected_date.weekday() + 1)
+    end_of_week = start_of_week + timedelta(days=6)
+    date_range = f"{start_of_week.strftime('%b %d')} - {end_of_week.strftime('%b %d')}"
+
+    for company, data in self.processed_data.items():
+        wb = Workbook()
+        ws = wb.active
+        ws.title = f"{company} - Curse Saptamanale"
+
+        # Antetul tabelului cu cursele
+        headers = ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+        # Adăugăm datele pentru fiecare VRID (cursă)
+        row = 2
+        for vrid, amounts in data.get('VRID_details', {}).items():
+            sum_7_days = amounts['7_days']
+            sum_30_days = amounts['30_days']
+            total = sum_7_days + sum_30_days
+            commission = amounts['commission']
+            net = total - commission
+            
+            ws.cell(row=row, column=1, value=vrid)
+            ws.cell(row=row, column=2, value=sum_7_days)
+            ws.cell(row=row, column=3, value=sum_30_days)
+            ws.cell(row=row, column=4, value=total)
+            ws.cell(row=row, column=5, value=commission)
+            ws.cell(row=row, column=6, value=net)
+            
+            # Centrez datele
+            for col in range(1, 7):
+                ws.cell(row=row, column=col).alignment = Alignment(horizontal='center')
+            
+            row += 1
+
+        # Adăugăm rândul cu totalurile
+        ws.cell(row=row, column=1, value='TOTAL')
+        ws.cell(row=row, column=2, value=data['Total_7_days'])
+        ws.cell(row=row, column=3, value=data['Total_30_days'])
+        ws.cell(row=row, column=4, value=data['Total_7_days'] + data['Total_30_days'])
+        ws.cell(row=row, column=5, value=data['Total_comision'])
+        ws.cell(row=row, column=6, value=data['Total_7_days'] + data['Total_30_days'] - data['Total_comision'])
+
+        # Stilizăm rândul cu totaluri
+        for col in range(1, 7):
+            cell = ws.cell(row=row, column=col)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+
+        # Adăugăm borduri la tot tabelul
+        border = Border(left=Side(style='thin'), right=Side(style='thin'), 
+                       top=Side(style='thin'), bottom=Side(style='thin'))
+        for row_cells in ws[f'A1:F{row}']:
+            for cell in row_cells:
+                cell.border = border
+
+        # Ajustăm lățimea coloanelor
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2) * 1.2
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        # Salvăm fișierul
+        filename = f"{output_dir}/{company} - Curse Saptamanale {date_range}.xlsx"
+        wb.save(filename)
+
+    messagebox.showinfo("Succes", f"Rapoartele Excel cu cursele săptămânale au fost generate în {output_dir}")
+```
+
+## Funcția pentru Afișarea Tabelului în Interface
+
+```python
+def show_weekly_trips_table(self):
+    """Afișează tabelul cu cursele săptămânale în interfață"""
+    if not self.processed_data:
+        messagebox.showwarning("Avertisment", "Nu există date procesate.")
+        return
+
+    # Creăm o fereastră nouă pentru tabelul cu cursele
+    trips_window = tk.Toplevel(self.master)
+    trips_window.title("Curse Săptămânale pe Companii")
+    trips_window.geometry("1000x600")
+
+    # Frame pentru selectarea companiei
+    selection_frame = tk.Frame(trips_window)
+    selection_frame.pack(pady=10, padx=10, fill=tk.X)
+
+    tk.Label(selection_frame, text="Selectați compania:").pack(side=tk.LEFT, padx=(0, 10))
+    company_var = tk.StringVar()
+    company_dropdown = ttk.Combobox(selection_frame, textvariable=company_var, 
+                                   values=list(self.processed_data.keys()))
+    company_dropdown.pack(side=tk.LEFT)
+
+    # Tabelul pentru cursele săptămânale
+    columns = ('VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net')
+    trips_table = ttk.Treeview(trips_window, columns=columns, show='headings')
+    
+    # Configurăm header-ele
+    for col in columns:
+        trips_table.heading(col, text=col)
+        trips_table.column(col, width=120, anchor='center')
+
+    trips_table.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+    # Scrollbar pentru tabel
+    scrollbar = ttk.Scrollbar(trips_window, orient=tk.VERTICAL, command=trips_table.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    trips_table.configure(yscroll=scrollbar.set)
+
+    def update_trips_table(event=None):
+        """Actualizează tabelul când se schimbă compania"""
+        selected_company = company_var.get()
+        if not selected_company or selected_company not in self.processed_data:
+            return
+
+        # Ștergem datele existente
+        for item in trips_table.get_children():
+            trips_table.delete(item)
+
+        # Adăugăm datele pentru compania selectată
+        company_data = self.processed_data[selected_company]
+        
+        for vrid, amounts in company_data.get('VRID_details', {}).items():
+            sum_7_days = amounts['7_days']
+            sum_30_days = amounts['30_days']
+            total = sum_7_days + sum_30_days
+            commission = amounts['commission']
+            net = total - commission
+            
+            trips_table.insert('', 'end', values=(
+                vrid,
+                f"{sum_7_days:.2f}",
+                f"{sum_30_days:.2f}",
+                f"{total:.2f}",
+                f"{commission:.2f}",
+                f"{net:.2f}"
+            ))
+
+        # Adăugăm rândul cu totalurile
+        trips_table.insert('', 'end', values=(
+            'TOTAL',
+            f"{company_data['Total_7_days']:.2f}",
+            f"{company_data['Total_30_days']:.2f}",
+            f"{company_data['Total_7_days'] + company_data['Total_30_days']:.2f}",
+            f"{company_data['Total_comision']:.2f}",
+            f"{company_data['Total_7_days'] + company_data['Total_30_days'] - company_data['Total_comision']:.2f}"
+        ))
+
+    # Conectăm evenimentul de schimbare a companiei
+    company_dropdown.bind('<<ComboboxSelected>>', update_trips_table)
+    
+    # Selectăm prima companie implicit
+    if self.processed_data:
+        company_dropdown.set(list(self.processed_data.keys())[0])
+        update_trips_table()
+```
+
+## Butoane pentru Interface
+
+```python
+# Adaugă aceste butoane în interfața principală
+tk.Button(self.master, text="Afișează Tabel Curse Săptămânale", 
+          command=self.show_weekly_trips_table).pack(pady=5)
+tk.Button(self.master, text="Descarcă PDF Curse pe Companii", 
+          command=self.download_pdf_per_company).pack(pady=5)
+tk.Button(self.master, text="Descarcă Excel Curse pe Companii", 
+          command=self.download_excel_per_company).pack(pady=5)
+```
+
+## Caracteristicile Tabelului
+
+**Structura tabelului include:**
+- **VRID** - Identificatorul cursei
+- **Total 7 zile** - Suma facturată la 7 zile pentru acea cursă
+- **Total 30 zile** - Suma facturată la 30 zile pentru acea cursă  
+- **Total de facturat** - Suma totală (7 zile + 30 zile)
+- **Comision** - Comisionul calculat pentru cursă
+- **Total net** - Suma finală după scăderea comisionului
+
+**Funcționalități:**
+- Filtrare pe companie prin dropdown
+- Export în PDF și Excel
+- Calcularea automată a totalurilor
+- Stilizare profesională a tabelelor
+- Gestionarea datelor pe săptămâni cu interval de date
