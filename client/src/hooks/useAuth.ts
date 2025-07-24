@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { getQueryFn } from '@/lib/queryClient';
 
 interface User {
   id: number;
@@ -11,8 +12,9 @@ export function useAuth() {
   const [, setLocation] = useLocation();
 
   // Query to check current user
-  const { data: user, isLoading, error } = useQuery<User>({
-    queryKey: ['/api/auth/user'],
+  const { data: user, isLoading, error } = useQuery<User | null>({
+    queryKey: ['/api', 'auth', 'user'],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

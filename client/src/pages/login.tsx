@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, User, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,17 +26,21 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // Invalidate user query to refresh authentication state
+        queryClient.invalidateQueries({ queryKey: ['/api', 'auth', 'user'] });
         toast({
           title: "Autentificare reușită",
           description: "Bine ai venit!",
         });
-        setLocation('/');
+        // Small delay to ensure query refetch completes
+        setTimeout(() => setLocation('/'), 100);
       } else {
         toast({
           title: "Eroare de autentificare",
