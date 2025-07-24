@@ -443,20 +443,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Driver management routes
   app.get("/api/drivers", async (req, res) => {
     try {
+      console.log('=== DRIVERS API CALLED ===');
       const drivers = await storage.getAllDrivers();
-      
-      // Join with company data
       const companies = await storage.getAllCompanies();
-      // Debug removed for production
+      
+      console.log(`Found ${drivers.length} drivers and ${companies.length} companies`);
       
       const driversWithCompanies = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
-        return {
-          ...driver,
+        const result = {
+          id: driver.id,
+          name: driver.name,
+          companyId: driver.companyId,
+          nameVariants: driver.nameVariants,
+          phone: driver.phone,
+          email: driver.email,
+          createdAt: driver.createdAt,
           company: company || null
         };
+        
+        if (driver.name === 'ADRIAN MIRON') {
+          console.log('ADRIAN MIRON debug:', {
+            driverCompanyId: driver.companyId,
+            foundCompany: company?.name || 'NOT FOUND',
+            resultHasCompany: !!result.company,
+            companyData: company
+          });
+        }
+        
+        return result;
       });
       
+      console.log('First driver result:', JSON.stringify(driversWithCompanies[0], null, 2));
       res.json(driversWithCompanies);
     } catch (error) {
       console.error("Error fetching drivers:", error);
