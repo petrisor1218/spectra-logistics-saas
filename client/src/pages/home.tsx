@@ -10,9 +10,12 @@ import { CalendarModal } from "@/components/transport/CalendarModal";
 import { LoadingOverlay } from "@/components/transport/LoadingOverlay";
 import { WeeklyHistorySection } from "@/components/transport/WeeklyHistorySection";
 import { SavedDataCalendar } from "@/components/transport/SavedDataCalendar";
+import { UnmatchedVRIDModal } from "@/components/transport/UnmatchedVRIDModal";
 import { useTransportData } from "@/hooks/useTransportData";
 
 export default function Home() {
+  const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
+  
   const {
     // State
     tripData,
@@ -46,6 +49,7 @@ export default function Home() {
     saveProcessedData,
     loadAllWeeklyProcessing,
     loadWeeklyProcessingByWeek,
+    assignUnmatchedVRID,
     
     // Computed
     getWeekOptions,
@@ -189,6 +193,8 @@ export default function Home() {
                   setShowCalendar={setShowCalendar}
                   processData={processData}
                   canProcess={!!canProcess}
+                  processedData={processedData}
+                  onShowUnmatchedModal={() => setShowUnmatchedModal(true)}
                 />
 
                 {Object.keys(processedData).length > 0 && (
@@ -359,6 +365,14 @@ export default function Home() {
 
       {/* Loading Overlay */}
       <LoadingOverlay loading={loading} />
+
+      {/* Unmatched VRID Modal */}
+      <UnmatchedVRIDModal
+        isOpen={showUnmatchedModal}
+        onClose={() => setShowUnmatchedModal(false)}
+        processedData={processedData}
+        onAssignVRID={assignUnmatchedVRID}
+      />
 
       {/* Floating Action Button */}
       <motion.div 

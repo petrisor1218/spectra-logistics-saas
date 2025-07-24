@@ -13,6 +13,8 @@ interface DataProcessingSectionProps {
   setShowCalendar: (show: boolean) => void;
   processData: () => void;
   canProcess: boolean;
+  processedData?: any;
+  onShowUnmatchedModal?: () => void;
 }
 
 export function DataProcessingSection({
@@ -23,7 +25,9 @@ export function DataProcessingSection({
   setProcessingWeek,
   setShowCalendar,
   processData,
-  canProcess
+  canProcess,
+  processedData,
+  onShowUnmatchedModal
 }: DataProcessingSectionProps) {
   return (
     <motion.div 
@@ -89,6 +93,22 @@ export function DataProcessingSection({
               <Play className="mr-2" size={16} />
               {loading ? 'Procesare...' : 'Procesează Datele'}
             </Button>
+            
+            {processedData && processedData.Unmatched && onShowUnmatchedModal && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <Button
+                  onClick={onShowUnmatchedModal}
+                  className="w-full bg-yellow-600 hover:bg-yellow-700 text-white mt-3"
+                  size="lg"
+                >
+                  VRID Neîmperecheate ({Object.keys(processedData.Unmatched.VRID_details || {}).length})
+                </Button>
+              </motion.div>
+            )}
           </motion.div>
           
           {/* Processing Progress */}

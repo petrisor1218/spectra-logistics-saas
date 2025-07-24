@@ -689,6 +689,45 @@ export function useTransportData() {
     return null;
   };
 
+  // Assign unmatched VRID to company
+  const assignUnmatchedVRID = (vrid: string, fromCompany: string, toCompany: string) => {
+    if (!processedData[fromCompany]?.VRID_details?.[vrid]) {
+      console.error(`VRID ${vrid} not found in ${fromCompany}`);
+      return;
+    }
+
+    const vridData = processedData[fromCompany].VRID_details[vrid];
+    
+    // Remove from source company
+    processedData[fromCompany].Total_7_days -= vridData['7_days'];
+    processedData[fromCompany].Total_30_days -= vridData['30_days'];
+    processedData[fromCompany].Total_comision -= vridData.commission;
+    delete processedData[fromCompany].VRID_details[vrid];
+
+    // Add to target company
+    if (!processedData[toCompany]) {
+      processedData[toCompany] = {
+        Total_7_days: 0,
+        Total_30_days: 0,
+        Total_comision: 0,
+        VRID_details: {}
+      };
+    }
+
+    processedData[toCompany].Total_7_days += vridData['7_days'];
+    processedData[toCompany].Total_30_days += vridData['30_days'];
+    processedData[toCompany].Total_comision += vridData.commission;
+    processedData[toCompany].VRID_details[vrid] = vridData;
+
+    // Clean up empty Unmatched category
+    if (fromCompany === 'Unmatched' && Object.keys(processedData.Unmatched.VRID_details).length === 0) {
+      delete processedData.Unmatched;
+    }
+
+    // Force re-render
+    setProcessedData({...processedData});
+  };
+
   return {
     // State
     tripData,
@@ -724,6 +763,7 @@ export function useTransportData() {
     saveProcessedData,
     loadAllWeeklyProcessing,
     loadWeeklyProcessingByWeek,
+    assignUnmatchedVRID,
     
     // Computed
     getCurrentWeekRange,
