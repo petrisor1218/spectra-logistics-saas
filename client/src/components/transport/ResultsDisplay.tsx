@@ -231,6 +231,7 @@ export function ResultsDisplay({
           sevenDaysAmount={processedData[selectedCompany]?.Total_7_days || 0}
           thirtyDaysAmount={processedData[selectedCompany]?.Total_30_days || 0}
           commission={processedData[selectedCompany]?.Total_comision || 0}
+          alreadyPaid={payments[selectedCompany] || 0}
           onConfirmPayment={handleConfirmPayment}
         />
       )}

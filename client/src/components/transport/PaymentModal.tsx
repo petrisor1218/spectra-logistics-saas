@@ -14,6 +14,7 @@ interface PaymentModalProps {
   sevenDaysAmount: number;
   thirtyDaysAmount: number;
   commission: number;
+  alreadyPaid?: number;
   onConfirmPayment: (amount: number, description: string, type: 'partial' | 'full') => void;
 }
 
@@ -25,6 +26,7 @@ export function PaymentModal({
   sevenDaysAmount,
   thirtyDaysAmount,
   commission,
+  alreadyPaid = 0,
   onConfirmPayment
 }: PaymentModalProps) {
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -124,6 +126,18 @@ export function PaymentModal({
                     <span className="text-white">€{totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
+                {alreadyPaid > 0 && (
+                  <div className="border-t border-gray-600 pt-2 mt-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Deja plătit:</span>
+                      <span className="text-yellow-400">€{alreadyPaid.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-medium mt-1">
+                      <span className="text-white">Rest de plată:</span>
+                      <span className="text-orange-400">€{Math.max(0, totalAmount - alreadyPaid).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
