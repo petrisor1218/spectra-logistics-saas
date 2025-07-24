@@ -52,6 +52,7 @@ async function parsePdfInvoice(buffer: Buffer): Promise<any[]> {
     let currentAmount = '';
     
     console.log('Analyzing PDF content for Tour IDs and amounts...');
+    console.log('First 10 lines of PDF:', lines.slice(0, 10));
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -89,12 +90,15 @@ async function parsePdfInvoice(buffer: Buffer): Promise<any[]> {
       
       // Alternative: Look for all Tour IDs and amounts, then match them
       const tourIdPattern = /\b([A-Z0-9]{7,10})\b/g;
-      const amountPattern = /\b(\d{2,4}\.\d{2})\b/g;
+      // More flexible amount pattern to catch different formats
+      const amountPattern = /(\d{1,4}(?:,\d{3})*\.?\d{0,2})/g;
       
       const tourIds = [...pdfString.matchAll(tourIdPattern)].map(match => match[1]);
       const amounts = [...pdfString.matchAll(amountPattern)].map(match => match[1]);
       
       console.log(`Found ${tourIds.length} Tour IDs and ${amounts.length} amounts`);
+      console.log('Sample Tour IDs:', tourIds.slice(0, 5));
+      console.log('Sample amounts:', amounts.slice(0, 10));
       
       // Match tour IDs with amounts (assuming they appear in order)
       const minLength = Math.min(tourIds.length, amounts.length);
