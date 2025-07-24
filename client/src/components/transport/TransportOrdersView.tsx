@@ -148,10 +148,10 @@ export function TransportOrdersView() {
     doc.setTextColor(51, 65, 85);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('📧 azlogistic8@gmail.com', 85, 18);
-    doc.text('🏦 DSK BANK - BG22STSA93000028729251', 85, 22);
-    doc.text('🆔 BG206507560 | 📍 Ruser, Ruse, Bulgaria', 85, 26);
-    doc.text('💶 TVA: 0%', 85, 30);
+    doc.text('Email: azlogistic8@gmail.com', 85, 18);
+    doc.text('Bank: DSK BANK - BG22STSA93000028729251', 85, 22);
+    doc.text('ID: BG206507560 | Adresa: Ruser, Ruse, Bulgaria', 85, 26);
+    doc.text('TVA: 0%', 85, 30);
     
     // Modern Title Section
     currentY = 50;
@@ -184,7 +184,7 @@ export function TransportOrdersView() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('🚛 TRANSPORTATOR', 20, currentY + 6);
+    doc.text('TRANSPORTATOR', 20, currentY + 6);
     
     // Company details in organized columns
     doc.setTextColor(51, 65, 85);
@@ -197,12 +197,12 @@ export function TransportOrdersView() {
     doc.setFont('helvetica', 'normal');
     doc.text(`CIF: ${companyDetails.cif}`, 20, leftColumnY + 6);
     doc.text(`RC: ${companyDetails.rc}`, 20, leftColumnY + 12);
-    doc.text(`📍 ${companyDetails.adresa}`, 20, leftColumnY + 18);
+    doc.text(`Adresa: ${companyDetails.adresa}`, 20, leftColumnY + 18);
     
     const rightColumnY = leftColumnY;
     doc.text(`${companyDetails.localitate}, ${companyDetails.judet}`, 110, rightColumnY + 6);
-    doc.text(`🇷🇴 România`, 110, rightColumnY + 12);
-    doc.text(`📞 ${companyDetails.contact}`, 110, rightColumnY + 18);
+    doc.text(`Tara: România`, 110, rightColumnY + 12);
+    doc.text(`Contact: ${companyDetails.contact}`, 110, rightColumnY + 18);
     
     currentY += 60;
     
@@ -213,49 +213,101 @@ export function TransportOrdersView() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(`🌍 RUTA: ${order.route}`, 20, currentY + 10);
-    
-    // Transport section
-    doc.setFont('helvetica', 'bold');
-    doc.text('Transport:', 20, 200);
-    
-    doc.setFont('helvetica', 'normal');
-    const vridsText = `VRID-uri: ${order.vrids.join(', ')}`;
-    
-    // Split VRIDs into multiple lines if too long
-    const splitText = doc.splitTextToSize(vridsText, 170);
-    currentY = 210;
-    splitText.forEach((line: string) => {
-      doc.text(line, 20, currentY);
-      currentY += 7;
-    });
-    
-    doc.text('ADR: Non ADR', 20, currentY + 10);
+    doc.text(`RUTA: ${order.route}`, 20, currentY + 10);
     
     currentY += 25;
-    doc.text('Locatia si data incarcarii: _______________________________', 20, currentY);
-    doc.text('Locatia si data descarcarii: _______________________________', 20, currentY + 10);
-    doc.text('Telefon sofer si numar: _______________________________', 20, currentY + 20);
-    doc.text('Tip camion: _______________________________', 20, currentY + 30);
     
-    // Price section
+    // Transport Details Section
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(15, currentY, 180, 40, 2, 2, 'FD');
+    
+    // Section header
+    doc.setFillColor(168, 85, 247);
+    doc.rect(15, currentY, 180, 8, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Pret negociat: ${parseFloat(order.totalAmount).toFixed(2)} EUR + TVA: 0%`, 20, currentY + 45);
-    doc.text('Metoda de plata: Ordin de plata', 20, currentY + 55);
+    doc.text('DETALII TRANSPORT', 20, currentY + 6);
     
-    // Notes
+    doc.setTextColor(51, 65, 85);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    const notesText = 'Note: 7 zile, documente originale conform cerintelor (2 CMR originale, T1, CEMT, Certificat auto, Documente de descarcare, Note de transport, Nota de cantarire)';
-    const notesSplit = doc.splitTextToSize(notesText, 170);
-    let notesY = currentY + 70;
-    notesSplit.forEach((line: string) => {
-      doc.text(line, 20, notesY);
-      notesY += 7;
+    
+    // VRIDs in a neat grid
+    const vridsText = `VRIDs (${order.vrids.length}): ${order.vrids.join(', ')}`;
+    const splitText = doc.splitTextToSize(vridsText, 170);
+    let vridY = currentY + 15;
+    splitText.forEach((line: string) => {
+      doc.text(line, 20, vridY);
+      vridY += 5;
     });
     
-    // Footer
-    doc.text('Intocmit de:', 20, notesY + 15);
-    doc.text('[Completati Nume]', 20, notesY + 25);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ADR: Non ADR', 20, vridY + 5);
+    
+    currentY = vridY + 20;
+    
+    // Form Fields Section
+    doc.setFillColor(255, 251, 235);
+    doc.setDrawColor(251, 191, 36);
+    doc.roundedRect(15, currentY, 180, 35, 2, 2, 'FD');
+    
+    doc.setTextColor(146, 64, 14);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('COMPLETATI URMATOARELE', 20, currentY + 8);
+    
+    doc.setTextColor(92, 77, 192);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Locatia si data incarcarii: ________________________________', 20, currentY + 16);
+    doc.text('Locatia si data descarcarii: ________________________________', 20, currentY + 22);
+    doc.text('Telefon sofer si numar: ____________________________________', 20, currentY + 28);
+    
+    currentY += 45;
+    
+    // Price Section with Highlight
+    doc.setFillColor(220, 252, 231);
+    doc.setDrawColor(16, 185, 129);
+    doc.setLineWidth(2);
+    doc.roundedRect(15, currentY, 180, 20, 2, 2, 'FD');
+    
+    doc.setTextColor(6, 95, 70);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`PRET NEGOCIAT: ${parseFloat(order.totalAmount).toFixed(2)} EUR + TVA: 0%`, 20, currentY + 8);
+    
+    doc.setFontSize(10);
+    doc.text('Metoda de plata: Ordin de plata', 20, currentY + 15);
+    
+    currentY += 30;
+    
+    // Notes Section
+    doc.setFillColor(254, 243, 199);
+    doc.setDrawColor(245, 158, 11);
+    doc.roundedRect(15, currentY, 180, 25, 2, 2, 'FD');
+    
+    doc.setTextColor(146, 64, 14);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NOTA IMPORTANTA:', 20, currentY + 8);
+    
+    doc.setFont('helvetica', 'normal');
+    const notesText = '7 zile termen plata • Documente originale obligatorii: 2 CMR originale, T1, CEMT, Certificat auto, Documente descarcare, Note transport, Nota cantarire';
+    const notesSplit = doc.splitTextToSize(notesText, 170);
+    let notesY = currentY + 13;
+    notesSplit.forEach((line: string) => {
+      doc.text(line, 20, notesY);
+      notesY += 4;
+    });
+    
+    // Signature Section
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Intocmit de: [Completati Nume]', 20, notesY + 10);
     
     // Page footer
     const pageHeight = doc.internal.pageSize.height;
