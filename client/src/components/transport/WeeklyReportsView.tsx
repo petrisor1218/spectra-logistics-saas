@@ -1,18 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, Calendar, TrendingUp } from 'lucide-react';
+import { Download, FileText, Calendar, TrendingUp, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { useQuery } from '@tanstack/react-query';
 
 interface WeeklyReportsViewProps {
-  processedData: any;
-  selectedWeek: string;
+  selectedWeek?: string;
 }
 
 interface VRIDDetails {
@@ -29,10 +29,42 @@ interface CompanyData {
 }
 
 const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({ 
-  processedData, 
-  selectedWeek 
+  selectedWeek = ''
 }) => {
   const [selectedCompany, setSelectedCompany] = useState<string>('');
+  const [selectedReportWeek, setSelectedReportWeek] = useState<string>(selectedWeek);
+
+  // Încărcăm toate datele procesate din baza de date
+  const { data: weeklyProcessingData, isLoading: loadingWeekly, refetch: refetchWeekly } = useQuery({
+    queryKey: ['/api/weekly-processing'],
+    enabled: true
+  });
+
+  // Încărcăm datele pentru săptămâna selectată
+  const { data: weekData, isLoading: loadingWeekData, refetch: refetchWeekData } = useQuery({
+    queryKey: ['/api/weekly-processing', selectedReportWeek],
+    enabled: !!selectedReportWeek
+  });
+
+  const weekOptions = useMemo(() => {
+    if (!weeklyProcessingData || !Array.isArray(weeklyProcessingData)) return [];
+    return weeklyProcessingData.map((week: any) => ({
+      value: week.weekLabel,
+      label: week.weekLabel
+    }));
+  }, [weeklyProcessingData]);
+
+  const processedData = useMemo(() => {
+    if (!weekData || !weekData.processedData) return {};
+    try {
+      return typeof weekData.processedData === 'string' 
+        ? JSON.parse(weekData.processedData) 
+        : weekData.processedData;
+    } catch (e) {
+      console.error('Error parsing processed data:', e);
+      return {};
+    }
+  }, [weekData]);
 
   const companies = useMemo(() => {
     return processedData ? Object.keys(processedData) : [];
@@ -42,6 +74,20 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     if (!processedData || !selectedCompany) return null;
     return processedData[selectedCompany];
   }, [processedData, selectedCompany]);
+
+  // Setăm automat prima companie când se schimbă datele
+  useEffect(() => {
+    if (companies.length > 0 && !selectedCompany) {
+      setSelectedCompany(companies[0]);
+    }
+  }, [companies, selectedCompany]);
+
+  // Setăm automat prima săptămână disponibilă
+  useEffect(() => {
+    if (weekOptions.length > 0 && !selectedReportWeek) {
+      setSelectedReportWeek(weekOptions[0].value);
+    }
+  }, [weekOptions, selectedReportWeek]);
 
   const tableData = useMemo(() => {
     if (!currentCompanyData?.VRID_details) return [];
@@ -83,7 +129,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     doc.text(`Raport Curse Săptămânale - ${selectedCompany}`, 148.5, 15, { align: 'center' });
     
     doc.setFontSize(12);
-    doc.text(`Săptămâna: ${selectedWeek}`, 148.5, 22, { align: 'center' });
+    doc.text(`Săptămâna: ${selectedReportWeek}`, 148.5, 22, { align: 'center' });
 
     // Prepare table data
     const headers = ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
@@ -141,7 +187,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       }
     });
 
-    const fileName = `${selectedCompany}_Curse_Saptamanale_${selectedWeek.replace(/\//g, '-')}.pdf`;
+    const fileName = `${selectedCompany}_Curse_Saptamanale_${selectedReportWeek.replace(/\//g, '-')}.pdf`;
     doc.save(fileName);
   };
 
@@ -150,7 +196,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
 
     const ws = XLSX.utils.aoa_to_sheet([
       [`Raport Curse Săptămânale - ${selectedCompany}`],
-      [`Săptămâna: ${selectedWeek}`],
+      [`Săptămâna: ${selectedReportWeek}`],
       [],
       ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'],
       ...tableData.map(row => [
@@ -167,7 +213,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Curse Saptamanale');
     
-    const fileName = `${selectedCompany}_Curse_Saptamanale_${selectedWeek.replace(/\//g, '-')}.xlsx`;
+    const fileName = `${selectedCompany}_Curse_Saptamanale_${selectedReportWeek.replace(/\//g, '-')}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -203,12 +249,25 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                 Rapoarte Curse Săptămânale
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Vizualizare detaliată pe companii • Săptămâna: {selectedWeek}
+                Vizualizare detaliată pe companii • Săptămâna: {selectedReportWeek || 'Selectați săptămâna'}
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
+            <Button
+              onClick={() => {
+                refetchWeekly();
+                refetchWeekData();
+              }}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              disabled={loadingWeekly || loadingWeekData}
+            >
+              <RefreshCw className={`w-4 h-4 ${(loadingWeekly || loadingWeekData) ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Badge variant="outline" className="px-3 py-1">
               {companies.length} companii
             </Badge>
@@ -219,7 +278,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         </div>
       </motion.div>
 
-      {/* Company Selection */}
+      {/* Week and Company Selection */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -229,12 +288,29 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              Selectare Companie
+              Selectare Săptămână și Companie
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex-1 min-w-[300px]">
+              <div className="flex-1 min-w-[250px]">
+                <label className="block text-sm font-medium mb-2">Săptămâna:</label>
+                <Select value={selectedReportWeek} onValueChange={setSelectedReportWeek}>
+                  <SelectTrigger className="glass-input">
+                    <SelectValue placeholder="Selectați săptămâna..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {weekOptions.map((week) => (
+                      <SelectItem key={week.value} value={week.value}>
+                        {week.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1 min-w-[250px]">
+                <label className="block text-sm font-medium mb-2">Compania:</label>
                 <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                   <SelectTrigger className="glass-input">
                     <SelectValue placeholder="Selectați compania pentru raport..." />
