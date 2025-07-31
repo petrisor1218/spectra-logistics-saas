@@ -78,7 +78,8 @@ const DRIVER_COMPANY_MAP_ORIGINAL = {
   "Dumitru Ciobanu": "Stef Trans",
   "Dimache Mihalache": "Stef Trans",
   "Toma Alin Marian": "Toma SRL",
-  "Balanean Daniel": "Toma SRL"
+  "Balanean Daniel": "Toma SRL",
+  "Alexandru Sorin Geanta": "Toma SRL"
 };
 
 export function useTransportData() {
