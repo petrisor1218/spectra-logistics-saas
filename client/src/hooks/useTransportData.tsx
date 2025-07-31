@@ -198,6 +198,81 @@ export function useTransportData() {
     return DRIVER_COMPANY_MAP;
   };
 
+  // Auto-suggest company for unmapped drivers
+  const autoSuggestCompany = (driverName: string, driverMap: Record<string, string>) => {
+    const parts = driverName.toLowerCase().split(' ');
+    const companyCount: Record<string, number> = {};
+    
+    // Count how many drivers from each company share name parts
+    Object.entries(driverMap).forEach(([mappedName, company]) => {
+      const mappedParts = mappedName.split(' ');
+      let matches = 0;
+      
+      parts.forEach(part => {
+        if (part.length > 2 && mappedParts.some(mp => mp.includes(part) || part.includes(mp))) {
+          matches++;
+        }
+      });
+      
+      if (matches > 0) {
+        companyCount[company] = (companyCount[company] || 0) + matches;
+      }
+    });
+    
+    // Return company with highest match score
+    const sortedCompanies = Object.entries(companyCount).sort((a, b) => b[1] - a[1]);
+    return sortedCompanies.length > 0 && sortedCompanies[0][1] >= 1 ? sortedCompanies[0][0] : null;
+  };
+
+  // Auto-add driver to database when found but not mapped
+  const autoAddDriverToDatabase = async (driverName: string, suggestedCompany: string) => {
+    try {
+      const companiesResponse = await fetch('/api/companies');
+      if (companiesResponse.ok) {
+        const companies = await companiesResponse.json();
+        let targetCompanyId = null;
+        
+        // Find company ID by matching suggested company name
+        for (const company of companies) {
+          if (company.name === 'Fast & Express S.R.L.' && suggestedCompany === 'Fast Express') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'Stef Trans S.R.L.' && suggestedCompany === 'Stef Trans') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'De Cargo Sped S.R.L.' && suggestedCompany === 'DE Cargo Speed') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'Toma SRL' && suggestedCompany === 'Toma SRL') {
+            targetCompanyId = company.id;
+            break;
+          }
+        }
+        
+        if (targetCompanyId) {
+          const response = await fetch('/api/drivers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: driverName,
+              companyId: targetCompanyId
+            })
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Auto-adăugat șofer: "${driverName}" → "${suggestedCompany}"`);
+            // Reload driver mapping after adding
+            await loadDriversFromDatabase();
+            return suggestedCompany;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error auto-adding driver:', error);
+    }
+    return null;
+  };
+
   const extractAndFindDriver = (driverName: string) => {
     if (!driverName || typeof driverName !== 'string') {
       console.log('Driver name invalid:', driverName);
@@ -226,7 +301,22 @@ export function useTransportData() {
       }
     }
     
-    console.log(`Șofer NEGĂSIT: "${driverName}"`);
+    // Auto-suggest and add driver if possible
+    const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
+    if (suggestedCompany) {
+      console.log(`💡 Sugestie automată pentru "${driverName}": ${suggestedCompany}`);
+      
+      // Try to auto-add the driver to database
+      autoAddDriverToDatabase(driverName, suggestedCompany).then((result) => {
+        if (result) {
+          console.log(`✅ Șofer adăugat automat: "${driverName}" → "${result}"`);
+        }
+      });
+      
+      return suggestedCompany; // Return suggestion immediately
+    }
+    
+    console.log(`❌ Șofer NEGĂSIT: "${driverName}" - nu s-au găsit sugestii automate`);
     return "Unknown";
   };
 

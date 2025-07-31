@@ -280,7 +280,7 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
                 await loadDriversFromDatabase();
                 toast({
                   title: "Succes",
-                  description: "Mappingul șoferilor a fost reîmprospătat",
+                  description: "Mappingul șoferilor a fost reîmprospătat cu auto-mapare activată",
                   variant: "default"
                 });
               }}
@@ -289,7 +289,7 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
               whileTap={{ scale: 0.98 }}
             >
               <RefreshCw className="w-4 h-4" />
-              <span>Reîmprospătează Mapping</span>
+              <span>Reîmprospătează cu Auto-Mapare</span>
             </motion.button>
           )}
           
