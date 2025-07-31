@@ -260,10 +260,15 @@ export class DatabaseStorage implements IStorage {
 
   // Transport orders methods
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
+    // Create the order
     const [transportOrder] = await db
       .insert(transportOrders)
       .values(order)
       .returning();
+    
+    // Increment the order sequence after successful creation
+    await this.incrementOrderNumber();
+    
     return transportOrder;
   }
 
@@ -377,7 +382,7 @@ export class DatabaseStorage implements IStorage {
 
   // Order numbering methods
   async getNextOrderNumber(): Promise<number> {
-    // Try to get existing sequence
+    // Only get current number without incrementing (for preview)
     const [sequence] = await db.select().from(orderSequence).limit(1);
     
     if (!sequence) {
@@ -386,7 +391,18 @@ export class DatabaseStorage implements IStorage {
       return 1554; // First number
     }
     
-    // Increment and update
+    return sequence.currentNumber;
+  }
+
+  async incrementOrderNumber(): Promise<number> {
+    // Increment only when order is actually saved
+    const [sequence] = await db.select().from(orderSequence).limit(1);
+    
+    if (!sequence) {
+      await this.initializeOrderSequence();
+      return 1554;
+    }
+    
     const nextNumber = sequence.currentNumber + 1;
     await db.update(orderSequence)
       .set({ 
