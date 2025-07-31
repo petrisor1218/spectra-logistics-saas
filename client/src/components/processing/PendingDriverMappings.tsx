@@ -76,12 +76,12 @@ export function PendingDriverMappings({
         });
 
         toast({
-          title: "Succes",
-          description: `Șoferul "${driverName}" a fost adăugat la "${selectedCompany}"`,
+          title: "Succes", 
+          description: `Șoferul "${driverName}" a fost adăugat la "${selectedCompany}". Reprocesez datele...`,
           variant: "default"
         });
 
-        // Call callback to refresh data
+        // Call callback to refresh data and reprocess
         onMappingComplete();
       } else {
         throw new Error("Failed to add driver");
@@ -118,7 +118,7 @@ export function PendingDriverMappings({
       
       toast({
         title: "Succes",
-        description: `${pendingMappings.length} șoferi au fost adăugați cu sugestiile automate`,
+        description: `${pendingMappings.length} șoferi au fost adăugați cu sugestiile automate. Reprocesez datele...`,
         variant: "default"
       });
 

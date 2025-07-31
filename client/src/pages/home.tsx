@@ -198,16 +198,21 @@ export default function Home() {
             {/* Data Processing Tab */}
             {activeTab === 'calculations' && (
               <div className="space-y-6">
-                {/* Debug info for pending mappings */}
-                {console.log('Pending mappings in Home:', pendingMappings) && null}
+
                 
                 <PendingDriverMappings
                   pendingMappings={pendingMappings}
                   setPendingMappings={setPendingMappings}
                   addDriverToDatabase={addDriverToDatabase}
-                  onMappingComplete={() => {
-                    // Refresh driver mappings and reprocess data if needed
-                    loadDriversFromDatabase?.();
+                  onMappingComplete={async () => {
+                    // Refresh driver mappings and reprocess data automatically
+                    if (loadDriversFromDatabase) {
+                      await loadDriversFromDatabase();
+                      // Reprocess data after mappings are updated to move amounts from Pending to correct companies
+                      if (tripData.length > 0 && (invoice7Data.length > 0 || invoice30Data.length > 0)) {
+                        await processData();
+                      }
+                    }
                   }}
                 />
                 
