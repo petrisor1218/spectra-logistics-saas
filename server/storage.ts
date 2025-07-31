@@ -6,6 +6,7 @@ import {
   payments, 
   paymentHistory,
   historicalTrips,
+  orderSequence,
   type User, 
   type InsertUser,
   type Company,
@@ -22,7 +23,9 @@ import {
   type TransportOrder,
   type InsertTransportOrder,
   type HistoricalTrip,
-  type InsertHistoricalTrip
+  type InsertHistoricalTrip,
+  type OrderSequence,
+  type InsertOrderSequence
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -326,16 +329,13 @@ export class DatabaseStorage implements IStorage {
     invoice30Data: any[], 
     processedData: any
   ): Promise<WeeklyProcessing> {
-    // Save weekly processing data with raw file content
+    // Save weekly processing data (without raw file content for now, until DB schema is updated)
     const weeklyData: InsertWeeklyProcessing = {
       weekLabel,
       tripDataCount: tripData.length,
       invoice7Count: invoice7Data.length,
       invoice30Count: invoice30Data.length,
-      processedData,
-      tripData, // Save raw TRIP data
-      invoice7Data, // Save raw invoice data
-      invoice30Data // Save raw invoice data
+      processedData
     };
 
     const [processing] = await db
