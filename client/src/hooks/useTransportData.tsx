@@ -558,6 +558,7 @@ export function useTransportData() {
     await loadDriversFromDatabase();
     
     const results: any = {};
+    const unmatchedVrids: string[] = []; // Track unmatched VRIDs for historical search
 
     try {
       const processInvoice = (invoiceData: any[], invoiceType: string) => {
@@ -591,6 +592,7 @@ export function useTransportData() {
             }
           } else {
             console.log(`VRID ${vrid} - Nu s-a găsit în trip data sau nu are driver`);
+            unmatchedVrids.push(vrid); // Track for historical search
           }
 
           if (!results[company]) {
@@ -632,6 +634,50 @@ export function useTransportData() {
       setProcessedData(results);
       setSelectedWeek(processingWeek);
       setActiveTab('calculations');
+
+      // Search historical data for unmatched VRIDs
+      if (unmatchedVrids.length > 0) {
+        console.log(`🔍 Caut în istoric pentru ${unmatchedVrids.length} VRID-uri neîmperecheate...`);
+        try {
+          const response = await fetch('/api/historical-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vrids: unmatchedVrids })
+          });
+          
+          if (response.ok) {
+            const historicalData = await response.json();
+            if (historicalData.foundCount > 0) {
+              console.log(`📚 Găsite în istoric: ${historicalData.foundCount} VRID-uri`);
+              console.log('Sugestii istorice:', historicalData.foundTrips);
+              // TODO: Display historical suggestions to user
+            }
+          }
+        } catch (error) {
+          console.log('Eroare la căutarea în istoric:', error);
+        }
+      }
+
+      // Save weekly data with historical tracking
+      try {
+        await fetch('/api/weekly-processing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            weekLabel: processingWeek,
+            processedData: results,
+            tripData: tripData, // Save raw TRIP data
+            invoice7Data: invoice7Data, // Save raw invoice data
+            invoice30Data: invoice30Data, // Save raw invoice data
+            tripDataCount: tripData.length,
+            invoice7Count: invoice7Data.length,
+            invoice30Count: invoice30Data.length
+          })
+        });
+        console.log(`💾 Date salvate pentru săptămâna ${processingWeek} cu ${tripData.length} cursuri în istoric`);
+      } catch (error) {
+        console.log('Eroare la salvarea datelor:', error);
+      }
 
     } catch (error: any) {
       alert('Eroare la procesarea datelor: ' + error.message);

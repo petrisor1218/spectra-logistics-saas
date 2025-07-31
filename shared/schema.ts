@@ -41,6 +41,22 @@ export const weeklyProcessing = pgTable("weekly_processing", {
   invoice7Count: integer("invoice7_count").default(0),
   invoice30Count: integer("invoice30_count").default(0),
   processedData: jsonb("processed_data"),
+  // New fields for storing raw file data
+  tripData: jsonb("trip_data"), // Raw TRIP file content
+  invoice7Data: jsonb("invoice7_data"), // Raw 7-day invoice content  
+  invoice30Data: jsonb("invoice30_data"), // Raw 30-day invoice content
+});
+
+// New table for historical VRID tracking
+export const historicalTrips = pgTable("historical_trips", {
+  id: serial("id").primaryKey(),
+  vrid: varchar("vrid", { length: 100 }).notNull(),
+  driverName: varchar("driver_name", { length: 200 }),
+  weekLabel: varchar("week_label", { length: 100 }).notNull(),
+  tripDate: timestamp("trip_date"),
+  route: varchar("route", { length: 200 }),
+  rawTripData: jsonb("raw_trip_data"), // Full trip record
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const payments = pgTable("payments", {
@@ -132,6 +148,11 @@ export const insertTransportOrderSchema = createInsertSchema(transportOrders).om
   createdAt: true,
 });
 
+export const insertHistoricalTripSchema = createInsertSchema(historicalTrips).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -153,3 +174,6 @@ export type PaymentHistoryRecord = typeof paymentHistory.$inferSelect;
 
 export type InsertTransportOrder = z.infer<typeof insertTransportOrderSchema>;
 export type TransportOrder = typeof transportOrders.$inferSelect;
+
+export type InsertHistoricalTrip = z.infer<typeof insertHistoricalTripSchema>;
+export type HistoricalTrip = typeof historicalTrips.$inferSelect;

@@ -5,6 +5,7 @@ import {
   weeklyProcessing, 
   payments, 
   paymentHistory,
+  historicalTrips,
   type User, 
   type InsertUser,
   type Company,
@@ -19,7 +20,9 @@ import {
   type InsertPaymentHistory,
   transportOrders,
   type TransportOrder,
-  type InsertTransportOrder
+  type InsertTransportOrder,
+  type HistoricalTrip,
+  type InsertHistoricalTrip
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -69,6 +72,21 @@ export interface IStorage {
   getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]>;
   updateTransportOrder(id: number, updates: Partial<InsertTransportOrder>): Promise<TransportOrder>;
   deleteTransportOrder(id: number): Promise<void>;
+  
+  // Historical trips methods
+  createHistoricalTrip(trip: InsertHistoricalTrip): Promise<HistoricalTrip>;
+  getHistoricalTripByVrid(vrid: string): Promise<HistoricalTrip | undefined>;
+  getHistoricalTripsByWeek(weekLabel: string): Promise<HistoricalTrip[]>;
+  searchHistoricalTripsByVrids(vrids: string[]): Promise<HistoricalTrip[]>;
+  
+  // Enhanced weekly processing with historical data
+  saveWeeklyDataWithHistory(
+    weekLabel: string, 
+    tripData: any[], 
+    invoice7Data: any[], 
+    invoice30Data: any[], 
+    processedData: any
+  ): Promise<WeeklyProcessing>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -265,6 +283,92 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTransportOrder(id: number): Promise<void> {
     await db.delete(transportOrders).where(eq(transportOrders.id, id));
+  }
+
+  // Historical trips methods
+  async createHistoricalTrip(trip: InsertHistoricalTrip): Promise<HistoricalTrip> {
+    const [historicalTrip] = await db
+      .insert(historicalTrips)
+      .values(trip)
+      .returning();
+    return historicalTrip;
+  }
+
+  async getHistoricalTripByVrid(vrid: string): Promise<HistoricalTrip | undefined> {
+    const [trip] = await db.select().from(historicalTrips).where(eq(historicalTrips.vrid, vrid));
+    return trip || undefined;
+  }
+
+  async getHistoricalTripsByWeek(weekLabel: string): Promise<HistoricalTrip[]> {
+    return await db.select().from(historicalTrips).where(eq(historicalTrips.weekLabel, weekLabel));
+  }
+
+  async searchHistoricalTripsByVrids(vrids: string[]): Promise<HistoricalTrip[]> {
+    if (vrids.length === 0) return [];
+    
+    const trips: HistoricalTrip[] = [];
+    for (const vrid of vrids) {
+      const trip = await this.getHistoricalTripByVrid(vrid);
+      if (trip) trips.push(trip);
+    }
+    return trips;
+  }
+
+  // Enhanced weekly processing with historical data
+  async saveWeeklyDataWithHistory(
+    weekLabel: string, 
+    tripData: any[], 
+    invoice7Data: any[], 
+    invoice30Data: any[], 
+    processedData: any
+  ): Promise<WeeklyProcessing> {
+    // Save weekly processing data with raw file content
+    const weeklyData: InsertWeeklyProcessing = {
+      weekLabel,
+      tripDataCount: tripData.length,
+      invoice7Count: invoice7Data.length,
+      invoice30Count: invoice30Data.length,
+      processedData,
+      tripData, // Save raw TRIP data
+      invoice7Data, // Save raw invoice data
+      invoice30Data // Save raw invoice data
+    };
+
+    const [processing] = await db
+      .insert(weeklyProcessing)
+      .values(weeklyData)
+      .onConflictDoUpdate({
+        target: weeklyProcessing.weekLabel,
+        set: {
+          ...weeklyData,
+          processingDate: new Date()
+        }
+      })
+      .returning();
+
+    // Save individual trip records to historical table
+    for (const trip of tripData) {
+      const vrid = trip['Trip ID'] || trip['VR ID'];
+      const driverName = trip['Driver'];
+      
+      if (vrid) {
+        try {
+          await this.createHistoricalTrip({
+            vrid,
+            driverName: driverName || null,
+            weekLabel,
+            tripDate: trip['Trip Date'] ? new Date(trip['Trip Date']) : null,
+            route: trip['Route'] || null,
+            rawTripData: trip
+          });
+        } catch (error) {
+          // Ignore duplicates - trip already exists for this VRID
+          console.log(`VRID ${vrid} already exists in historical data`);
+        }
+      }
+    }
+
+    return processing;
   }
 
   // User authentication methods
