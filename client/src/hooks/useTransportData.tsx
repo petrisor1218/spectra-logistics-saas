@@ -307,27 +307,29 @@ export function useTransportData() {
       }
     }
     
-    // Suggest company and add to pending mappings for user confirmation
+    // Driver not found - add to pending mappings for user confirmation
+    console.log(`💡 Șofer nou detectat: "${driverName}"`);
+    
+    // Try to suggest a company based on similar drivers
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
-    if (suggestedCompany) {
-      console.log(`💡 Șofer nou detectat: "${driverName}" - sugestie: ${suggestedCompany}`);
+    const finalSuggestion = suggestedCompany || 'Fast Express'; // Default suggestion
+    
+    console.log(`   Sugestie: ${finalSuggestion}`);
+    
+    // Add to pending mappings if not already there
+    const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
+    if (!isAlreadyPending) {
+      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
+      const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
-      // Add to pending mappings if not already there
-      const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
-      if (!isAlreadyPending) {
-        const alternatives = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'].filter(c => c !== suggestedCompany);
-        setPendingMappings(prev => [...prev, {
-          driverName,
-          suggestedCompany,
-          alternatives
-        }]);
-      }
-      
-      return "Pending"; // Mark as pending for user decision
+      setPendingMappings(prev => [...prev, {
+        driverName,
+        suggestedCompany: finalSuggestion,
+        alternatives
+      }]);
     }
     
-    console.log(`❌ Șofer NEGĂSIT: "${driverName}" - nu s-au găsit sugestii`);
-    return "Unknown";
+    return "Pending"; // Mark as pending for user decision
   };
 
   // Week functions - DO NOT MODIFY!
@@ -579,8 +581,11 @@ export function useTransportData() {
           let company = 'Unmatched';
           if (tripRecord && tripRecord['Driver']) {
             const foundCompany = extractAndFindDriver(tripRecord['Driver']);
-            if (foundCompany !== 'Unknown') {
+            if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
+            } else if (foundCompany === 'Pending') {
+              console.log(`VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - verificați mapările pendente`);
+              company = 'Pending Mapping'; // Special category for pending drivers
             } else {
               console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
             }
