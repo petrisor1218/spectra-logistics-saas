@@ -152,6 +152,8 @@ export function useTransportData() {
                 mappedCompanyName = 'DE Cargo Speed';
               } else if (company.name === 'Stef Trans S.R.L.') {
                 mappedCompanyName = 'Stef Trans';
+              } else if (company.name === 'Bis General') {
+                mappedCompanyName = 'Bis General';
               }
               
               // Generate variants for each driver name
