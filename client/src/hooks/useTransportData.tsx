@@ -224,26 +224,33 @@ export function useTransportData() {
     return sortedCompanies.length > 0 && sortedCompanies[0][1] >= 1 ? sortedCompanies[0][0] : null;
   };
 
-  // Auto-add driver to database when found but not mapped
-  const autoAddDriverToDatabase = async (driverName: string, suggestedCompany: string) => {
+  // State for pending driver mappings
+  const [pendingMappings, setPendingMappings] = useState<Array<{
+    driverName: string;
+    suggestedCompany: string;
+    alternatives: string[];
+  }>>([]);
+
+  // Add driver to database after user confirmation
+  const addDriverToDatabase = async (driverName: string, selectedCompany: string) => {
     try {
       const companiesResponse = await fetch('/api/companies');
       if (companiesResponse.ok) {
         const companies = await companiesResponse.json();
         let targetCompanyId = null;
         
-        // Find company ID by matching suggested company name
+        // Find company ID by matching selected company name
         for (const company of companies) {
-          if (company.name === 'Fast & Express S.R.L.' && suggestedCompany === 'Fast Express') {
+          if (company.name === 'Fast & Express S.R.L.' && selectedCompany === 'Fast Express') {
             targetCompanyId = company.id;
             break;
-          } else if (company.name === 'Stef Trans S.R.L.' && suggestedCompany === 'Stef Trans') {
+          } else if (company.name === 'Stef Trans S.R.L.' && selectedCompany === 'Stef Trans') {
             targetCompanyId = company.id;
             break;
-          } else if (company.name === 'De Cargo Sped S.R.L.' && suggestedCompany === 'DE Cargo Speed') {
+          } else if (company.name === 'De Cargo Sped S.R.L.' && selectedCompany === 'DE Cargo Speed') {
             targetCompanyId = company.id;
             break;
-          } else if (company.name === 'Toma SRL' && suggestedCompany === 'Toma SRL') {
+          } else if (company.name === 'Toma SRL' && selectedCompany === 'Toma SRL') {
             targetCompanyId = company.id;
             break;
           }
@@ -260,15 +267,14 @@ export function useTransportData() {
           });
           
           if (response.ok) {
-            console.log(`✅ Auto-adăugat șofer: "${driverName}" → "${suggestedCompany}"`);
-            // Reload driver mapping after adding
+            console.log(`✅ Adăugat șofer: "${driverName}" → "${selectedCompany}"`);
             await loadDriversFromDatabase();
-            return suggestedCompany;
+            return selectedCompany;
           }
         }
       }
     } catch (error) {
-      console.error('Error auto-adding driver:', error);
+      console.error('Error adding driver:', error);
     }
     return null;
   };
@@ -301,22 +307,26 @@ export function useTransportData() {
       }
     }
     
-    // Auto-suggest and add driver if possible
+    // Suggest company and add to pending mappings for user confirmation
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
     if (suggestedCompany) {
-      console.log(`💡 Sugestie automată pentru "${driverName}": ${suggestedCompany}`);
+      console.log(`💡 Șofer nou detectat: "${driverName}" - sugestie: ${suggestedCompany}`);
       
-      // Try to auto-add the driver to database
-      autoAddDriverToDatabase(driverName, suggestedCompany).then((result) => {
-        if (result) {
-          console.log(`✅ Șofer adăugat automat: "${driverName}" → "${result}"`);
-        }
-      });
+      // Add to pending mappings if not already there
+      const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
+      if (!isAlreadyPending) {
+        const alternatives = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'].filter(c => c !== suggestedCompany);
+        setPendingMappings(prev => [...prev, {
+          driverName,
+          suggestedCompany,
+          alternatives
+        }]);
+      }
       
-      return suggestedCompany; // Return suggestion immediately
+      return "Pending"; // Mark as pending for user decision
     }
     
-    console.log(`❌ Șofer NEGĂSIT: "${driverName}" - nu s-au găsit sugestii automate`);
+    console.log(`❌ Șofer NEGĂSIT: "${driverName}" - nu s-au găsit sugestii`);
     return "Unknown";
   };
 
@@ -935,6 +945,9 @@ export function useTransportData() {
     loadWeeklyProcessingByWeek,
     assignUnmatchedVRID,
     loadDriversFromDatabase,
+    pendingMappings,
+    setPendingMappings,
+    addDriverToDatabase,
     
     // Computed
     getCurrentWeekRange,

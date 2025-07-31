@@ -14,6 +14,7 @@ import { UnmatchedVRIDModal } from "@/components/transport/UnmatchedVRIDModal";
 import { TransportOrdersView } from "@/components/transport/TransportOrdersView";
 import WeeklyReportsView from "@/components/transport/WeeklyReportsView";
 import { ManagementTabs } from "@/components/management/ManagementTabs";
+import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
 import { useTransportData } from "@/hooks/useTransportData";
 
 export default function Home() {
@@ -54,6 +55,9 @@ export default function Home() {
     loadWeeklyProcessingByWeek,
     assignUnmatchedVRID,
     loadDriversFromDatabase,
+    pendingMappings,
+    setPendingMappings,
+    addDriverToDatabase,
     
     // Computed
     getWeekOptions,
@@ -193,7 +197,17 @@ export default function Home() {
 
             {/* Data Processing Tab */}
             {activeTab === 'calculations' && (
-              <div>
+              <div className="space-y-6">
+                <PendingDriverMappings
+                  pendingMappings={pendingMappings}
+                  setPendingMappings={setPendingMappings}
+                  addDriverToDatabase={addDriverToDatabase}
+                  onMappingComplete={() => {
+                    // Refresh driver mappings and reprocess data if needed
+                    loadDriversFromDatabase?.();
+                  }}
+                />
+                
                 <DataProcessingSection
                   selectedWeek={selectedWeek}
                   processingWeek={processingWeek}
