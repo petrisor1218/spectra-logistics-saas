@@ -144,10 +144,20 @@ export function useTransportData() {
           if (driver.companyId) {
             const company = companies.find((c: any) => c.id === driver.companyId);
             if (company) {
+              // Map company names to match processing logic
+              let mappedCompanyName = company.name;
+              if (company.name === 'Fast & Express S.R.L.') {
+                mappedCompanyName = 'Fast Express';
+              } else if (company.name === 'De Cargo Sped S.R.L.') {
+                mappedCompanyName = 'DE Cargo Speed';
+              } else if (company.name === 'Stef Trans S.R.L.') {
+                mappedCompanyName = 'Stef Trans';
+              }
+              
               // Generate variants for each driver name
               const variants = generateNameVariants(driver.name);
               variants.forEach(variant => {
-                dbDriverMap[variant] = company.name;
+                dbDriverMap[variant] = mappedCompanyName;
               });
             }
           }
