@@ -77,8 +77,8 @@ const DRIVER_COMPANY_MAP_ORIGINAL = {
   "Adi-Nicolae Gocea": "Stef Trans",
   "Dumitru Ciobanu": "Stef Trans",
   "Dimache Mihalache": "Stef Trans",
-  "Toma Alin Marian": "Bis General",
-  "Balanean Daniel": "Bis General"
+  "Toma Alin Marian": "Toma SRL",
+  "Balanean Daniel": "Toma SRL"
 };
 
 export function useTransportData() {
@@ -152,8 +152,8 @@ export function useTransportData() {
                 mappedCompanyName = 'DE Cargo Speed';
               } else if (company.name === 'Stef Trans S.R.L.') {
                 mappedCompanyName = 'Stef Trans';
-              } else if (company.name === 'Bis General') {
-                mappedCompanyName = 'Bis General';
+              } else if (company.name === 'Toma SRL') {
+                mappedCompanyName = 'Toma SRL';
               }
               
               // Generate variants for each driver name
