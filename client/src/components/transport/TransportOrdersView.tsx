@@ -87,32 +87,45 @@ export function TransportOrdersView() {
   };
 
   const getCompanyDetails = (companyName: string) => {
-    // Try to find company in database first
-    const dbCompany = companies.find(c => 
-      c.name === companyName || 
-      c.name.includes(companyName) || 
-      companyName.includes(c.name.split(' ')[0])
-    );
+    console.log('Looking for company:', companyName, 'in companies:', companies);
+    
+    // Try to find company in database with better matching
+    const dbCompany = companies.find(c => {
+      // Direct match
+      if (c.name === companyName) return true;
+      
+      // Handle specific company name mappings
+      if (companyName === 'DE Cargo Speed' && c.name === 'De Cargo Sped S.R.L.') return true;
+      if (companyName === 'Fast Express' && c.name === 'Fast & Express S.R.L.') return true;
+      if (companyName === 'Stef Trans' && c.name === 'Stef Trans S.R.L.') return true;
+      if (companyName === 'Toma SRL' && c.name === 'Toma SRL') return true;
+      
+      // Partial matching as fallback
+      return c.name.toLowerCase().includes(companyName.toLowerCase()) || 
+             companyName.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]);
+    });
     
     if (dbCompany) {
+      console.log('Found company in DB:', dbCompany);
       return {
-        cif: dbCompany.cif,
-        rc: dbCompany.tradeRegisterNumber,
-        adresa: dbCompany.address,
-        localitate: dbCompany.location,
-        judet: dbCompany.county,
-        contact: dbCompany.contact
+        cif: dbCompany.cif || '[Completați CIF]',
+        rc: dbCompany.tradeRegisterNumber || '[Completați RC]',
+        adresa: dbCompany.address || '[Completați Adresa]',
+        localitate: dbCompany.location || '[Completați Localitatea]',
+        judet: dbCompany.county || '[Completați Județul]',
+        contact: dbCompany.contact || '[Completați Contact]'
       };
     }
     
-    // Fallback to hardcoded values if not found in DB
+    console.log('Company not found in DB, using placeholders');
+    // Fallback with Romanian diacritics
     return {
-      cif: '[Completati CIF]',
-      rc: '[Completati]',
-      adresa: '[Completati]',
-      localitate: '[Completati]',
-      judet: '[Completati]',
-      contact: '[Completati]'
+      cif: '[Completați CIF]',
+      rc: '[Completați RC]',
+      adresa: '[Completați Adresa]',
+      localitate: '[Completați Localitatea]',
+      judet: '[Completați Județul]',
+      contact: '[Completați Contact]'
     };
   };
 
