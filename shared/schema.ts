@@ -90,6 +90,13 @@ export const transportOrders = pgTable("transport_orders", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Auto-increment sequence for order numbers
+export const orderSequence = pgTable("order_sequence", {
+  id: serial("id").primaryKey(),
+  currentNumber: integer("current_number").notNull().default(1554), // Start from 1554
+  lastUpdated: timestamp("last_updated").defaultNow()
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   drivers: many(drivers),
@@ -153,6 +160,11 @@ export const insertHistoricalTripSchema = createInsertSchema(historicalTrips).om
   createdAt: true,
 });
 
+export const insertOrderSequenceSchema = createInsertSchema(orderSequence).omit({
+  id: true,
+  lastUpdated: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -177,3 +189,6 @@ export type TransportOrder = typeof transportOrders.$inferSelect;
 
 export type InsertHistoricalTrip = z.infer<typeof insertHistoricalTripSchema>;
 export type HistoricalTrip = typeof historicalTrips.$inferSelect;
+
+export type InsertOrderSequence = z.infer<typeof insertOrderSequenceSchema>;
+export type OrderSequence = typeof orderSequence.$inferSelect;

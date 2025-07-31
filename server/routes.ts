@@ -454,6 +454,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get next order number
+  app.get("/api/next-order-number", async (req, res) => {
+    try {
+      const nextNumber = await storage.getNextOrderNumber();
+      res.json({ orderNumber: nextNumber });
+    } catch (error) {
+      console.error("Error getting next order number:", error);
+      res.status(500).json({ error: "Failed to get next order number" });
+    }
+  });
+
   app.post("/api/transport-orders", async (req, res) => {
     try {
       console.log("Received transport order data:", req.body);

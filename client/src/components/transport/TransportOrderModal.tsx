@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, FileText, Calendar, Hash, MapPin, Euro, Send, Save } from "lucide-react";
 
 interface TransportOrderModalProps {
@@ -18,9 +18,61 @@ export function TransportOrderModal({
   selectedWeek
 }: TransportOrderModalProps) {
   const [orderNumber, setOrderNumber] = useState('');
-  const [orderDate, setOrderDate] = useState(new Date().toISOString().split('T')[0]);
+  const [orderDate, setOrderDate] = useState('');
   const [route, setRoute] = useState('DE-BE-NL');
   const [loading, setLoading] = useState(false);
+
+  // Load auto-generated order number and suggested date when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Load next order number
+      fetch('/api/next-order-number')
+        .then(res => res.json())
+        .then(data => setOrderNumber(data.orderNumber.toString()))
+        .catch(err => console.error('Error loading order number:', err));
+      
+      // Calculate suggested date from week label
+      if (selectedWeek) {
+        const dateParts = selectedWeek.split(' - ');
+        if (dateParts.length >= 1) {
+          // Extract start date from week label like "20 iul. - 26 iul."
+          const startDateStr = dateParts[0].trim();
+          try {
+            // Convert Romanian month names to dates
+            const months = {
+              'ian.': '01', 'feb.': '02', 'mar.': '03', 'apr.': '04',
+              'mai': '05', 'iun.': '06', 'iul.': '07', 'aug.': '08',
+              'sep.': '09', 'oct.': '10', 'noi.': '11', 'dec.': '12'
+            };
+            
+            const parts = startDateStr.split(' ');
+            if (parts.length >= 2) {
+              const day = parts[0].padStart(2, '0');
+              const monthKey = parts[1] as keyof typeof months;
+              const month = months[monthKey];
+              const year = new Date().getFullYear();
+              
+              if (month) {
+                const suggestedDate = `${year}-${month}-${day}`;
+                setOrderDate(suggestedDate);
+              } else {
+                setOrderDate(new Date().toISOString().split('T')[0]);
+              }
+            } else {
+              setOrderDate(new Date().toISOString().split('T')[0]);
+            }
+          } catch (error) {
+            console.error('Error parsing week date:', error);
+            setOrderDate(new Date().toISOString().split('T')[0]);
+          }
+        } else {
+          setOrderDate(new Date().toISOString().split('T')[0]);
+        }
+      } else {
+        setOrderDate(new Date().toISOString().split('T')[0]);
+      }
+    }
+  }, [isOpen, selectedWeek]);
 
   if (!isOpen) return null;
 

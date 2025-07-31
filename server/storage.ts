@@ -87,6 +87,10 @@ export interface IStorage {
     invoice30Data: any[], 
     processedData: any
   ): Promise<WeeklyProcessing>;
+  
+  // Order numbering methods
+  getNextOrderNumber(): Promise<number>;
+  initializeOrderSequence(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -369,6 +373,40 @@ export class DatabaseStorage implements IStorage {
     }
 
     return processing;
+  }
+
+  // Order numbering methods
+  async getNextOrderNumber(): Promise<number> {
+    // Try to get existing sequence
+    const [sequence] = await db.select().from(orderSequence).limit(1);
+    
+    if (!sequence) {
+      // Initialize sequence if it doesn't exist
+      await this.initializeOrderSequence();
+      return 1554; // First number
+    }
+    
+    // Increment and update
+    const nextNumber = sequence.currentNumber + 1;
+    await db.update(orderSequence)
+      .set({ 
+        currentNumber: nextNumber,
+        lastUpdated: new Date()
+      })
+      .where(eq(orderSequence.id, sequence.id));
+    
+    return nextNumber;
+  }
+
+  async initializeOrderSequence(): Promise<void> {
+    try {
+      await db.insert(orderSequence).values({
+        currentNumber: 1554
+      });
+    } catch (error) {
+      // Sequence might already exist
+      console.log('Order sequence might already be initialized');
+    }
   }
 
   // User authentication methods
