@@ -198,6 +198,9 @@ export default function Home() {
             {/* Data Processing Tab */}
             {activeTab === 'calculations' && (
               <div className="space-y-6">
+                {/* Debug info for pending mappings */}
+                {console.log('Pending mappings in Home:', pendingMappings) && null}
+                
                 <PendingDriverMappings
                   pendingMappings={pendingMappings}
                   setPendingMappings={setPendingMappings}

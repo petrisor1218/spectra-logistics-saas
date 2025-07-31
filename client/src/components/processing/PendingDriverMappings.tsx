@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, UserPlus, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PendingMapping {
   driverName: string;
@@ -27,6 +27,20 @@ export function PendingDriverMappings({
 }: PendingDriverMappingsProps) {
   const { toast } = useToast();
   const [selectedCompanies, setSelectedCompanies] = useState<Record<string, string>>({});
+
+  // Initialize selected companies with suggestions when pendingMappings changes
+  useEffect(() => {
+    const initialSelections: Record<string, string> = {};
+    pendingMappings.forEach(mapping => {
+      if (!selectedCompanies[mapping.driverName]) {
+        initialSelections[mapping.driverName] = mapping.suggestedCompany;
+      }
+    });
+    
+    if (Object.keys(initialSelections).length > 0) {
+      setSelectedCompanies(prev => ({ ...prev, ...initialSelections }));
+    }
+  }, [pendingMappings]);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleCompanySelect = (driverName: string, company: string) => {
@@ -37,7 +51,9 @@ export function PendingDriverMappings({
   };
 
   const handleConfirmMapping = async (driverName: string) => {
-    const selectedCompany = selectedCompanies[driverName];
+    const mapping = pendingMappings.find(p => p.driverName === driverName);
+    const selectedCompany = selectedCompanies[driverName] || mapping?.suggestedCompany;
+    
     if (!selectedCompany) {
       toast({
         title: "Eroare",
@@ -159,6 +175,8 @@ export function PendingDriverMappings({
             {pendingMappings.map((mapping, index) => {
               const allOptions = [mapping.suggestedCompany, ...mapping.alternatives];
               const selectedCompany = selectedCompanies[mapping.driverName] || mapping.suggestedCompany;
+              
+              // selectedCompany is now properly initialized via useEffect
               
               return (
                 <motion.div
