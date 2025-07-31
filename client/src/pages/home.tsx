@@ -53,6 +53,7 @@ export default function Home() {
     loadAllWeeklyProcessing,
     loadWeeklyProcessingByWeek,
     assignUnmatchedVRID,
+    loadDriversFromDatabase,
     
     // Computed
     getWeekOptions,
@@ -374,7 +375,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <ManagementTabs />
+                <ManagementTabs loadDriversFromDatabase={loadDriversFromDatabase} />
               </motion.div>
             )}
 

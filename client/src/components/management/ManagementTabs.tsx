@@ -4,7 +4,11 @@ import { Building, User } from 'lucide-react';
 import { CompanyManagement } from './CompanyManagement';
 import { DriverManagement } from './DriverManagement';
 
-export function ManagementTabs() {
+interface ManagementTabsProps {
+  loadDriversFromDatabase?: () => Promise<any>;
+}
+
+export function ManagementTabs({ loadDriversFromDatabase }: ManagementTabsProps) {
   const [activeTab, setActiveTab] = useState<'companies' | 'drivers'>('companies');
 
   const tabs = [
@@ -66,7 +70,7 @@ export function ManagementTabs() {
         transition={{ duration: 0.2 }}
       >
         {activeTab === 'companies' && <CompanyManagement />}
-        {activeTab === 'drivers' && <DriverManagement />}
+        {activeTab === 'drivers' && <DriverManagement loadDriversFromDatabase={loadDriversFromDatabase} />}
       </motion.div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit, Save, X, User, Building, Trash2 } from 'lucide-react';
+import { Plus, Edit, Save, X, User, Building, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Driver {
@@ -19,7 +19,11 @@ interface Company {
   name: string;
 }
 
-export function DriverManagement() {
+interface DriverManagementProps {
+  loadDriversFromDatabase?: () => Promise<any>;
+}
+
+export function DriverManagement({ loadDriversFromDatabase }: DriverManagementProps) {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -269,15 +273,36 @@ export function DriverManagement() {
           <span>Gestionare Șoferi</span>
         </h2>
 
-        <motion.button
-          onClick={() => setShowAddForm(true)}
-          className="glass-button bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-2 rounded-lg flex items-center space-x-2"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Adaugă Șofer</span>
-        </motion.button>
+        <div className="flex items-center space-x-3">
+          {loadDriversFromDatabase && (
+            <motion.button
+              onClick={async () => {
+                await loadDriversFromDatabase();
+                toast({
+                  title: "Succes",
+                  description: "Mappingul șoferilor a fost reîmprospătat",
+                  variant: "default"
+                });
+              }}
+              className="glass-button bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 px-4 py-2 rounded-lg flex items-center space-x-2"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Reîmprospătează Mapping</span>
+            </motion.button>
+          )}
+          
+          <motion.button
+            onClick={() => setShowAddForm(true)}
+            className="glass-button bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-2 rounded-lg flex items-center space-x-2"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Plus className="w-4 h-4" />
+            <span>Adaugă Șofer</span>
+          </motion.button>
+        </div>
       </div>
 
       <AnimatePresence>

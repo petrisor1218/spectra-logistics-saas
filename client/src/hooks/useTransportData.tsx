@@ -154,11 +154,15 @@ export function useTransportData() {
         });
         
         setDynamicDriverMap(dbDriverMap);
-        console.log('Loaded drivers from database:', Object.keys(dbDriverMap).length, 'variants');
+        console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
+        console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.companyId)?.name || 'FĂRĂ COMPANIE'}`));
+        console.log('🔗 Mapare completă (primele 5):', Object.entries(dbDriverMap).slice(0, 5));
+        return dbDriverMap;
       }
     } catch (error) {
       console.error('Error loading drivers from database:', error);
     }
+    return {};
   };
 
   // Build complete normalized dictionary (static + dynamic)
