@@ -234,6 +234,22 @@ export function useTransportData() {
   // Add driver to database after user confirmation
   const addDriverToDatabase = async (driverName: string, selectedCompany: string) => {
     try {
+      // Check if driver already exists first
+      const existingDriversResponse = await fetch('/api/drivers');
+      if (existingDriversResponse.ok) {
+        const existingDrivers = await existingDriversResponse.json();
+        const existingDriver = existingDrivers.find((d: any) => 
+          d.name.toLowerCase().trim() === driverName.toLowerCase().trim()
+        );
+        
+        if (existingDriver) {
+          console.log('🔄 Șoferul există deja în baza de date:', existingDriver);
+          // Reload drivers to update mapping
+          await loadDriversFromDatabase();
+          return selectedCompany;
+        }
+      }
+
       const companiesResponse = await fetch('/api/companies');
       if (companiesResponse.ok) {
         const companies = await companiesResponse.json();
@@ -267,7 +283,7 @@ export function useTransportData() {
           });
           
           if (response.ok) {
-            console.log(`✅ Adăugat șofer: "${driverName}" → "${selectedCompany}"`);
+            console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`);
             await loadDriversFromDatabase();
             return selectedCompany;
           }
