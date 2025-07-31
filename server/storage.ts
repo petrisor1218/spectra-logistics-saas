@@ -160,6 +160,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDriver(insertDriver: InsertDriver): Promise<Driver> {
+    // Check if driver already exists
+    const existingDriver = await db
+      .select()
+      .from(drivers)
+      .where(eq(drivers.name, insertDriver.name))
+      .limit(1);
+    
+    if (existingDriver.length > 0) {
+      console.log('Driver already exists:', existingDriver[0]);
+      return existingDriver[0];
+    }
+
     const [driver] = await db
       .insert(drivers)
       .values(insertDriver)
