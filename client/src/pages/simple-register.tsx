@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Check, X, Loader2, CreditCard } from 'lucide-react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { Link } from 'wouter';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
@@ -555,12 +556,11 @@ function RegisterForm() {
             <div className="text-center pt-4">
               <p className="text-gray-300">
                 Ai deja cont?{' '}
-                <a
-                  href="/login"
-                  className="text-blue-400 hover:text-blue-300 font-medium"
-                >
-                  Conectează-te aici
-                </a>
+                <Link href="/login">
+                  <span className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer">
+                    Conectează-te aici
+                  </span>
+                </Link>
               </p>
             </div>
           </form>
