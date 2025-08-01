@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "./hooks/useAuth";
 import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
-import Register from "@/pages/register";
+import SimpleRegister from "@/pages/simple-register";
 import NotFound from "@/pages/not-found";
 import Pricing from "@/pages/pricing";
 import Subscribe from "@/pages/subscribe";
@@ -33,7 +33,7 @@ function Router() {
       <Switch>
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/pricing" component={Pricing} />
-        <Route path="/register" component={Register} />
+        <Route path="/register" component={SimpleRegister} />
         <Route path="/subscribe/:planId" component={Subscribe} />
         <Route path="/subscription-success" component={SubscriptionSuccess} />
         <Route path="/login" component={LoginPage} />
