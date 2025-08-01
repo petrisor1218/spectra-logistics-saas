@@ -15,7 +15,6 @@ interface Company {
   county?: string;
   country?: string;
   contact?: string;
-  orderNumberStart?: number;
 }
 
 // Mutăm CompanyForm în afara componentei principale pentru a preveni re-crearea
@@ -130,18 +129,7 @@ const CompanyForm = memo(({ data, onChange, onSave, onCancel }: {
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          Număr start comenzi *
-        </label>
-        <IsolatedInput
-          type="number"
-          value={data.orderNumberStart?.toString() || ''}
-          onChange={(value) => onChange('orderNumberStart', parseInt(value) || 1554)}
-          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-          placeholder="1554"
-        />
-      </div>
+
 
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -198,8 +186,7 @@ export function CompanyManagement() {
     location: '',
     county: '',
     country: 'Romania',
-    contact: '',
-    orderNumberStart: 1554
+    contact: ''
   });
   const { toast } = useToast();
 
@@ -250,8 +237,7 @@ export function CompanyManagement() {
           location: '',
           county: '',
           country: 'Romania',
-          contact: '',
-          orderNumberStart: 1554
+          contact: ''
         });
         toast({
           title: "Succes",
@@ -303,8 +289,7 @@ export function CompanyManagement() {
       location: company.location || '',
       county: company.county || '',
       country: company.country || 'Romania',
-      contact: company.contact || '',
-      orderNumberStart: company.orderNumberStart || 1554
+      contact: company.contact || ''
     });
     setShowAddForm(false);
   }, []);
@@ -329,8 +314,7 @@ export function CompanyManagement() {
       location: '',
       county: '',
       country: 'Romania',
-      contact: '',
-      orderNumberStart: 1554
+      contact: ''
     });
   }, []);
 
@@ -345,8 +329,7 @@ export function CompanyManagement() {
       location: '',
       county: '',
       country: 'Romania',
-      contact: '',
-      orderNumberStart: 1554
+      contact: ''
     });
   }, []);
 
