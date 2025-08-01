@@ -111,13 +111,33 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User methods
-  // User authentication methods are implemented below at line 510+
+  private tenantId: string | null = null;
+
+  // Setează tenant-ul pentru această instanță de storage
+  setTenant(tenantId: string) {
+    this.tenantId = tenantId;
+  }
+
+  // Obține baza de date pentru tenant-ul curent
+  private async getTenantDb() {
+    if (!this.tenantId) {
+      throw new Error('Tenant not set for database storage');
+    }
+    return await databaseManager.getTenantDatabase(this.tenantId);
+  }
+
+  // Obține baza de date principală pentru autentificare
+  private getMainDb() {
+    return databaseManager.getMainDatabase();
+  }
+
+  // User methods - folosesc baza de date principală
 
   // Username reservation methods to prevent race conditions
   async reserveUsername(username: string, email: string): Promise<string> {
+    const mainDb = this.getMainDb();
     // Clean up expired reservations first
-    await db.delete(usernameReservations).where(sql`expires_at < NOW()`);
+    await mainDb.delete(usernameReservations).where(sql`expires_at < NOW()`);
     
     // Check if username or email already exists in main users table
     const [existingUser, existingEmailUser] = await Promise.all([
@@ -534,31 +554,42 @@ export class DatabaseStorage implements IStorage {
     return sequence;
   }
 
-  // User authentication methods
+  // User authentication methods - folosesc baza de date principală
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const mainDb = this.getMainDb();
+    const [user] = await mainDb.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const mainDb = this.getMainDb();
+    const [user] = await mainDb.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const mainDb = this.getMainDb();
+    const [user] = await mainDb.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
   async deleteUser(id: number): Promise<void> {
-    await db.delete(users).where(eq(users.id, id));
+    const mainDb = this.getMainDb();
+    await mainDb.delete(users).where(eq(users.id, id));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
+    const mainDb = this.getMainDb();
+    const [user] = await mainDb
       .insert(users)
       .values(insertUser)
       .returning();
+    
+    // Inițializează baza de date pentru tenant-ul nou
+    if (user.tenantId) {
+      await databaseManager.createTenantDatabase(user.tenantId);
+    }
+    
     return user;
   }
 
