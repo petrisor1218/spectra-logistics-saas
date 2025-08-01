@@ -336,7 +336,12 @@ export default function CompanyBalancesView() {
       {/* Company Balances */}
       <div className="space-y-4">
         
-        {Object.entries(balancesByCompany).map(([companyName, companyBalances]: [string, CompanyBalance[]], index) => (
+        {Object.entries(balancesByCompany).map(([companyName, companyBalances]: [string, CompanyBalance[]], index) => {
+          // Calculate total outstanding for this company
+          const companyTotalOutstanding = companyBalances.reduce((sum, balance) => 
+            sum + parseFloat(balance.outstandingBalance || '0'), 0);
+          
+          return (
           <motion.div
             key={companyName}
             initial={{ opacity: 0, y: 20 }}
@@ -345,13 +350,27 @@ export default function CompanyBalancesView() {
           >
             <Card className="overflow-hidden">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  {companyName}
-                </CardTitle>
-                <CardDescription>
-                  {companyBalances.length} săptămână{companyBalances.length !== 1 ? 'i' : ''}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      {companyName}
+                    </CardTitle>
+                    <CardDescription>
+                      {companyBalances.length} săptămână{companyBalances.length !== 1 ? 'i' : ''}
+                    </CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground mb-1">Total de încasat</div>
+                    <div className={`text-lg font-bold ${
+                      companyTotalOutstanding > 0 
+                        ? 'text-red-600 dark:text-red-400' 
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {formatCurrency(companyTotalOutstanding)}
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -359,7 +378,7 @@ export default function CompanyBalancesView() {
                     <div key={`${balance.companyName}-${balance.weekLabel}`} 
                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        {getStatusIcon(balance.paymentStatus)}
+                        {getStatusIcon(balance.paymentStatus || 'pending')}
                         <div>
                           <div className="font-medium">{balance.weekLabel}</div>
                           <div className="text-sm text-muted-foreground">
@@ -373,7 +392,7 @@ export default function CompanyBalancesView() {
                           <div className="font-semibold">
                             {formatCurrency(parseFloat(balance.outstandingBalance || '0'))}
                           </div>
-                          {getStatusBadge(balance.paymentStatus)}
+                          {getStatusBadge(balance.paymentStatus || 'pending')}
                         </div>
                         {parseFloat(balance.outstandingBalance || '0') > 0 && (
                           <Button
@@ -393,7 +412,8 @@ export default function CompanyBalancesView() {
               </CardContent>
             </Card>
           </motion.div>
-        ))}
+          );
+        })}
 
         {Object.keys(balancesByCompany).length === 0 && (
           <Card>
