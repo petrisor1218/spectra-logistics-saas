@@ -18,6 +18,172 @@ interface Company {
   orderNumberStart?: number;
 }
 
+// Mutăm CompanyForm în afara componentei principale pentru a preveni re-crearea
+const CompanyForm = memo(({ data, onChange, onSave, onCancel }: {
+  data: Partial<Company>;
+  onChange: (field: string, value: string | number) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.95 }}
+    className="glass-card p-6 rounded-xl border border-white/10"
+  >
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Nume Companie *
+        </label>
+        <IsolatedInput
+          value={data.name || ''}
+          onChange={(value) => onChange('name', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="Introduceti numele companiei"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Rata comision (decimal) *
+        </label>
+        <IsolatedInput
+          type="number"
+          step="0.0001"
+          value={data.commissionRate || ''}
+          onChange={(value) => onChange('commissionRate', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="0.04"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          CIF
+        </label>
+        <IsolatedInput
+          value={data.cif || ''}
+          onChange={(value) => onChange('cif', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="RO12345678"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Nr. Registrul Comerțului
+        </label>
+        <IsolatedInput
+          value={data.tradeRegisterNumber || ''}
+          onChange={(value) => onChange('tradeRegisterNumber', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="J40/1234/2020"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Adresă
+        </label>
+        <IsolatedInput
+          value={data.address || ''}
+          onChange={(value) => onChange('address', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="Str. Exemplu, Nr. 1"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Localitate
+        </label>
+        <IsolatedInput
+          value={data.location || ''}
+          onChange={(value) => onChange('location', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="București"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Județ
+        </label>
+        <IsolatedInput
+          value={data.county || ''}
+          onChange={(value) => onChange('county', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="București"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Țară
+        </label>
+        <IsolatedInput
+          value={data.country || ''}
+          onChange={(value) => onChange('country', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="Romania"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Număr start comenzi *
+        </label>
+        <IsolatedInput
+          type="number"
+          value={data.orderNumberStart?.toString() || ''}
+          onChange={(value) => onChange('orderNumberStart', parseInt(value) || 1554)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="1554"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Contact
+        </label>
+        <IsolatedInput
+          value={data.contact || ''}
+          onChange={(value) => onChange('contact', value)}
+          className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+          placeholder="+40 123 456 789, email@company.com"
+        />
+      </div>
+    </div>
+
+    <div className="flex space-x-3 mt-6">
+      <motion.button
+        onClick={onSave}
+        disabled={!data.name || !data.commissionRate}
+        className="glass-button bg-green-500/20 hover:bg-green-500/30 text-green-400 px-4 py-2 rounded-lg flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <Save className="w-4 h-4" />
+        <span>Salvează</span>
+      </motion.button>
+
+      <motion.button
+        onClick={onCancel}
+        className="glass-button bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 px-4 py-2 rounded-lg flex items-center space-x-2"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <X className="w-4 h-4" />
+        <span>Anulează</span>
+      </motion.button>
+    </div>
+  </motion.div>
+));
+
+// Adăugăm displayName pentru debugging
+CompanyForm.displayName = 'CompanyForm';
+
 export function CompanyManagement() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +270,7 @@ export function CompanyManagement() {
     }
   }, [editingId, fetchCompanies, toast]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = useCallback(async (id: number) => {
     if (!confirm('Sigur doriți să ștergeți această companie?')) return;
     
     try {
@@ -124,14 +290,26 @@ export function CompanyManagement() {
         variant: "destructive"
       });
     }
-  };
+  }, [fetchCompanies, toast]);
 
-  const startEdit = (company: Company) => {
+  const startEdit = useCallback((company: Company) => {
     setEditingId(company.id);
-    setFormData(company);
+    setFormData({
+      name: company.name,
+      commissionRate: company.commissionRate,
+      cif: company.cif || '',
+      tradeRegisterNumber: company.tradeRegisterNumber || '',
+      address: company.address || '',
+      location: company.location || '',
+      county: company.county || '',
+      country: company.country || 'Romania',
+      contact: company.contact || '',
+      orderNumberStart: company.orderNumberStart || 1554
+    });
     setShowAddForm(false);
-  };
+  }, []);
 
+  // Stabilizăm callback-urile pentru a preveni re-render-ul
   const handleFormChange = useCallback((field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
@@ -158,171 +336,24 @@ export function CompanyManagement() {
 
   const handleCancelEdit = useCallback(() => {
     setEditingId(null);
-    setFormData({});
+    setFormData({
+      name: '',
+      commissionRate: '0.04',
+      cif: '',
+      tradeRegisterNumber: '',
+      address: '',
+      location: '',
+      county: '',
+      country: 'Romania',
+      contact: '',
+      orderNumberStart: 1554
+    });
   }, []);
 
-  const CompanyForm = memo(({ data, onChange, onSave, onCancel }: {
-    data: Partial<Company>;
-    onChange: (field: string, value: string | number) => void;
-    onSave: () => void;
-    onCancel: () => void;
-  }) => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="glass-card p-6 rounded-xl border border-white/10"
-    >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Nume Companie *
-          </label>
-          <IsolatedInput
-            value={data.name || ''}
-            onChange={(value) => onChange('name', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="Introduceti numele companiei"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Rata comision (decimal) *
-          </label>
-          <IsolatedInput
-            type="number"
-            step="0.0001"
-            value={data.commissionRate || ''}
-            onChange={(value) => onChange('commissionRate', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="0.04"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            CIF
-          </label>
-          <IsolatedInput
-            value={data.cif || ''}
-            onChange={(value) => onChange('cif', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="RO12345678"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Nr. Registrul Comerțului
-          </label>
-          <IsolatedInput
-            value={data.tradeRegisterNumber || ''}
-            onChange={(value) => onChange('tradeRegisterNumber', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="J40/1234/2020"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Adresă
-          </label>
-          <IsolatedInput
-            value={data.address || ''}
-            onChange={(value) => onChange('address', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="Str. Exemplu, Nr. 1"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Localitate
-          </label>
-          <IsolatedInput
-            value={data.location || ''}
-            onChange={(value) => onChange('location', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="București"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Județ
-          </label>
-          <IsolatedInput
-            value={data.county || ''}
-            onChange={(value) => onChange('county', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="București"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Țară
-          </label>
-          <IsolatedInput
-            value={data.country || ''}
-            onChange={(value) => onChange('country', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="România"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Număr start comenzi *
-          </label>
-          <IsolatedInput
-            type="number"
-            value={data.orderNumberStart || 1554}
-            onChange={(value) => onChange('orderNumberStart', parseInt(value) || 1554)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="1554"
-            min="1"
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Contact
-          </label>
-          <IsolatedInput
-            value={data.contact || ''}
-            onChange={(value) => onChange('contact', value)}
-            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
-            placeholder="+40 123 456 789, email@company.com"
-          />
-        </div>
-      </div>
-
-      <div className="flex space-x-3 mt-6">
-        <motion.button
-          onClick={onSave}
-          disabled={!data.name || !data.commissionRate}
-          className="glass-button bg-green-500/20 hover:bg-green-500/30 text-green-400 px-4 py-2 rounded-lg flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Save className="w-4 h-4" />
-          <span>Salvează</span>
-        </motion.button>
-
-        <motion.button
-          onClick={onCancel}
-          className="glass-button bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 px-4 py-2 rounded-lg flex items-center space-x-2"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <X className="w-4 h-4" />
-          <span>Anulează</span>
-        </motion.button>
-      </div>
-    </motion.div>
-  ));
+  const handleStartAdd = useCallback(() => {
+    setShowAddForm(true);
+    setEditingId(null);
+  }, []);
 
   if (loading) {
     return (
@@ -341,7 +372,7 @@ export function CompanyManagement() {
         </h2>
 
         <motion.button
-          onClick={() => setShowAddForm(true)}
+          onClick={handleStartAdd}
           className="glass-button bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-2 rounded-lg flex items-center space-x-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -351,9 +382,10 @@ export function CompanyManagement() {
         </motion.button>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showAddForm && (
           <CompanyForm
+            key="add-form"
             data={formData}
             onChange={handleFormChange}
             onSave={handleSaveForm}
@@ -372,6 +404,7 @@ export function CompanyManagement() {
           >
             {editingId === company.id ? (
               <CompanyForm
+                key={`edit-form-${company.id}`}
                 data={formData}
                 onChange={handleFormChange}
                 onSave={handleSaveForm}
@@ -385,17 +418,28 @@ export function CompanyManagement() {
                       <Building className="w-5 h-5" />
                       <span>{company.name}</span>
                     </h3>
-                    <div className="flex items-center space-x-4 text-sm text-gray-400">
-                      <div className="flex items-center space-x-1">
+                    <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
+                      <div className="flex items-center space-x-2">
                         <CreditCard className="w-4 h-4" />
                         <span>Comision: {(parseFloat(company.commissionRate) * 100).toFixed(2)}%</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Truck className="w-4 h-4" />
-                        <span>Start comenzi: {company.orderNumberStart || 1554}</span>
-                      </div>
                       {company.cif && (
-                        <span>CIF: {company.cif}</span>
+                        <div className="flex items-center space-x-2">
+                          <Truck className="w-4 h-4" />
+                          <span>CIF: {company.cif}</span>
+                        </div>
+                      )}
+                      {company.location && (
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="w-4 h-4" />
+                          <span>{company.location}, {company.county}</span>
+                        </div>
+                      )}
+                      {company.contact && (
+                        <div className="flex items-center space-x-2">
+                          <Phone className="w-4 h-4" />
+                          <span>{company.contact}</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -422,31 +466,6 @@ export function CompanyManagement() {
                     </motion.button>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                  {company.tradeRegisterNumber && (
-                    <div className="text-gray-300">
-                      <strong>Reg. Com.:</strong> {company.tradeRegisterNumber}
-                    </div>
-                  )}
-                  {company.location && (
-                    <div className="text-gray-300 flex items-center space-x-1">
-                      <MapPin className="w-3 h-3" />
-                      <span>{company.location}{company.county ? `, ${company.county}` : ''}</span>
-                    </div>
-                  )}
-                  {company.contact && (
-                    <div className="text-gray-300 flex items-center space-x-1">
-                      <Phone className="w-3 h-3" />
-                      <span>{company.contact}</span>
-                    </div>
-                  )}
-                  {company.address && (
-                    <div className="text-gray-300 md:col-span-2 lg:col-span-3">
-                      <strong>Adresă:</strong> {company.address}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </motion.div>
@@ -454,10 +473,10 @@ export function CompanyManagement() {
       </div>
 
       {companies.length === 0 && (
-        <div className="text-center py-12">
-          <Building className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-400 text-lg">Nu sunt companii înregistrate</p>
-          <p className="text-gray-500 text-sm">Adăugați prima companie pentru a începe</p>
+        <div className="text-center py-8">
+          <Building className="w-12 h-12 text-gray-400 mx-auto mb-4 opacity-50" />
+          <p className="text-gray-400">Nu sunt companii înregistrate</p>
+          <p className="text-gray-500 text-sm mt-2">Adăugați prima companie pentru a începe</p>
         </div>
       )}
     </div>
