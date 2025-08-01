@@ -530,6 +530,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Additional admin user management endpoints
+  app.put('/api/admin/users/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      
+      await storage.updateUser(parseInt(id), updateData);
+      res.json({ message: 'User updated successfully' });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ error: 'Failed to update user' });
+    }
+  });
+
+  app.post('/api/admin/users', async (req, res) => {
+    try {
+      const userData = req.body;
+      
+      // Generate a default password for new users
+      const defaultPassword = 'TempPass123!';
+      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+      
+      const newUser = await storage.createUser({
+        ...userData,
+        password: hashedPassword
+      });
+      
+      res.json({ 
+        message: 'User created successfully', 
+        user: newUser,
+        defaultPassword // In production, send this via email
+      });
+    } catch (error) {
+      console.error('Error creating user:', error);
+      res.status(500).json({ error: 'Failed to create user' });
+    }
+  });
+
+  app.delete('/api/admin/users/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      await storage.deleteUser(parseInt(id));
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  });
+
   app.post("/api/transport-orders", async (req, res) => {
     try {
       console.log("Received transport order data:", req.body);

@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
@@ -46,6 +49,17 @@ interface Analytics {
 export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    username: '',
+    email: '',
+    companyName: '',
+    subscriptionStatus: '',
+    role: ''
+  });
   const { toast } = useToast();
 
   // Fetch all subscribers
@@ -61,38 +75,117 @@ export default function AdminDashboard() {
   });
 
   const handleViewUser = (userId: number) => {
-    toast({
-      title: "Vizualizare utilizator",
-      description: `Afișez detaliile pentru utilizatorul ID: ${userId}`,
-    });
-    console.log('View user:', userId);
+    const user = subscribers.find((u: User) => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setIsViewDialogOpen(true);
+    }
   };
 
   const handleEditUser = (userId: number) => {
-    toast({
-      title: "Editare utilizator",
-      description: `Deschid formularul de editare pentru utilizatorul ID: ${userId}`,
-    });
-    console.log('Edit user:', userId);
+    const user = subscribers.find((u: User) => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setEditForm({
+        username: user.username,
+        email: user.email,
+        companyName: user.companyName || '',
+        subscriptionStatus: user.subscriptionStatus,
+        role: user.role
+      });
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (selectedUser) {
+      try {
+        const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editForm)
+        });
+        
+        if (response.ok) {
+          toast({
+            title: "Utilizator actualizat",
+            description: "Modificările au fost salvate cu succes",
+          });
+          setIsEditDialogOpen(false);
+          // Refresh data
+          window.location.reload();
+        } else {
+          throw new Error('Failed to update user');
+        }
+      } catch (error) {
+        toast({
+          title: "Eroare",
+          description: "Nu s-au putut salva modificările",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleDeleteUser = (userId: number) => {
     if (confirm('Ești sigur că vrei să ștergi acest utilizator?')) {
-      toast({
-        title: "Utilizator șters",
-        description: `Utilizatorul ID: ${userId} a fost șters`,
-        variant: "destructive",
-      });
-      console.log('Delete user:', userId);
+      fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
+        .then(response => {
+          if (response.ok) {
+            toast({
+              title: "Utilizator șters",
+              description: "Utilizatorul a fost șters cu succes",
+              variant: "destructive",
+            });
+            window.location.reload();
+          }
+        })
+        .catch(() => {
+          toast({
+            title: "Eroare",
+            description: "Nu s-a putut șterge utilizatorul",
+            variant: "destructive",
+          });
+        });
     }
   };
 
   const handleAddSubscriber = () => {
-    toast({
-      title: "Adaugă abonat nou",
-      description: "Deschid formularul pentru adăugarea unui abonat nou",
+    setEditForm({
+      username: '',
+      email: '',
+      companyName: '',
+      subscriptionStatus: 'active',
+      role: 'subscriber'
     });
-    console.log('Add new subscriber');
+    setIsAddDialogOpen(true);
+  };
+
+  const handleSaveNewUser = async () => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Utilizator adăugat",
+          description: "Noul utilizator a fost creat cu succes",
+        });
+        setIsAddDialogOpen(false);
+        window.location.reload();
+      } else {
+        throw new Error('Failed to create user');
+      }
+    } catch (error) {
+      toast({
+        title: "Eroare",
+        description: "Nu s-a putut crea utilizatorul",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDatabaseAccess = (userId: number) => {
@@ -387,6 +480,200 @@ export default function AdminDashboard() {
           </Tabs>
         </motion.div>
       </div>
+
+      {/* View User Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="bg-gray-900 text-white border-gray-700">
+          <DialogHeader>
+            <DialogTitle>Detalii utilizator</DialogTitle>
+            <DialogDescription>
+              Informații complete despre utilizatorul selectat
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div>
+                <Label>Nume utilizator</Label>
+                <p className="text-gray-300">{selectedUser.username}</p>
+              </div>
+              <div>
+                <Label>Email</Label>
+                <p className="text-gray-300">{selectedUser.email}</p>
+              </div>
+              <div>
+                <Label>Companie</Label>
+                <p className="text-gray-300">{selectedUser.companyName || 'Nu este specificat'}</p>
+              </div>
+              <div>
+                <Label>Rol</Label>
+                <p className="text-gray-300">{selectedUser.role}</p>
+              </div>
+              <div>
+                <Label>Status abonament</Label>
+                <Badge className={getStatusColor(selectedUser.subscriptionStatus)}>
+                  {getStatusText(selectedUser.subscriptionStatus)}
+                </Badge>
+              </div>
+              <div>
+                <Label>Data înregistrării</Label>
+                <p className="text-gray-300">{new Date(selectedUser.createdAt).toLocaleDateString('ro-RO')}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-gray-900 text-white border-gray-700">
+          <DialogHeader>
+            <DialogTitle>Editare utilizator</DialogTitle>
+            <DialogDescription>
+              Modifică informațiile utilizatorului
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="username">Nume utilizator</Label>
+              <Input
+                id="username"
+                value={editForm.username}
+                onChange={(e) => setEditForm({...editForm, username: e.target.value})}
+                className="bg-gray-800 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                className="bg-gray-800 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="companyName">Companie</Label>
+              <Input
+                id="companyName"
+                value={editForm.companyName}
+                onChange={(e) => setEditForm({...editForm, companyName: e.target.value})}
+                className="bg-gray-800 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="role">Rol</Label>
+              <Select value={editForm.role} onValueChange={(value) => setEditForm({...editForm, role: value})}>
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue placeholder="Selectează rolul" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="subscriber">Abonat</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="status">Status abonament</Label>
+              <Select value={editForm.subscriptionStatus} onValueChange={(value) => setEditForm({...editForm, subscriptionStatus: value})}>
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue placeholder="Selectează statusul" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Activ</SelectItem>
+                  <SelectItem value="trialing">Perioada probă</SelectItem>
+                  <SelectItem value="canceled">Anulat</SelectItem>
+                  <SelectItem value="inactive">Inactiv</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Anulează
+            </Button>
+            <Button onClick={handleSaveEdit} className="bg-blue-600 hover:bg-blue-700">
+              Salvează
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="bg-gray-900 text-white border-gray-700">
+          <DialogHeader>
+            <DialogTitle>Adaugă utilizator nou</DialogTitle>
+            <DialogDescription>
+              Creează un nou cont de utilizator
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-username">Nume utilizator</Label>
+              <Input
+                id="new-username"
+                value={editForm.username}
+                onChange={(e) => setEditForm({...editForm, username: e.target.value})}
+                className="bg-gray-800 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-email">Email</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                className="bg-gray-800 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-companyName">Companie</Label>
+              <Input
+                id="new-companyName"
+                value={editForm.companyName}
+                onChange={(e) => setEditForm({...editForm, companyName: e.target.value})}
+                className="bg-gray-800 border-gray-600"
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-role">Rol</Label>
+              <Select value={editForm.role} onValueChange={(value) => setEditForm({...editForm, role: value})}>
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue placeholder="Selectează rolul" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="subscriber">Abonat</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="new-status">Status abonament</Label>
+              <Select value={editForm.subscriptionStatus} onValueChange={(value) => setEditForm({...editForm, subscriptionStatus: value})}>
+                <SelectTrigger className="bg-gray-800 border-gray-600">
+                  <SelectValue placeholder="Selectează statusul" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Activ</SelectItem>
+                  <SelectItem value="trialing">Perioada probă</SelectItem>
+                  <SelectItem value="canceled">Anulat</SelectItem>
+                  <SelectItem value="inactive">Inactiv</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Anulează
+            </Button>
+            <Button onClick={handleSaveNewUser} className="bg-green-600 hover:bg-green-700">
+              Creează
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
