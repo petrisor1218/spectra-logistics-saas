@@ -110,28 +110,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
-  }
+  // User authentication methods are implemented below at line 510+
 
   // Username reservation methods to prevent race conditions
   async reserveUsername(username: string, email: string): Promise<string> {
@@ -556,8 +535,12 @@ export class DatabaseStorage implements IStorage {
     const [balance] = await db
       .select()
       .from(companyBalances)
-      .where(eq(companyBalances.companyName, companyName))
-      .where(eq(companyBalances.weekLabel, weekLabel));
+      .where(
+        and(
+          eq(companyBalances.companyName, companyName),
+          eq(companyBalances.weekLabel, weekLabel)
+        )
+      );
     return balance || undefined;
   }
 

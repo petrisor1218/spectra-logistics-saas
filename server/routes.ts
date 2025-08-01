@@ -622,6 +622,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate that reservation still exists and user doesn't exist yet
       // This prevents race conditions where user was created between reservation and registration
 
+      // Check if username or email already exists in main users table
+      const [existingUser, existingEmailUser] = await Promise.all([
+        storage.getUserByUsername(username),
+        storage.getUserByEmail(email)
+      ]);
+
+      if (existingUser) {
+        // Release reservation if username was taken between reservation and registration
+        await storage.releaseReservation(username);
+        return res.status(400).json({ 
+          error: 'Username already exists' 
+        });
+      }
+
+      if (existingEmailUser) {
+        // Release reservation if email was taken between reservation and registration
+        await storage.releaseReservation(username);
+        return res.status(400).json({ 
+          error: 'Email already exists' 
+        });
+      }
+
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
 
