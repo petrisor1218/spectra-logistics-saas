@@ -22,64 +22,29 @@ interface PricingPlan {
 
 const plans: PricingPlan[] = [
   {
-    id: 'basic',
-    name: 'Basic',
-    description: 'Perfect pentru transportatori mici',
-    price: 29,
-    period: 'lună',
-    icon: Truck,
-    features: [
-      'Până la 50 de comenzi/lună',
-      'Tracking plăți de bază',
-      'Calculatoare comisioane',
-      'Rapoarte săptămânale',
-      'Suport email'
-    ],
-    cta: 'Începe perioada de probă',
-    trialDays: 3
-  },
-  {
     id: 'professional',
-    name: 'Professional',
-    description: 'Ideal pentru companii de transport',
-    price: 79,
-    originalPrice: 99,
+    name: 'Transport Pro',
+    description: 'Soluția completă pentru managementul transporturilor',
+    price: 99.99,
     period: 'lună',
-    icon: TrendingUp,
+    icon: Crown,
     features: [
       'Comenzi nelimitate',
-      'Tracking avansat plăți',
+      'Tracking complet plăți și comisioane',
       'Gestionare companii multiple',
-      'Bilanțuri automate',
-      'Rapoarte avansate',
-      'Export PDF profesional',
-      'Integrări API',
-      'Suport prioritar'
+      'Bilanțuri automate și rapoarte avansate',
+      'Export PDF profesional cu logo',
+      'Calculatoare comisioane avansate',
+      'Istoric complet tranzacții',
+      'Dashboard analitică în timp real',
+      'Backup automat și securitate',
+      'Suport prioritar 24/7',
+      'Actualizări gratuite',
+      'Conformitate GDPR'
     ],
     popular: true,
     cta: 'Începe perioada de probă',
     trialDays: 3
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    description: 'Pentru operațiuni la scară mare',
-    price: 199,
-    period: 'lună',
-    icon: Crown,
-    features: [
-      'Totul din Professional',
-      'Gestionare multi-utilizatori',
-      'Dashboard personalizabil',
-      'Analize predictive',
-      'Integrări custom',
-      'Backup automat',
-      'Conformitate GDPR',
-      'Account manager dedicat',
-      'Training gratuit echipă'
-    ],
-    cta: 'Contactează echipa',
-    trialDays: 7
   }
 ];
 
@@ -106,8 +71,8 @@ export default function Pricing() {
           </p>
         </motion.div>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {/* Pricing Card */}
+        <div className="flex justify-center max-w-2xl mx-auto">
           {plans.map((plan, index) => {
             const Icon = plan.icon;
             return (
@@ -116,31 +81,23 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className={`relative ${plan.popular ? 'md:scale-105' : ''}`}
+                className="relative w-full max-w-lg"
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-1 text-sm font-medium">
-                      <Crown className="w-4 h-4 mr-1" />
-                      Cel mai popular
-                    </Badge>
-                  </div>
-                )}
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-2 text-base font-medium">
+                    <Star className="w-5 h-5 mr-2" />
+                    Soluția recomandată
+                  </Badge>
+                </div>
                 
-                <Card className={`h-full bg-white/10 backdrop-blur-lg border-white/20 text-white transition-all duration-300 hover:scale-105 hover:bg-white/15 ${
-                  plan.popular ? 'ring-2 ring-blue-500/50' : ''
-                }`}>
+                <Card className="h-full bg-white/10 backdrop-blur-lg border-white/20 text-white transition-all duration-300 hover:scale-105 hover:bg-white/15 ring-2 ring-blue-500/50">
                   <CardHeader className="text-center pb-8">
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                      plan.popular 
-                        ? 'bg-gradient-to-r from-blue-500 to-cyan-500' 
-                        : 'bg-white/20'
-                    }`}>
-                      <Icon className="w-8 h-8" />
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-cyan-500">
+                      <Icon className="w-10 h-10" />
                     </div>
                     
-                    <CardTitle className="text-2xl font-bold mb-2">{plan.name}</CardTitle>
-                    <p className="text-gray-300 mb-6">{plan.description}</p>
+                    <CardTitle className="text-3xl font-bold mb-3">{plan.name}</CardTitle>
+                    <p className="text-gray-300 mb-8 text-lg">{plan.description}</p>
                     
                     <div className="space-y-2">
                       {plan.originalPrice && (
@@ -148,9 +105,9 @@ export default function Pricing() {
                           {plan.originalPrice}€/{plan.period}
                         </div>
                       )}
-                      <div className="text-4xl font-bold">
+                      <div className="text-5xl font-bold">
                         {plan.price}€
-                        <span className="text-lg text-gray-300">/{plan.period}</span>
+                        <span className="text-xl text-gray-300">/{plan.period}</span>
                       </div>
                       {plan.trialDays && (
                         <Badge variant="outline" className="border-green-500/50 text-green-300">
@@ -172,14 +129,10 @@ export default function Pricing() {
                     </ul>
                     
                     <Button 
-                      className={`w-full py-6 text-lg font-medium transition-all duration-300 ${
-                        plan.popular
-                          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-blue-500/25'
-                          : 'bg-white/20 hover:bg-white/30 text-white border border-white/30'
-                      }`}
+                      className="w-full py-8 text-xl font-medium transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-blue-500/25"
                       asChild
                     >
-                      <Link href={plan.id === 'enterprise' ? '/contact' : `/subscribe/${plan.id}`}>
+                      <Link href={`/subscribe/${plan.id}`}>
                         {plan.cta}
                       </Link>
                     </Button>
@@ -198,7 +151,7 @@ export default function Pricing() {
           className="mt-20 text-center"
         >
           <h2 className="text-3xl font-bold text-white mb-12">
-            Beneficii pentru afacerea ta
+            De ce să alegi Transport Pro?
           </h2>
           
           <div className="grid md:grid-cols-4 gap-8">

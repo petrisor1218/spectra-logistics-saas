@@ -16,34 +16,25 @@ const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_demo'
 const stripePromise = stripePublicKey !== 'pk_test_demo' ? loadStripe(stripePublicKey) : null;
 
 const planDetails = {
-  basic: {
-    name: 'Plan Basic',
-    price: 29,
-    description: 'Perfect pentru transportatori mici',
-    trialDays: 3,
-    features: [
-      'Până la 50 de comenzi/lună',
-      'Tracking plăți de bază',
-      'Calculatoare comisioane',
-      'Rapoarte săptămânale',
-      'Suport email'
-    ]
-  },
   professional: {
-    name: 'Plan Professional',
-    price: 79,
-    description: 'Ideal pentru companii de transport',
+    name: 'Transport Pro',
+    price: 99.99,
+    description: 'Soluția completă pentru managementul transporturilor',
     trialDays: 3,
     popular: true,
     features: [
       'Comenzi nelimitate',
-      'Tracking avansat plăți',
+      'Tracking complet plăți și comisioane',
       'Gestionare companii multiple',
-      'Bilanțuri automate',
-      'Rapoarte avansate',
-      'Export PDF profesional',
-      'Integrări API',
-      'Suport prioritar'
+      'Bilanțuri automate și rapoarte avansate',
+      'Export PDF profesional cu logo',
+      'Calculatoare comisioane avansate',
+      'Istoric complet tranzacții',
+      'Dashboard analitică în timp real',
+      'Backup automat și securitate',
+      'Suport prioritar 24/7',
+      'Actualizări gratuite',
+      'Conformitate GDPR'
     ]
   }
 };

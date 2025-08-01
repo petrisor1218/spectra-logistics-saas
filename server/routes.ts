@@ -710,8 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Plan pricing mapping
       const planPricing = {
-        basic: { price: 2900 }, // 29 EUR in cents
-        professional: { price: 7900 } // 79 EUR in cents
+        professional: { price: 9999 } // 99.99 EUR in cents
       };
 
       const plan = planPricing[planId as keyof typeof planPricing];
