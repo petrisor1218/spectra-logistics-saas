@@ -536,6 +536,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const updateData = req.body;
       
+      // If password is provided, hash it
+      if (updateData.password) {
+        updateData.password = await bcrypt.hash(updateData.password, 10);
+      }
+      
       await storage.updateUser(parseInt(id), updateData);
       res.json({ message: 'User updated successfully' });
     } catch (error) {
@@ -548,9 +553,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = req.body;
       
-      // Generate a default password for new users
-      const defaultPassword = 'TempPass123!';
-      const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+      // Validate required fields
+      if (!userData.username || !userData.email || !userData.password) {
+        return res.status(400).json({ 
+          error: 'Username, email and password are required' 
+        });
+      }
+      
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ 
+          error: 'Username already exists' 
+        });
+      }
+      
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
       
       const newUser = await storage.createUser({
         ...userData,
@@ -559,8 +578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ 
         message: 'User created successfully', 
-        user: newUser,
-        defaultPassword // In production, send this via email
+        user: newUser
       });
     } catch (error) {
       console.error('Error creating user:', error);
