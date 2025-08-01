@@ -214,7 +214,7 @@ export default function Pricing() {
                   className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-3 text-lg"
                   asChild
                 >
-                  <Link href="/subscribe/professional">
+                  <Link href="/register">
                     Începe perioada de probă
                   </Link>
                 </Button>

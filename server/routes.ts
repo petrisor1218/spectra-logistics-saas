@@ -598,6 +598,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public registration endpoint
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const {
+        username,
+        email,
+        password,
+        firstName,
+        lastName,
+        companyName,
+        role = 'subscriber',
+        subscriptionStatus = 'trialing'
+      } = req.body;
+
+      // Validate required fields
+      if (!username || !email || !password || !firstName || !lastName || !companyName) {
+        return res.status(400).json({
+          error: 'All fields are required: username, email, password, firstName, lastName, companyName'
+        });
+      }
+
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ 
+          error: 'Username already exists' 
+        });
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create the user
+      const newUser = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        companyName,
+        role,
+        subscriptionStatus
+      });
+
+      // Don't return the password in the response
+      const { password: _, ...userResponse } = newUser;
+
+      res.status(201).json({
+        message: 'User registered successfully',
+        user: userResponse
+      });
+    } catch (error) {
+      console.error('Error registering user:', error);
+      res.status(500).json({ error: 'Failed to register user' });
+    }
+  });
+
   app.post("/api/transport-orders", async (req, res) => {
     try {
       console.log("Received transport order data:", req.body);
