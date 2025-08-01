@@ -36,8 +36,8 @@ function Router() {
         <Route path="/subscribe/:planId" component={Subscribe} />
         <Route path="/subscription-success" component={SubscriptionSuccess} />
         <Route path="/login" component={LoginPage} />
-        <Route path="/" component={LoginPage} />
-        <Route component={LoginPage} />
+        <Route path="/" component={Pricing} />
+        <Route component={Pricing} />
       </Switch>
     );
   }
