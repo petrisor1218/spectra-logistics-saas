@@ -11,9 +11,17 @@ import { Check, ArrowLeft, Clock, Crown, Star, Shield } from 'lucide-react';
 import { Link } from 'wouter';
 import { apiRequest } from "@/lib/queryClient";
 
-// Temporar pentru dezvoltare - înlocuiește cu secretul real când este setat
+// Folosește doar cheia PUBLICĂ în frontend - NICIODATĂ cheia secretă!
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_demo';
-const stripePromise = stripePublicKey !== 'pk_test_demo' ? loadStripe(stripePublicKey) : null;
+console.log('Frontend Stripe key starts with:', stripePublicKey.substring(0, 7));
+
+// Verifică că este cheia publică corectă
+if (stripePublicKey.startsWith('sk_')) {
+  console.error('⚠️ SECURITY ERROR: Secret key found in frontend! Using demo mode.');
+  const stripePromise = null;
+} else {
+  const stripePromise = stripePublicKey !== 'pk_test_demo' ? loadStripe(stripePublicKey) : null;
+}
 
 const planDetails = {
   professional: {
