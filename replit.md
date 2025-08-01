@@ -24,12 +24,14 @@ Preferred communication style: Simple, everyday language.
 ### ✅ Company Balance Management System - August 1, 2025
 - **Database Table**: company_balances table with complete tracking fields
 - **Modern UI Interface**: Glassmorphism design with real-time updates
-- **Automatic Integration**: Balances created when processing weekly transport data
+- **Calendar Integration**: Automatic generation of balances from weekly processing data and payment history
+- **Smart Status Logic**: Differences under 1 EUR automatically marked as "paid" to handle rounding issues
+- **Synchronization Button**: "Sincronizează cu Calendarul" button regenerates all balances from existing data
 - **Payment Workflow**: Record payments with automatic balance calculation
-- **Status Tracking**: Visual indicators for pending/partial/paid status
+- **Status Tracking**: Visual indicators for pending/partial/paid status with intelligent rounding
 - **Multi-week Support**: Track balances across different processing weeks
 
-The system now provides complete financial oversight with automated balance tracking and payment management.
+The system now provides complete financial oversight with automated balance tracking, smart payment status detection, and seamless integration with existing calendar and payment data.
 
 ## System Architecture
 

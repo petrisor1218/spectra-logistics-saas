@@ -506,8 +506,21 @@ export class DatabaseStorage implements IStorage {
     }
 
     const newTotalPaid = parseFloat(existing.totalPaid) + paidAmount;
-    const newOutstandingBalance = parseFloat(existing.totalInvoiced) - newTotalPaid;
-    const newStatus = newOutstandingBalance <= 0 ? 'paid' : newTotalPaid > 0 ? 'partial' : 'pending';
+    const totalInvoiced = parseFloat(existing.totalInvoiced);
+    let newOutstandingBalance = totalInvoiced - newTotalPaid;
+    
+    // If difference is less than 1 EUR, consider it paid and set balance to 0
+    let newStatus: 'pending' | 'partial' | 'paid' = 'pending';
+    if (newTotalPaid === 0) {
+      newStatus = 'pending';
+    } else if (newTotalPaid >= totalInvoiced || Math.abs(newOutstandingBalance) < 1) {
+      newStatus = 'paid';
+      if (Math.abs(newOutstandingBalance) < 1) {
+        newOutstandingBalance = 0;
+      }
+    } else {
+      newStatus = 'partial';
+    }
 
     const [updated] = await db
       .update(companyBalances)
@@ -553,13 +566,17 @@ export class DatabaseStorage implements IStorage {
             );
             const totalPaid = weekPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
             
-            const outstandingBalance = totalInvoiced - totalPaid;
+            let outstandingBalance = totalInvoiced - totalPaid;
             
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
             if (totalPaid === 0) {
               paymentStatus = 'pending';
-            } else if (totalPaid >= totalInvoiced) {
+            } else if (totalPaid >= totalInvoiced || Math.abs(totalInvoiced - totalPaid) < 1) {
               paymentStatus = 'paid';
+              // Set outstanding balance to 0 if difference is less than 1 EUR
+              if (Math.abs(totalInvoiced - totalPaid) < 1) {
+                outstandingBalance = 0;
+              }
             } else {
               paymentStatus = 'partial';
             }
