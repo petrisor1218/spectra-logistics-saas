@@ -1208,7 +1208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let errorMessage = "Card verification failed";
       if (error.code === 'card_declined') {
         if (error.decline_code === 'test_mode_live_card') {
-          errorMessage = "Pentru testare, folosește carduri de test Stripe: 4242 4242 4242 4242 (orice CVC/dată viitoare)";
+          errorMessage = "Pentru testare, folosește carduri de test Stripe: 4242 4242 4242 4242 (orice CVC/dată viitoare). Pentru carduri reale, configurează cheile LIVE.";
         } else {
           errorMessage = "Cardul a fost respins de către bancă";
         }

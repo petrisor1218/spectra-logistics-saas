@@ -552,9 +552,9 @@ function RegisterForm() {
               </p>
               
               {stripePublicKey?.startsWith('pk_test_') && (
-                <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 mb-4">
-                  <p className="text-blue-200 text-xs">
-                    <strong>Pentru testare folosește:</strong> 4242 4242 4242 4242, orice CVC (ex: 123), orice dată viitoare (ex: 12/30)
+                <div className="bg-amber-500/20 border border-amber-400/30 rounded-lg p-3 mb-4">
+                  <p className="text-amber-200 text-xs">
+                    <strong>⚠️ MOD TEST:</strong> Folosește carduri de test: 4242 4242 4242 4242, orice CVC (ex: 123), orice dată viitoare (ex: 12/30). Pentru carduri reale, configurează cheile LIVE în Secrets.
                   </p>
                 </div>
               )}
@@ -562,7 +562,7 @@ function RegisterForm() {
               {stripePublicKey?.startsWith('pk_live_') && (
                 <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-3 mb-4">
                   <p className="text-green-200 text-xs">
-                    <strong>🔒 MOD LIVE:</strong> Folosește cardul tău real. Plățile vor fi procesate efectiv.
+                    <strong>🔒 MOD LIVE:</strong> Folosește cardul tău real. Plățile vor fi procesate efectiv cu €99.99/lună după trial.
                   </p>
                 </div>
               )}
