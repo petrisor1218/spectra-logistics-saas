@@ -35,6 +35,7 @@ export const companies = pgTable("companies", {
   county: varchar("county", { length: 100 }),
   country: varchar("country", { length: 100 }).default("Romania"),
   contact: text("contact"),
+  orderNumberStart: integer("order_number_start").default(1554), // Numărul de start pentru comenzile de transport
   tenantId: varchar("tenant_id", { length: 100 }), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });

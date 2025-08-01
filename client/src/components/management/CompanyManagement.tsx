@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit, Save, X, Building, Phone, MapPin, CreditCard, Trash2 } from 'lucide-react';
+import { Plus, Edit, Save, X, Building, Phone, MapPin, CreditCard, Trash2, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Company {
@@ -14,6 +14,7 @@ interface Company {
   county?: string;
   country?: string;
   contact?: string;
+  orderNumberStart?: number;
 }
 
 export function CompanyManagement() {
@@ -30,7 +31,8 @@ export function CompanyManagement() {
     location: '',
     county: '',
     country: 'Romania',
-    contact: ''
+    contact: '',
+    orderNumberStart: 1554
   });
   const { toast } = useToast();
 
@@ -246,6 +248,20 @@ export function CompanyManagement() {
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Număr start comenzi *
+          </label>
+          <input
+            type="number"
+            value={data.orderNumberStart || 1554}
+            onChange={(e) => onChange('orderNumberStart', e.target.value)}
+            className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
+            placeholder="1554"
+            min="1"
+          />
+        </div>
+
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Contact
@@ -329,7 +345,8 @@ export function CompanyManagement() {
                 location: '',
                 county: '',
                 country: 'Romania',
-                contact: ''
+                contact: '',
+                orderNumberStart: 1554
               });
             }}
           />
@@ -366,6 +383,10 @@ export function CompanyManagement() {
                       <div className="flex items-center space-x-1">
                         <CreditCard className="w-4 h-4" />
                         <span>Comision: {(parseFloat(company.commissionRate) * 100).toFixed(2)}%</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Truck className="w-4 h-4" />
+                        <span>Start comenzi: {company.orderNumberStart || 1554}</span>
                       </div>
                       {company.cif && (
                         <span>CIF: {company.cif}</span>

@@ -174,13 +174,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompanyByName(name: string, tenantId?: string): Promise<Company | undefined> {
-    let query = db.select().from(companies).where(eq(companies.name, name));
-    
     if (tenantId) {
-      query = query.where(eq(companies.tenantId, tenantId));
+      const [company] = await db.select().from(companies)
+        .where(and(eq(companies.name, name), eq(companies.tenantId, tenantId)));
+      return company || undefined;
     }
     
-    const [company] = await query;
+    const [company] = await db.select().from(companies).where(eq(companies.name, name));
     return company || undefined;
   }
 
@@ -252,13 +252,13 @@ export class DatabaseStorage implements IStorage {
 
   // Weekly processing methods with tenant isolation
   async getWeeklyProcessing(weekLabel: string, tenantId?: string): Promise<WeeklyProcessing | undefined> {
-    let query = db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
-    
     if (tenantId) {
-      query = query.where(eq(weeklyProcessing.tenantId, tenantId));
+      const [processing] = await db.select().from(weeklyProcessing)
+        .where(and(eq(weeklyProcessing.weekLabel, weekLabel), eq(weeklyProcessing.tenantId, tenantId)));
+      return processing || undefined;
     }
     
-    const [processing] = await query;
+    const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
     return processing || undefined;
   }
 
@@ -598,7 +598,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
-    const newTotalPaid = parseFloat(existing.totalPaid) + paidAmount;
+    const newTotalPaid = parseFloat(existing.totalPaid || '0') + paidAmount;
     const totalInvoiced = parseFloat(existing.totalInvoiced);
     let newOutstandingBalance = totalInvoiced - newTotalPaid;
     
