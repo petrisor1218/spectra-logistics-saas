@@ -557,8 +557,12 @@ export class DatabaseStorage implements IStorage {
           if (companyName === 'Unmatched' || companyName === 'Totals') return;
           
           const companyData = processedData[companyName];
-          if (companyData && companyData.Total_7_days) {
-            const totalInvoiced = parseFloat(companyData.Total_7_days) || 0;
+          if (companyData && (companyData.Total_7_days || companyData.Total_30_days)) {
+            const total7Days = parseFloat(companyData.Total_7_days) || 0;
+            const total30Days = parseFloat(companyData.Total_30_days) || 0;
+            const totalInvoiced = total7Days + total30Days;
+            
+
             
             // Calculate total paid for this company and week
             const weekPayments = allPayments.filter(p => 
