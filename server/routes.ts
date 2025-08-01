@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { registerTenantRoutes } from "./tenant-routes.js";
 import { 
   companies, 
   drivers, 
@@ -321,9 +322,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🏢 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
       
       try {
-        // Obține baza de date separată pentru tenant
-        const { tenantDatabaseManager } = await import('./tenant-database.js');
-        const tenantDb = await tenantDatabaseManager.getTenantDatabase(user.tenantId);
+        // Obține baza de date separată pentru tenant folosind noul multi-tenant manager
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
         
         const companiesData = await tenantDb.select().from(companies);
         console.log(`✅ Separate DB: User ${user.username} sees ${companiesData.length} companies from separate database`);
@@ -363,9 +364,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`👥 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
       
       try {
-        // Obține baza de date separată pentru tenant
-        const { tenantDatabaseManager } = await import('./tenant-database.js');
-        const tenantDb = await tenantDatabaseManager.getTenantDatabase(user.tenantId);
+        // Obține baza de date separată pentru tenant folosind noul multi-tenant manager
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
         
         const driversData = await tenantDb.select().from(drivers);
         console.log(`✅ Separate DB: User ${user.username} sees ${driversData.length} drivers from separate database`);
@@ -886,13 +887,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🔒 NEW TENANT CREATED: ${tenantId} for user: ${username}`);
       console.log(`✅ User has isolated database - no access to existing data`);
 
-      // Creează baza de date separată pentru noul tenant
+      // Creează baza de date separată pentru noul tenant folosind noul multi-tenant manager
       try {
-        const { tenantDatabaseManager } = await import('./tenant-database.js');
-        await tenantDatabaseManager.createTenantSchema(tenantId);
-        console.log(`✅ Successfully created separate database schema for user ${username} (tenant: ${tenantId})`);
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        await multiTenantManager.createTenantDatabase(tenantId);
+        console.log(`✅ Successfully created separate database for user ${username} (tenant: ${tenantId})`);
+        
+        // Obține statistici despre sistemul multi-tenant
+        const stats = multiTenantManager.getSystemStats();
+        console.log(`📊 Multi-tenant system stats: ${stats.totalTenants}/${stats.maxTenants} tenants active`);
       } catch (dbError) {
-        console.error(`❌ Failed to create database schema for tenant ${tenantId}:`, dbError);
+        console.error(`❌ Failed to create separate database for tenant ${tenantId}:`, dbError);
         // Nu întrerup procesul de înregistrare pentru că utilizatorul a fost deja creat
         // Va folosi sistemul existent cu tenant_id până când problema se rezolvă
       }
@@ -1689,6 +1694,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to delete user' });
     }
   });
+
+  // Înregistrează rutele pentru funcționalitatea multi-tenant
+  registerTenantRoutes(app);
 
   const httpServer = createServer(app);
 

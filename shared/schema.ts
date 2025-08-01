@@ -35,8 +35,6 @@ export const companies = pgTable("companies", {
   county: varchar("county", { length: 100 }),
   country: varchar("country", { length: 100 }).default("Romania"),
   contact: text("contact"),
-
-  tenantId: varchar("tenant_id", { length: 100 }), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -47,7 +45,6 @@ export const drivers = pgTable("drivers", {
   nameVariants: jsonb("name_variants"),
   phone: varchar("phone", { length: 20 }).default(""),
   email: varchar("email", { length: 100 }).default(""),
-  tenantId: varchar("tenant_id", { length: 100 }), // Multi-tenant isolation
   createdAt: timestamp("created_at").defaultNow(),
 });
 
