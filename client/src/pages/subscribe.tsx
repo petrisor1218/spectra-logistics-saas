@@ -360,7 +360,7 @@ export default function Subscribe() {
           </p>
         </motion.div>
 
-        {stripePromise && clientSecret !== "demo_client_secret" ? (
+        {stripePromise && clientSecret && clientSecret !== "demo_client_secret" ? (
           <Elements stripe={stripePromise} options={{ clientSecret }}>
             <SubscribeForm planId={planId} />
           </Elements>
