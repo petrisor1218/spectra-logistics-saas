@@ -7,6 +7,11 @@ interface User {
   username: string;
   role?: string;
   email?: string;
+  subscriptionStatus?: string;
+  trialEndsAt?: string;
+  subscriptionEndsAt?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 export function useAuth() {

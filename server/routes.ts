@@ -273,7 +273,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: user.email,
             role: user.role || 'subscriber',
             tenantId: user.tenantId, // Include tenant info for frontend
-            subscriptionStatus: user.subscriptionStatus
+            subscriptionStatus: user.subscriptionStatus || 'inactive',
+            trialEndsAt: user.trialEndsAt,
+            subscriptionEndsAt: user.subscriptionEndsAt,
+            stripeCustomerId: user.stripeCustomerId,
+            stripeSubscriptionId: user.stripeSubscriptionId
           });
         } else {
           res.status(401).json({ error: 'User not found' });

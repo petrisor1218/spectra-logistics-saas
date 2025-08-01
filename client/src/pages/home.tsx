@@ -16,10 +16,13 @@ import WeeklyReportsView from "@/components/transport/WeeklyReportsView";
 import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
+import { SubscriptionNotification } from "@/components/ui/subscription-notification";
 import { useTransportData } from "@/hooks/useTransportData";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
+  const { user } = useAuth();
   
   const {
     // State
@@ -92,6 +95,7 @@ export default function Home() {
       background: 'linear-gradient(135deg, hsl(240, 21%, 9%) 0%, hsl(240, 19%, 13%) 50%, hsl(240, 17%, 16%) 100%)'
     }}>
       <NavigationHeader />
+      <SubscriptionNotification user={user || null} />
       
       <main className="pt-24 pb-8">
         <div className="container mx-auto px-6">
@@ -356,8 +360,9 @@ export default function Home() {
                         if (weekLabel) {
                           loadWeeklyProcessingByWeek(weekLabel);
                         } else {
-                          setProcessedData({});
-                          setSelectedWeek('');
+                          // Clear data when no week is selected
+                          // These functions are not exposed by the hook, so we'll just reload
+                          loadAllWeeklyProcessing();
                         }
                       }}
                       className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
