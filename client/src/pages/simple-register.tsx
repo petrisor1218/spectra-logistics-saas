@@ -271,24 +271,9 @@ function RegisterForm() {
         throw new Error(errorData.error || 'Failed to create account');
       }
 
-      // AL TREILEA: Setup subscription cu cardul validat
-      if (clientSecret) {
-        const { error } = await stripe.confirmSetup({
-          elements,
-          confirmParams: {
-            return_url: `${window.location.origin}/subscription-success`,
-          },
-        });
-
-        if (error) {
-          toast({
-            title: "Eroare la configurarea plății",
-            description: error.message,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
+      // AL TREILEA: Setup subscription cu cardul validat (nu e necesar pentru trial)
+      // Pentru perioada de trial, payment method-ul este deja atașat la customer
+      console.log('✅ Trial setup complete - no immediate charge needed');
 
       toast({
         title: "🎉 Cont creat cu succes!",
