@@ -652,10 +652,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      // Allow admin, petrisor, or dan to modify order sequence
-      if (user.role !== 'admin' && user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor' && user.username !== 'dan') {
-        return res.status(403).json({ error: 'Access denied - admin only' });
-      }
+      // Allow any authenticated user to modify order sequence for their workflow
+      // This is a tenant-specific setting that affects their order numbering
 
       const { currentNumber } = req.body;
       if (!currentNumber || currentNumber < 1) {
