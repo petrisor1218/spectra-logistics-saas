@@ -11,6 +11,9 @@ let stripe: Stripe | null = null;
 
 // Use LIVE keys if available, otherwise fall back to test keys
 const stripeSecretKey = process.env.STRIPE_LIVE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+console.log('🔍 Available Stripe env vars:');
+console.log('- STRIPE_LIVE_SECRET_KEY:', process.env.STRIPE_LIVE_SECRET_KEY ? 'SET' : 'NOT SET');
+console.log('- STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'SET' : 'NOT SET');
 
 if (stripeSecretKey) {
   const keyStart = stripeSecretKey.substring(0, 10);
