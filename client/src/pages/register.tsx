@@ -198,7 +198,29 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
     setIsProcessing(true);
 
     try {
-      // First, create the user account
+      // Final validation before submission - check both username and email one more time
+      const [usernameCheckResult, emailCheckResult] = await Promise.all([
+        fetch('/api/auth/check-username', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: formData.username })
+        }).then(res => res.json()),
+        fetch('/api/auth/check-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email })
+        }).then(res => res.json())
+      ]);
+
+      if (!usernameCheckResult.available) {
+        throw new Error('Username already exists');
+      }
+
+      if (!emailCheckResult.available) {
+        throw new Error('Email already exists');
+      }
+
+      // Create the user account
       const userResponse = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -562,7 +584,11 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 <Button
                   type="button"
                   onClick={handleNext}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={
+                    (step === 1 && (!usernameCheck || !usernameCheck.available || !emailCheck || !emailCheck.available)) ||
+                    (step === 2 && (!formData.firstName.trim() || !formData.lastName.trim() || !formData.companyName.trim()))
+                  }
                 >
                   Continuă
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -571,9 +597,9 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 <Button
                   type="submit"
                   disabled={!stripe || isProcessing}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                 >
-                  {isProcessing ? 'Se procesează...' : 'Finalizează înregistrarea'}
+                  {isProcessing ? 'Se verifică și se procesează...' : 'Finalizează înregistrarea'}
                 </Button>
               )}
             </div>
