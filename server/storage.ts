@@ -123,12 +123,13 @@ export class DatabaseStorage implements IStorage {
     if (!this.tenantId) {
       throw new Error('Tenant not set for database storage');
     }
-    return await databaseManager.getTenantDatabase(this.tenantId);
+    const { tenantDatabaseManager } = await import('./tenant-database.js');
+    return await tenantDatabaseManager.getTenantDatabase(this.tenantId);
   }
 
   // Obține baza de date principală pentru autentificare
   private getMainDb() {
-    return databaseManager.getMainDatabase();
+    return db;
   }
 
   // User methods - folosesc baza de date principală
@@ -585,11 +586,7 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     
-    // Inițializează baza de date pentru tenant-ul nou
-    if (user.tenantId) {
-      await databaseManager.createTenantDatabase(user.tenantId);
-    }
-    
+    console.log(`📊 Created user ${user.username} with tenant ID: ${user.tenantId}`);
     return user;
   }
 

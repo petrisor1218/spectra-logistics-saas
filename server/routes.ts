@@ -858,6 +858,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🔒 NEW TENANT CREATED: ${tenantId} for user: ${username}`);
       console.log(`✅ User has isolated database - no access to existing data`);
 
+      // Creează baza de date separată pentru noul tenant
+      try {
+        const { tenantDatabaseManager } = await import('./tenant-database.js');
+        await tenantDatabaseManager.createTenantSchema(tenantId);
+        console.log(`✅ Successfully created separate database schema for user ${username} (tenant: ${tenantId})`);
+      } catch (dbError) {
+        console.error(`❌ Failed to create database schema for tenant ${tenantId}:`, dbError);
+        // Nu întrerup procesul de înregistrare pentru că utilizatorul a fost deja creat
+        // Va folosi sistemul existent cu tenant_id până când problema se rezolvă
+      }
+
       // Release the username reservation after successful creation
       await storage.releaseReservation(username);
 
