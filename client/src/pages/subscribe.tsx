@@ -211,6 +211,13 @@ export default function Subscribe() {
       return;
     }
 
+    // Skip Stripe setup if keys are not configured
+    if (!stripePromise) {
+      setClientSecret("demo_client_secret");
+      setIsLoading(false);
+      return;
+    }
+
     // Create subscription setup intent
     apiRequest("POST", "/api/create-subscription", { 
       planId,
@@ -222,6 +229,8 @@ export default function Subscribe() {
       })
       .catch((error) => {
         console.error('Error creating subscription:', error);
+        // Fallback pentru demo
+        setClientSecret("demo_client_secret");
       })
       .finally(() => {
         setIsLoading(false);
@@ -239,16 +248,85 @@ export default function Subscribe() {
     );
   }
 
-  if (!clientSecret || !planId || !(planId in planDetails)) {
+  if (!planId || !(planId in planDetails)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center text-white">
-          <p className="text-red-400 mb-4">Plan invalid sau eroare la încărcarea datelor</p>
+          <p className="text-red-400 mb-4">Plan invalid</p>
           <Link href="/pricing">
             <Button variant="outline">
               Înapoi la preturi
             </Button>
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Demo mode when Stripe is not configured
+  if (!stripePromise || clientSecret === "demo_client_secret") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+        <div className="container mx-auto px-4 py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 text-center"
+          >
+            <h1 className="text-4xl font-bold text-white mb-4">
+              Finalizează <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Abonamentul</span>
+            </h1>
+            <p className="text-xl text-gray-300">
+              Demonstrație - pentru funcționarea completă sunt necesare cheile Stripe
+            </p>
+          </motion.div>
+
+          <div className="max-w-2xl mx-auto">
+            <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white mb-8">
+              <CardHeader>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <Crown className="w-6 h-6 text-yellow-400" />
+                  {planDetails[planId as keyof typeof planDetails].name}
+                </CardTitle>
+                <p className="text-gray-300 mt-2">{planDetails[planId as keyof typeof planDetails].description}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center space-y-4">
+                  <div className="text-5xl font-bold text-blue-400">
+                    {planDetails[planId as keyof typeof planDetails].price}€/lună
+                  </div>
+                  <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                    <Clock className="w-4 h-4 mr-1" />
+                    3 zile perioada de probă gratuită
+                  </Badge>
+                  <div className="bg-yellow-500/20 p-4 rounded-lg border border-yellow-500/30 mt-6">
+                    <p className="text-yellow-300 font-medium mb-2">Mod demonstrație</p>
+                    <p className="text-gray-300 text-sm">
+                      Pentru activarea plăților sunt necesare cheile Stripe (VITE_STRIPE_PUBLIC_KEY și STRIPE_SECRET_KEY)
+                    </p>
+                  </div>
+                  <div className="flex gap-4 mt-6">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-white/30 text-white hover:bg-white/10"
+                      asChild
+                    >
+                      <Link href="/pricing">
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Înapoi
+                      </Link>
+                    </Button>
+                    <Button
+                      className="flex-1 bg-blue-500/50 hover:bg-blue-500/70 cursor-not-allowed"
+                      disabled
+                    >
+                      Necesită configurare Stripe
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -270,9 +348,15 @@ export default function Subscribe() {
           </p>
         </motion.div>
 
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
-          <SubscribeForm planId={planId} />
-        </Elements>
+        {stripePromise && clientSecret !== "demo_client_secret" ? (
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <SubscribeForm planId={planId} />
+          </Elements>
+        ) : (
+          <div className="text-center text-white">
+            <p>Stripe nu este configurat</p>
+          </div>
+        )}
       </div>
     </div>
   );
