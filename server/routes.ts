@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company routes
-  app.get("/api/companies", requireAuth, async (req, res) => {
+  app.get("/api/companies", async (req, res) => {
     try {
       const companies = await storage.getAllCompanies();
       res.json(companies);
@@ -274,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Driver routes
-  app.get("/api/drivers", requireAuth, async (req, res) => {
+  app.get("/api/drivers", async (req, res) => {
     try {
       const drivers = await storage.getAllDrivers();
       res.json(drivers);
@@ -396,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment history routes
-  app.get("/api/payment-history", requireAuth, async (req, res) => {
+  app.get("/api/payment-history", async (req, res) => {
     try {
       const { paymentId } = req.query;
       const history = await storage.getPaymentHistory(
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transport orders routes
-  app.get("/api/transport-orders", requireAuth, async (req, res) => {
+  app.get("/api/transport-orders", async (req, res) => {
     try {
       const { weekLabel, companyName } = req.query;
       
