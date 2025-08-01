@@ -78,12 +78,6 @@ export default function LoginPage() {
             <CardDescription className="text-gray-600 dark:text-gray-300">
               Autentificare în sistemul de plăți transport
             </CardDescription>
-            
-            {/* Credențiale pentru testare rapidă */}
-            <div className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 p-2 rounded space-y-1">
-              <div><strong>Admin:</strong> petrisor / ••••••••</div>
-              <div><strong>Demo:</strong> admin / ••••••••</div>
-            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
