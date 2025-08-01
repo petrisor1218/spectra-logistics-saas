@@ -16,7 +16,7 @@ const formatCurrency = (amount: number): string => {
 };
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign } from "lucide-react";
+import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import type { CompanyBalance } from "@shared/schema";
 
@@ -151,6 +151,7 @@ function getStatusBadge(status: string) {
 export default function CompanyBalancesView() {
   const [selectedBalance, setSelectedBalance] = useState<CompanyBalance | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const { toast } = useToast();
 
   const { data: balances = [], isLoading } = useQuery({
     queryKey: ['/api/company-balances'],
@@ -180,6 +181,35 @@ export default function CompanyBalancesView() {
     sum + parseFloat(balance.totalInvoiced || '0'), 0);
   const totalPaid = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalPaid || '0'), 0);
+
+  const generateBalances = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/company-balances/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to generate balances');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/company-balances'] });
+      toast({
+        title: "Succes",
+        description: "Bilanțurile au fost regenerate din datele calendarul și plăților",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Eroare",
+        description: "Nu s-au putut genera bilanțurile",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handlePaymentClick = (balance: CompanyBalance) => {
     setSelectedBalance(balance);
@@ -253,9 +283,31 @@ export default function CompanyBalancesView() {
         </motion.div>
       </div>
 
+      {/* Header with Generate Button */}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Bilanțuri pe Companii</h3>
+        <Button
+          onClick={() => generateBalances.mutate()}
+          disabled={generateBalances.isPending}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          size="sm"
+        >
+          {generateBalances.isPending ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Generez...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Sincronizează cu Calendarul
+            </>
+          )}
+        </Button>
+      </div>
+
       {/* Company Balances */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Bilanțuri pe Companii</h3>
         
         {Object.entries(balancesByCompany).map(([companyName, companyBalances]: [string, CompanyBalance[]], index) => (
           <motion.div

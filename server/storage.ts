@@ -522,6 +522,79 @@ export class DatabaseStorage implements IStorage {
     
     return updated;
   }
+
+  // Generate company balances from weekly processing data and payments
+  async generateCompanyBalancesFromCalendarData(): Promise<CompanyBalance[]> {
+    try {
+      // Get all weekly processing data
+      const weeklyData = await db.select().from(weeklyProcessing).orderBy(weeklyProcessing.weekLabel);
+      
+      // Get all payments
+      const allPayments = await db.select().from(payments);
+      
+      const balancesToCreate: InsertCompanyBalance[] = [];
+      
+      for (const week of weeklyData) {
+        if (!week.processedData) continue;
+        
+        const processedData = week.processedData as any;
+        
+        // Extract company totals from processed data
+        Object.keys(processedData).forEach(companyName => {
+          if (companyName === 'Unmatched' || companyName === 'Totals') return;
+          
+          const companyData = processedData[companyName];
+          if (companyData && companyData.Total_7_days) {
+            const totalInvoiced = parseFloat(companyData.Total_7_days) || 0;
+            
+            // Calculate total paid for this company and week
+            const weekPayments = allPayments.filter(p => 
+              p.companyName === companyName && p.weekLabel === week.weekLabel
+            );
+            const totalPaid = weekPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            
+            const outstandingBalance = totalInvoiced - totalPaid;
+            
+            let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
+            if (totalPaid === 0) {
+              paymentStatus = 'pending';
+            } else if (totalPaid >= totalInvoiced) {
+              paymentStatus = 'paid';
+            } else {
+              paymentStatus = 'partial';
+            }
+            
+            balancesToCreate.push({
+              companyName,
+              weekLabel: week.weekLabel,
+              totalInvoiced: totalInvoiced.toString(),
+              totalPaid: totalPaid.toString(),
+              outstandingBalance: outstandingBalance.toString(),
+              paymentStatus
+            });
+          }
+        });
+      }
+      
+      // Clear existing balances and insert new ones
+      await db.delete(companyBalances);
+      
+      if (balancesToCreate.length > 0) {
+        const createdBalances = await db
+          .insert(companyBalances)
+          .values(balancesToCreate)
+          .returning();
+        
+        console.log(`✅ Generated ${createdBalances.length} company balances from calendar data`);
+        return createdBalances;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error generating company balances:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

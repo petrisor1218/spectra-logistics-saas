@@ -653,6 +653,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/company-balances/generate", async (req, res) => {
+    try {
+      const balances = await storage.generateCompanyBalancesFromCalendarData();
+      res.json(balances);
+    } catch (error) {
+      console.error("Error generating company balances:", error);
+      res.status(500).json({ message: "Failed to generate company balances" });
+    }
+  });
+
   app.post("/api/company-balances", async (req, res) => {
     try {
       const balanceData = req.body;
