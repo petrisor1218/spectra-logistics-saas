@@ -9,8 +9,9 @@ import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStri
 import { loadStripe } from '@stripe/stripe-js';
 import { Link } from 'wouter';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
+// Initialize Stripe - use LIVE key if available, otherwise test key
+const stripePublicKey = import.meta.env.VITE_STRIPE_LIVE_PUBLIC_KEY || import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise = loadStripe(stripePublicKey!);
 
 interface FormData {
   username: string;
@@ -550,11 +551,21 @@ function RegisterForm() {
                 <strong>Obligatoriu:</strong> Cardul este necesar pentru verificarea identității. Nu vei fi taxat în perioada de probă de 3 zile.
               </p>
               
-              <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 mb-4">
-                <p className="text-blue-200 text-xs">
-                  <strong>Pentru testare folosește:</strong> 4242 4242 4242 4242, orice CVC (ex: 123), orice dată viitoare (ex: 12/30)
-                </p>
-              </div>
+              {stripePublicKey?.startsWith('pk_test_') && (
+                <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 mb-4">
+                  <p className="text-blue-200 text-xs">
+                    <strong>Pentru testare folosește:</strong> 4242 4242 4242 4242, orice CVC (ex: 123), orice dată viitoare (ex: 12/30)
+                  </p>
+                </div>
+              )}
+              
+              {stripePublicKey?.startsWith('pk_live_') && (
+                <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-3 mb-4">
+                  <p className="text-green-200 text-xs">
+                    <strong>🔒 MOD LIVE:</strong> Folosește cardul tău real. Plățile vor fi procesate efectiv.
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-4">
                 {/* Card Number */}

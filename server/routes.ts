@@ -9,9 +9,14 @@ import Stripe from "stripe";
 
 let stripe: Stripe | null = null;
 
-if (process.env.STRIPE_SECRET_KEY) {
-  console.log('STRIPE_SECRET_KEY starts with:', process.env.STRIPE_SECRET_KEY.substring(0, 10));
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+// Use LIVE keys if available, otherwise fall back to test keys
+const stripeSecretKey = process.env.STRIPE_LIVE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+
+if (stripeSecretKey) {
+  const keyStart = stripeSecretKey.substring(0, 10);
+  const isLive = stripeSecretKey.startsWith('sk_live_');
+  console.log(`STRIPE_SECRET_KEY starts with: ${keyStart} (${isLive ? 'LIVE MODE' : 'TEST MODE'})`);
+  stripe = new Stripe(stripeSecretKey, {
     apiVersion: "2024-06-20",
   });
 } else {
