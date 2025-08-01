@@ -655,6 +655,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Username availability check endpoint
+  app.post('/api/auth/check-username', async (req, res) => {
+    try {
+      const { username } = req.body;
+
+      if (!username || username.length < 3) {
+        return res.json({
+          available: false,
+          message: 'Numele de utilizator trebuie să aibă cel puțin 3 caractere'
+        });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      
+      if (existingUser) {
+        res.json({
+          available: false,
+          message: 'Acest nume de utilizator este deja folosit'
+        });
+      } else {
+        res.json({
+          available: true,
+          message: 'Nume de utilizator disponibil'
+        });
+      }
+    } catch (error) {
+      console.error('Error checking username:', error);
+      res.status(500).json({
+        available: false,
+        message: 'Eroare la verificarea numelui de utilizator'
+      });
+    }
+  });
+
   app.post("/api/transport-orders", async (req, res) => {
     try {
       console.log("Received transport order data:", req.body);

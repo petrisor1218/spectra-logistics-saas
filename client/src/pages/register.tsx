@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { Eye, EyeOff, Check, ArrowRight, CreditCard, User, Building, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Check, ArrowRight, CreditCard, User, Building, Mail, Lock, X } from 'lucide-react';
 import { Link } from 'wouter';
 
 // Stripe setup
@@ -27,6 +27,11 @@ interface RegistrationForm {
   lastName: string;
 }
 
+interface UsernameCheckResult {
+  available: boolean;
+  message?: string;
+}
+
 const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -35,6 +40,9 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [usernameCheck, setUsernameCheck] = useState<UsernameCheckResult | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameTimeout, setUsernameTimeout] = useState<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<RegistrationForm>({
     username: '',
@@ -46,11 +54,42 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
     lastName: ''
   });
 
+  const checkUsernameAvailability = async (username: string) => {
+    if (!username.trim() || username.length < 3) {
+      setUsernameCheck(null);
+      return;
+    }
+
+    setIsCheckingUsername(true);
+    try {
+      const response = await fetch('/api/auth/check-username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+      
+      const result = await response.json();
+      setUsernameCheck(result);
+    } catch (error) {
+      setUsernameCheck({ available: false, message: 'Eroare la verificare' });
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
   const validateStep1 = () => {
     if (!formData.username.trim()) {
       toast({
         title: "Câmp obligatoriu",
         description: "Te rog introdu numele de utilizator",
+        variant: "destructive"
+      });
+      return false;
+    }
+    if (usernameCheck && !usernameCheck.available) {
+      toast({
+        title: "Nume de utilizator indisponibil",
+        description: "Te rog alege un alt nume de utilizator",
         variant: "destructive"
       });
       return false;
@@ -218,13 +257,54 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
                   <User className="w-4 h-4" />
                   Nume utilizator
                 </Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
-                  className="bg-gray-800 border-gray-600 text-white"
-                  placeholder="username"
-                />
+                <div className="relative">
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({...formData, username: value});
+                      
+                      // Clear existing timeout
+                      if (usernameTimeout) {
+                        clearTimeout(usernameTimeout);
+                      }
+                      
+                      // Reset check status for immediate feedback
+                      setUsernameCheck(null);
+                      
+                      // Set new timeout for debounced check
+                      const newTimeout = setTimeout(() => checkUsernameAvailability(value), 800);
+                      setUsernameTimeout(newTimeout);
+                    }}
+                    className={`bg-gray-800 border-gray-600 text-white pr-10 ${
+                      usernameCheck 
+                        ? usernameCheck.available 
+                          ? 'border-green-500' 
+                          : 'border-red-500'
+                        : ''
+                    }`}
+                    placeholder="username"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    {isCheckingUsername && (
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {!isCheckingUsername && usernameCheck && (
+                      usernameCheck.available ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <X className="w-4 h-4 text-red-500" />
+                      )
+                    )}
+                  </div>
+                </div>
+                {usernameCheck && !usernameCheck.available && (
+                  <p className="text-xs text-red-400 mt-1">{usernameCheck.message}</p>
+                )}
+                {usernameCheck && usernameCheck.available && (
+                  <p className="text-xs text-green-400 mt-1">Nume de utilizator disponibil</p>
+                )}
               </div>
 
               <div>
@@ -360,6 +440,9 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
                 <h4 className="font-semibold text-green-300">Perioada de probă de 3 zile</h4>
                 <p className="text-sm text-gray-300 mt-1">
                   Nu vei fi taxat acum. Abonamentul începe după perioada de probă.
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  <strong>€99.99/lună</strong> după perioada de probă
                 </p>
               </div>
 
