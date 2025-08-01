@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Save, X, Building, Phone, MapPin, CreditCard, Trash2, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { StableInput } from '@/components/ui/stable-input';
+import { IsolatedInput } from '@/components/ui/isolated-input';
 
 interface Company {
   id: number;
@@ -37,10 +37,6 @@ export function CompanyManagement() {
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchCompanies();
-  }, []);
-
   const fetchCompanies = useCallback(async () => {
     try {
       const response = await fetch('/api/companies');
@@ -59,6 +55,10 @@ export function CompanyManagement() {
       setLoading(false);
     }
   }, [toast]);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
 
   const handleSave = useCallback(async (companyData: Partial<Company>) => {
     try {
@@ -178,7 +178,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Nume Companie *
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.name || ''}
             onChange={(value) => onChange('name', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
@@ -190,7 +190,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Rata comision (decimal) *
           </label>
-          <StableInput
+          <IsolatedInput
             type="number"
             step="0.0001"
             value={data.commissionRate || ''}
@@ -204,7 +204,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             CIF
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.cif || ''}
             onChange={(value) => onChange('cif', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
@@ -216,7 +216,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Nr. Registrul Comerțului
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.tradeRegisterNumber || ''}
             onChange={(value) => onChange('tradeRegisterNumber', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
@@ -228,7 +228,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Adresă
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.address || ''}
             onChange={(value) => onChange('address', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
@@ -240,7 +240,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Localitate
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.location || ''}
             onChange={(value) => onChange('location', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
@@ -252,7 +252,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Județ
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.county || ''}
             onChange={(value) => onChange('county', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
@@ -264,7 +264,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Țară
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.country || ''}
             onChange={(value) => onChange('country', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
@@ -276,7 +276,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Număr start comenzi *
           </label>
-          <StableInput
+          <IsolatedInput
             type="number"
             value={data.orderNumberStart || 1554}
             onChange={(value) => onChange('orderNumberStart', parseInt(value) || 1554)}
@@ -290,7 +290,7 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Contact
           </label>
-          <StableInput
+          <IsolatedInput
             value={data.contact || ''}
             onChange={(value) => onChange('contact', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
