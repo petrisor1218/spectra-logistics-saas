@@ -978,6 +978,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create or update Transport Pro product in Stripe with complete description
+  app.post("/api/create-stripe-product", async (req, res) => {
+    try {
+      const keyStart = process.env.STRIPE_SECRET_KEY?.substring(0, 7);
+      if (!stripe || keyStart === 'pk_test') {
+        return res.status(500).json({ 
+          error: "Stripe not configured", 
+          message: keyStart === 'pk_test' 
+            ? "Secret key required (currently using publishable key)" 
+            : "Please set STRIPE_SECRET_KEY" 
+        });
+      }
+
+      // Create or get the Transport Pro product with comprehensive description
+      let product;
+      try {
+        // Try to find existing product
+        const products = await stripe.products.list({ 
+          active: true,
+          limit: 100 
+        });
+        product = products.data.find(p => p.name === 'Transport Pro');
+        
+        if (!product) {
+          // Create the product if it doesn't exist
+          product = await stripe.products.create({
+            name: 'Transport Pro',
+            description: 'Platformă avansată de management transport cu automatizare inteligentă și design modern glassmorphism. Include: Gestionare comenzi transport cu auto-numerotare, calculatoare comisioane personalizabile per companie (2% Fast Express, 4% altele), generare PDF automată cu toate datele companiei și diacritice românești, urmărire plăți în timp real cu status inteligent și rounding pentru diferențe sub 1€, dashboard analitică cu statistici live și export Excel/CSV, istorică VRID cross-săptămână pentru trip matching, sistem multi-companii cu izolare completă date per tenant, monitorizare balanțe companii cu sincronizare automată din calendar și payment history, notificări inteligente pentru plăți și status changes, securitate avansată cu role-based access (admin/subscriber), interfață responsive glassmorphism pentru desktop și mobile, backup automat și recovery sistem, trial 3 zile gratuit.',
+            images: [],
+            metadata: {
+              features: 'transport_orders,auto_numbering,commission_calc_2_4_percent,pdf_generation_romanian_diacritics,real_time_payment_tracking,smart_status_rounding,analytics_dashboard,excel_csv_export,vrid_cross_week_history,multi_tenant_isolation,balance_monitoring_sync,calendar_integration,payment_history,smart_notifications,role_based_security,glassmorphism_responsive_ui,auto_backup_recovery',
+              trial_days: '3',
+              billing_interval: 'monthly',
+              category: 'logistics_management',
+              target_users: 'transport_companies,logistics_operators,fleet_managers',
+              price_eur: '99.99',
+              commission_rates: 'fast_express_2_percent_others_4_percent',
+              ui_design: 'glassmorphism_dark_light_mode',
+              database: 'postgresql_neon_multi_tenant',
+              authentication: 'stripe_subscription_based'
+            }
+          });
+          console.log('✅ Created Transport Pro product in Stripe with complete description');
+        } else {
+          // Update existing product with new description
+          product = await stripe.products.update(product.id, {
+            description: 'Platformă avansată de management transport cu automatizare inteligentă și design modern glassmorphism. Include: Gestionare comenzi transport cu auto-numerotare, calculatoare comisioane personalizabile per companie (2% Fast Express, 4% altele), generare PDF automată cu toate datele companiei și diacritice românești, urmărire plăți în timp real cu status inteligent și rounding pentru diferențe sub 1€, dashboard analitică cu statistici live și export Excel/CSV, istorică VRID cross-săptămână pentru trip matching, sistem multi-companii cu izolare completă date per tenant, monitorizare balanțe companii cu sincronizare automată din calendar și payment history, notificări inteligente pentru plăți și status changes, securitate avansată cu role-based access (admin/subscriber), interfață responsive glassmorphism pentru desktop și mobile, backup automat și recovery sistem, trial 3 zile gratuit.',
+            metadata: {
+              features: 'transport_orders,auto_numbering,commission_calc_2_4_percent,pdf_generation_romanian_diacritics,real_time_payment_tracking,smart_status_rounding,analytics_dashboard,excel_csv_export,vrid_cross_week_history,multi_tenant_isolation,balance_monitoring_sync,calendar_integration,payment_history,smart_notifications,role_based_security,glassmorphism_responsive_ui,auto_backup_recovery',
+              trial_days: '3',
+              billing_interval: 'monthly',
+              category: 'logistics_management',
+              target_users: 'transport_companies,logistics_operators,fleet_managers',
+              price_eur: '99.99',
+              commission_rates: 'fast_express_2_percent_others_4_percent',
+              ui_design: 'glassmorphism_dark_light_mode',
+              database: 'postgresql_neon_multi_tenant',
+              authentication: 'stripe_subscription_based',
+              updated_at: new Date().toISOString()
+            }
+          });
+          console.log('✅ Updated Transport Pro product in Stripe with complete description');
+        }
+      } catch (productError) {
+        console.error('Error with product:', productError);
+        throw productError;
+      }
+
+      // Create or get the price for this product (€99.99/month)
+      let price;
+      try {
+        const prices = await stripe.prices.list({
+          product: product.id,
+          active: true
+        });
+        price = prices.data.find(p => p.unit_amount === 9999 && p.currency === 'eur');
+        
+        if (!price) {
+          price = await stripe.prices.create({
+            product: product.id,
+            unit_amount: 9999, // €99.99 in cents
+            currency: 'eur',
+            recurring: {
+              interval: 'month'
+            },
+            metadata: {
+              plan_name: 'Transport Pro Monthly',
+              trial_days: '3',
+              features: 'all_transport_management_features'
+            }
+          });
+          console.log('✅ Created Transport Pro price in Stripe (€99.99/month)');
+        }
+      } catch (priceError) {
+        console.error('Error with price:', priceError);
+        throw priceError;
+      }
+
+      res.json({
+        success: true,
+        product: {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          metadata: product.metadata
+        },
+        price: {
+          id: price.id,
+          amount: price.unit_amount,
+          currency: price.currency,
+          interval: price.recurring?.interval
+        },
+        message: 'Transport Pro product created/updated successfully in Stripe'
+      });
+    } catch (error: any) {
+      console.error('Error creating/updating Stripe product:', error);
+      res.status(500).json({ 
+        error: 'Failed to create/update Stripe product', 
+        message: error.message 
+      });
+    }
+  });
+
   // Stripe subscription routes
   app.post("/api/create-subscription", async (req, res) => {
     try {
