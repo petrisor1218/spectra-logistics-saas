@@ -211,13 +211,25 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
         setStep(2);
       } catch (error: any) {
+        let errorMessage = "Te rog încearcă din nou.";
+        
+        if (error.message.includes('Username already exists')) {
+          errorMessage = `Numele "${formData.username}" a fost luat între timp de alt utilizator. Te rog alege un alt nume.`;
+        } else if (error.message.includes('Email already exists')) {
+          errorMessage = `Emailul "${formData.email}" a fost luat între timp de alt utilizator. Te rog folosește un alt email.`;
+        } else if (error.message.includes('already taken') || error.message.includes('already reserved')) {
+          errorMessage = `Numele "${formData.username}" sau emailul "${formData.email}" au fost luate între timp. Te rog reîncarcă pagina și încearcă din nou.`;
+        }
+        
         toast({
           title: "Eroare la rezervare",
-          description: error.message.includes('already taken') 
-            ? `Numele "${formData.username}" sau emailul "${formData.email}" au fost luate între timp. Te rog reîncarcă pagina și încearcă din nou.`
-            : "Te rog încearcă din nou.",
+          description: errorMessage,
           variant: "destructive",
         });
+        
+        // Reset validation to allow user to try again
+        setUsernameCheck(null);
+        setEmailCheck(null);
       } finally {
         setIsProcessing(false);
       }

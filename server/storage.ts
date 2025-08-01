@@ -138,6 +138,20 @@ export class DatabaseStorage implements IStorage {
     // Clean up expired reservations first
     await db.delete(usernameReservations).where(sql`expires_at < NOW()`);
     
+    // Check if username or email already exists in main users table
+    const [existingUser, existingEmailUser] = await Promise.all([
+      this.getUserByUsername(username),
+      this.getUserByEmail(email)
+    ]);
+
+    if (existingUser) {
+      throw new Error('Username already exists');
+    }
+
+    if (existingEmailUser) {
+      throw new Error('Email already exists');
+    }
+    
     // Generate a simple token (timestamp-based)
     const token = Date.now().toString() + Math.random().toString(36).substr(2, 9);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
@@ -150,8 +164,8 @@ export class DatabaseStorage implements IStorage {
       });
       return token;
     } catch (error) {
-      // If username is already reserved or exists, throw error
-      throw new Error('Username already reserved or taken');
+      // If username is already reserved, throw error
+      throw new Error('Username already reserved');
     }
   }
 

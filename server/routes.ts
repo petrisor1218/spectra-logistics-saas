@@ -619,8 +619,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Skip validation - username is already reserved and protected by reservation system
-      // Just proceed to create the user since reservation guarantees uniqueness
+      // Validate that reservation still exists and user doesn't exist yet
+      // This prevents race conditions where user was created between reservation and registration
 
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -671,12 +671,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
 
       if (existingUser) {
+        // Release reservation if username was taken between reservation and registration
+        await storage.releaseReservation(username);
         return res.status(400).json({ 
           error: 'Username already exists' 
         });
       }
 
       if (existingEmailUser) {
+        // Release reservation if email was taken between reservation and registration
+        await storage.releaseReservation(username);
         return res.status(400).json({ 
           error: 'Email already exists' 
         });
