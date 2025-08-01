@@ -203,21 +203,33 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
         fetch('/api/auth/check-username', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: formData.username })
+          body: JSON.stringify({ username: formData.username.trim() })
         }).then(res => res.json()),
         fetch('/api/auth/check-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email })
+          body: JSON.stringify({ email: formData.email.trim() })
         }).then(res => res.json())
       ]);
 
       if (!usernameCheckResult.available) {
-        throw new Error('Username already exists');
+        toast({
+          title: "Nume de utilizator indisponibil",
+          description: `Numele "${formData.username}" este deja folosit. Te rog alege un alt nume de utilizator.`,
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
       }
 
       if (!emailCheckResult.available) {
-        throw new Error('Email already exists');
+        toast({
+          title: "Email indisponibil", 
+          description: `Adresa "${formData.email}" este deja înregistrată. Te rog folosește o altă adresă de email.`,
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
       }
 
       // Create the user account
@@ -266,9 +278,11 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
       let errorMessage = "A apărut o eroare. Te rog încearcă din nou.";
       
       if (error.message.includes('Username already exists')) {
-        errorMessage = "Acest nume de utilizator este deja folosit. Te rog alege altul.";
+        errorMessage = `Numele de utilizator "${formData.username}" este deja folosit. Te rog alege un alt nume.`;
       } else if (error.message.includes('Email already exists')) {
-        errorMessage = "Această adresă de email este deja înregistrată. Te rog folosește altă adresă.";
+        errorMessage = `Adresa de email "${formData.email}" este deja înregistrată. Te rog folosește o altă adresă.`;
+      } else if (error.message.includes('User validation failed')) {
+        errorMessage = "Datele introduse nu sunt valide. Te rog verifică toate câmpurile.";
       }
       
       toast({
