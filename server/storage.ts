@@ -560,7 +560,12 @@ export class DatabaseStorage implements IStorage {
           if (companyData && (companyData.Total_7_days || companyData.Total_30_days)) {
             const total7Days = parseFloat(companyData.Total_7_days) || 0;
             const total30Days = parseFloat(companyData.Total_30_days) || 0;
-            const totalInvoiced = total7Days + total30Days;
+            const totalCommission = parseFloat(companyData.Total_comision) || 0;
+            
+            // Total invoiced should exclude commission - commission is separate from company payments
+            const totalInvoiced = total7Days + total30Days - totalCommission;
+            
+
             
 
             

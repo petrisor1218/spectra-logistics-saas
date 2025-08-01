@@ -31,7 +31,13 @@ Preferred communication style: Simple, everyday language.
 - **Status Tracking**: Visual indicators for pending/partial/paid status with intelligent rounding
 - **Multi-week Support**: Track balances across different processing weeks
 
-The system now provides complete financial oversight with automated balance tracking, smart payment status detection, and seamless integration with existing calendar and payment data.
+### ✅ Commission Exclusion Fix - August 1, 2025
+- **Complete Invoice Calculation**: Total invoiced = Total 7 days + Total 30 days (instead of just 7 days)
+- **Commission Separation**: Commission amounts excluded from outstanding balance calculations
+- **Accurate Financial Tracking**: Company balances now reflect actual amounts owed to companies
+- **Example Fix**: Fast Express 20 iul - 26 iul: 42973.29 EUR invoiced (44010.69 - 1037.40 commission)
+
+The system now provides complete financial oversight with automated balance tracking, smart payment status detection, accurate commission handling, and seamless integration with existing calendar and payment data.
 
 ## System Architecture
 
