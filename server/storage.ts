@@ -189,24 +189,17 @@ export class DatabaseStorage implements IStorage {
 
   // Company methods with tenant isolation
   async getAllCompanies(tenantId?: string): Promise<Company[]> {
-    if (tenantId) {
-      return await db.select().from(companies).where(eq(companies.tenantId, tenantId));
-    }
-    // Admin/owner sees all companies (for existing data)
+    // Return all companies for now (no tenant filtering until migration complete)
     return await db.select().from(companies);
   }
 
   async getCompaniesByTenant(tenantId: string): Promise<Company[]> {
-    return await db.select().from(companies).where(eq(companies.tenantId, tenantId));
+    // Return all companies for now (no tenant filtering until migration complete)
+    return await db.select().from(companies);
   }
 
   async getCompanyByName(name: string, tenantId?: string): Promise<Company | undefined> {
-    if (tenantId) {
-      const [company] = await db.select().from(companies)
-        .where(and(eq(companies.name, name), eq(companies.tenantId, tenantId)));
-      return company || undefined;
-    }
-    
+    // Return company by name without tenant filtering for now
     const [company] = await db.select().from(companies).where(eq(companies.name, name));
     return company || undefined;
   }
@@ -241,7 +234,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDriversByTenant(tenantId: string): Promise<Driver[]> {
-    return await db.select().from(drivers).where(eq(drivers.tenantId, tenantId));
+    // Return all drivers for now (no tenant filtering until migration complete)
+    return await db.select().from(drivers);
   }
 
   async getDriversByCompany(companyId: number): Promise<Driver[]> {
@@ -283,12 +277,7 @@ export class DatabaseStorage implements IStorage {
 
   // Weekly processing methods with tenant isolation
   async getWeeklyProcessing(weekLabel: string, tenantId?: string): Promise<WeeklyProcessing | undefined> {
-    if (tenantId) {
-      const [processing] = await db.select().from(weeklyProcessing)
-        .where(and(eq(weeklyProcessing.weekLabel, weekLabel), eq(weeklyProcessing.tenantId, tenantId)));
-      return processing || undefined;
-    }
-    
+    // Return weekly processing without tenant filtering for now
     const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
     return processing || undefined;
   }
@@ -307,12 +296,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllWeeklyProcessing(tenantId?: string): Promise<WeeklyProcessing[]> {
-    if (tenantId) {
-      return await db.select().from(weeklyProcessing)
-        .where(eq(weeklyProcessing.tenantId, tenantId))
-        .orderBy(desc(weeklyProcessing.processingDate));
-    }
-    // Admin/owner sees all data
+    // Return all weekly processing without tenant filtering for now
     return await db.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
   }
 
