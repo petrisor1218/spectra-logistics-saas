@@ -1,46 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import { memo, forwardRef } from 'react';
 
 interface IsolatedInputProps {
   value: string | number;
   onChange: (value: string) => void;
   type?: string;
-  placeholder?: string;
-  className?: string;
-  min?: string;
   step?: string;
+  className?: string;
+  placeholder?: string;
+  min?: string;
+  disabled?: boolean;
 }
 
-export const IsolatedInput: React.FC<IsolatedInputProps> = ({
-  value,
-  onChange,
-  type = "text",
-  placeholder,
-  className,
-  min,
-  step
-}) => {
-  const [localValue, setLocalValue] = useState(String(value || ''));
+// Component izolat pentru input-uri care nu își pierd focus-ul
+export const IsolatedInput = memo(forwardRef<HTMLInputElement, IsolatedInputProps>(
+  ({ value, onChange, type = 'text', step, className, placeholder, min, disabled }, ref) => {
+    return (
+      <input
+        ref={ref}
+        type={type}
+        step={step}
+        min={min}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={className}
+        placeholder={placeholder}
+        disabled={disabled}
+      />
+    );
+  }
+));
 
-  // Update local value when prop changes
-  useEffect(() => {
-    setLocalValue(String(value || ''));
-  }, [value]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    onChange(newValue);
-  };
-
-  return (
-    <input
-      type={type}
-      value={localValue}
-      onChange={handleChange}
-      placeholder={placeholder}
-      className={className}
-      min={min}
-      step={step}
-    />
-  );
-};
+IsolatedInput.displayName = 'IsolatedInput';
