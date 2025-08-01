@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Check, X, Loader2, CreditCard } from 'lucide-react';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Link } from 'wouter';
 
@@ -211,8 +211,8 @@ function RegisterForm() {
 
     try {
       // PRIMUL: Validez cardul înainte de orice altceva
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
+      const cardNumberElement = elements.getElement(CardNumberElement);
+      if (!cardNumberElement) {
         toast({
           title: "Eroare",
           description: "Te rog introdu detaliile cardului pentru a continua",
@@ -224,7 +224,11 @@ function RegisterForm() {
       // Verific că cardul este complet și valid
       const { error: cardError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
-        card: cardElement,
+        card: cardNumberElement,
+        billing_details: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+        },
       });
 
       if (cardError) {
@@ -511,24 +515,85 @@ function RegisterForm() {
                 <strong>Obligatoriu:</strong> Cardul este necesar pentru verificarea identității. Nu vei fi taxat în perioada de probă de 3 zile.
               </p>
               
-              <div className="bg-white/5 border border-white/20 rounded-lg p-4">
-                <CardElement
-                  options={{
-                    style: {
-                      base: {
-                        fontSize: '16px',
-                        color: '#ffffff',
-                        '::placeholder': {
-                          color: '#9ca3af',
+              <div className="space-y-4">
+                {/* Card Number */}
+                <div>
+                  <Label className="text-white text-sm">Numărul cardului *</Label>
+                  <div className="bg-white/5 border border-white/20 rounded-lg p-4 mt-2">
+                    <CardNumberElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#ffffff',
+                            fontFamily: 'system-ui, -apple-system, sans-serif',
+                            '::placeholder': {
+                              color: '#9ca3af',
+                            },
+                            backgroundColor: 'transparent',
+                          },
+                          invalid: {
+                            color: '#ef4444',
+                          },
                         },
-                        backgroundColor: 'transparent',
-                      },
-                      invalid: {
-                        color: '#ef4444',
-                      },
-                    },
-                  }}
-                />
+                        placeholder: '1234 1234 1234 1234',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Expiry and CVC */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-white text-sm">Data expirării *</Label>
+                    <div className="bg-white/5 border border-white/20 rounded-lg p-4 mt-2">
+                      <CardExpiryElement
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: '16px',
+                              color: '#ffffff',
+                              fontFamily: 'system-ui, -apple-system, sans-serif',
+                              '::placeholder': {
+                                color: '#9ca3af',
+                              },
+                              backgroundColor: 'transparent',
+                            },
+                            invalid: {
+                              color: '#ef4444',
+                            },
+                          },
+                          placeholder: 'MM/YY',
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-white text-sm">CVC *</Label>
+                    <div className="bg-white/5 border border-white/20 rounded-lg p-4 mt-2">
+                      <CardCvcElement
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: '16px',
+                              color: '#ffffff',
+                              fontFamily: 'system-ui, -apple-system, sans-serif',
+                              '::placeholder': {
+                                color: '#9ca3af',
+                              },
+                              backgroundColor: 'transparent',
+                            },
+                            invalid: {
+                              color: '#ef4444',
+                            },
+                          },
+                          placeholder: '123',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
