@@ -47,7 +47,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/pricing" component={Pricing} />
-      <Route path="/register" component={Home} />
+      <Route path="/register" component={SimpleRegister} />
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
       <Route path="/login" component={Home} />
