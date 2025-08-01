@@ -52,7 +52,10 @@ export function NavigationHeader() {
             
             {/* Admin Dashboard Button */}
             <Button
-              onClick={() => window.location.href = '/admin'}
+              onClick={() => {
+                console.log('Navigating to admin dashboard...');
+                window.location.href = '/admin';
+              }}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               size="sm"
             >
