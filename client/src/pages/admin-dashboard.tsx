@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
   DollarSign, 
@@ -24,23 +25,85 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  companyName?: string;
+  subscriptionStatus: string;
+  createdAt: string;
+  lastLoginAt?: string;
+}
+
+interface Analytics {
+  totalSubscribers: number;
+  activeSubscriptions: number;
+  monthlyRevenue: number;
+  trialUsers: number;
+}
+
 export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const { toast } = useToast();
 
   // Fetch all subscribers
-  const { data: subscribers = [], isLoading } = useQuery({
+  const { data: subscribers = [], isLoading } = useQuery<User[]>({
     queryKey: ['/api/admin/subscribers'],
     retry: false,
   });
 
   // Fetch subscription analytics
-  const { data: analytics = {} } = useQuery({
+  const { data: analytics = {} } = useQuery<Analytics>({
     queryKey: ['/api/admin/analytics'],
     retry: false,
   });
 
-  const filteredSubscribers = subscribers.filter((user: any) => {
+  const handleViewUser = (userId: number) => {
+    toast({
+      title: "Vizualizare utilizator",
+      description: `Afișez detaliile pentru utilizatorul ID: ${userId}`,
+    });
+    console.log('View user:', userId);
+  };
+
+  const handleEditUser = (userId: number) => {
+    toast({
+      title: "Editare utilizator",
+      description: `Deschid formularul de editare pentru utilizatorul ID: ${userId}`,
+    });
+    console.log('Edit user:', userId);
+  };
+
+  const handleDeleteUser = (userId: number) => {
+    if (confirm('Ești sigur că vrei să ștergi acest utilizator?')) {
+      toast({
+        title: "Utilizator șters",
+        description: `Utilizatorul ID: ${userId} a fost șters`,
+        variant: "destructive",
+      });
+      console.log('Delete user:', userId);
+    }
+  };
+
+  const handleAddSubscriber = () => {
+    toast({
+      title: "Adaugă abonat nou",
+      description: "Deschid formularul pentru adăugarea unui abonat nou",
+    });
+    console.log('Add new subscriber');
+  };
+
+  const handleDatabaseAccess = (userId: number) => {
+    toast({
+      title: "Acces bază de date",
+      description: `Conectez la baza de date pentru utilizatorul ID: ${userId}`,
+    });
+    console.log('Database access for user:', userId);
+  };
+
+  const filteredSubscribers = subscribers.filter((user: User) => {
     const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -96,7 +159,10 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Button className="bg-gradient-to-r from-blue-500 to-cyan-500">
+              <Button 
+                onClick={handleAddSubscriber}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Adaugă abonat
               </Button>
@@ -197,7 +263,17 @@ export default function AdminDashboard() {
                       <option value="inactive">Inactiv</option>
                     </select>
 
-                    <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                    <Button 
+                      variant="outline" 
+                      className="border-white/30 text-white hover:bg-white/10"
+                      onClick={() => {
+                        toast({
+                          title: "Export date",
+                          description: "Exportez lista de abonaților în format CSV",
+                        });
+                        console.log('Export subscribers data');
+                      }}
+                    >
                       <Download className="w-4 h-4 mr-2" />
                       Export
                     </Button>
@@ -249,13 +325,31 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-white/30 text-white hover:bg-white/10"
+                                  onClick={() => handleViewUser(user.id)}
+                                  title="Vizualizare detalii"
+                                >
                                   <Eye className="w-4 h-4" />
                                 </Button>
-                                <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-white/30 text-white hover:bg-white/10"
+                                  onClick={() => handleDatabaseAccess(user.id)}
+                                  title="Acces bază de date"
+                                >
                                   <Database className="w-4 h-4" />
                                 </Button>
-                                <Button size="sm" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-white/30 text-white hover:bg-white/10"
+                                  onClick={() => handleEditUser(user.id)}
+                                  title="Editare utilizator"
+                                >
                                   <Edit className="w-4 h-4" />
                                 </Button>
                               </div>
