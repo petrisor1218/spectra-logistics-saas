@@ -37,7 +37,7 @@ function Router() {
         <Route path="/subscription-success" component={SubscriptionSuccess} />
         <Route path="/login" component={LoginPage} />
         <Route path="/" component={LoginPage} />
-        <Route path="*" component={LoginPage} />
+        <Route component={LoginPage} />
       </Switch>
     );
   }
@@ -51,7 +51,7 @@ function Router() {
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
       <Route path="/login" component={Home} />
-      <Route path="*" component={NotFound} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
