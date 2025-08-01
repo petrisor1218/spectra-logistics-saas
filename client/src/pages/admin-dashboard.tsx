@@ -472,15 +472,18 @@ export default function AdminDashboard() {
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                                  onClick={() => handleDeleteUser(user.id, user.username)}
-                                  title="Șterge utilizator"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                {/* Only show delete button for non-main users */}
+                                {user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor' && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                                    onClick={() => handleDeleteUser(user.id, user.username)}
+                                    title="Șterge utilizator"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>

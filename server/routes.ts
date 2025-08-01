@@ -1047,9 +1047,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // Prevent deleting admin users (safety check)
+      // Prevent deleting admin users and main account (safety check)
       if (user.role === 'admin') {
         return res.status(403).json({ error: 'Cannot delete admin users' });
+      }
+
+      // Prevent deleting the main account
+      if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        return res.status(403).json({ error: 'Cannot delete the main account' });
       }
 
       // Delete the user
