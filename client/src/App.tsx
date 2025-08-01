@@ -8,6 +8,9 @@ import { useAuth } from "./hooks/useAuth";
 import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
+import Pricing from "@/pages/pricing";
+import Subscribe from "@/pages/subscribe";
+import SubscriptionSuccess from "@/pages/subscription-success";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,8 +29,11 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/pricing" component={Pricing} />
+        <Route path="/subscribe/:planId" component={Subscribe} />
+        <Route path="/subscription-success" component={SubscriptionSuccess} />
         <Route path="/login" component={LoginPage} />
-        <Route path="*" component={LoginPage} />
+        <Route path="*" component={Pricing} />
       </Switch>
     );
   }
@@ -35,6 +41,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/subscribe/:planId" component={Subscribe} />
+      <Route path="/subscription-success" component={SubscriptionSuccess} />
       <Route path="/login" component={Home} />
       <Route path="*" component={NotFound} />
     </Switch>

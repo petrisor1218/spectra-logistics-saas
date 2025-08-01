@@ -5,6 +5,17 @@ import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrder
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
 import connectPg from 'connect-pg-simple';
+import Stripe from "stripe";
+
+let stripe: Stripe | null = null;
+
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2023-10-16",
+  });
+} else {
+  console.warn('STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
+}
 
 // Create default user if it doesn't exist
 async function createDefaultUser() {
@@ -682,6 +693,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating company balance payment:", error);
       res.status(500).json({ message: "Failed to update payment" });
+    }
+  });
+
+  // Stripe subscription routes
+  app.post("/api/create-subscription", async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ 
+          error: "Stripe not configured", 
+          message: "Please set STRIPE_SECRET_KEY" 
+        });
+      }
+
+      const { planId, trialDays } = req.body;
+      
+      // Plan pricing mapping
+      const planPricing = {
+        basic: { price: 2900 }, // 29 EUR in cents
+        professional: { price: 7900 } // 79 EUR in cents
+      };
+
+      const plan = planPricing[planId as keyof typeof planPricing];
+      if (!plan) {
+        return res.status(400).json({ error: "Invalid plan" });
+      }
+
+      // Create payment intent for subscription with trial
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: plan.price,
+        currency: "eur",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          planId,
+          trialDays: trialDays.toString(),
+          type: 'subscription'
+        }
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ 
+        error: "Error creating subscription", 
+        message: error.message 
+      });
+    }
+  });
+
+  // Webhook endpoint for Stripe events
+  app.post("/api/stripe-webhook", async (req, res) => {
+    try {
+      // Handle Stripe webhook events for subscription updates
+      const event = req.body;
+      
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          // Handle successful subscription payment
+          console.log('Subscription payment succeeded:', event.data.object);
+          break;
+        case 'customer.subscription.created':
+          // Handle new subscription
+          console.log('New subscription created:', event.data.object);
+          break;
+        case 'customer.subscription.updated':
+          // Handle subscription updates
+          console.log('Subscription updated:', event.data.object);
+          break;
+        default:
+          console.log('Unhandled event type:', event.type);
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Webhook error:", error);
+      res.status(400).json({ error: "Webhook failed" });
     }
   });
 
