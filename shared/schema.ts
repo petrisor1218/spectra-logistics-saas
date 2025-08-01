@@ -63,7 +63,6 @@ export const weeklyProcessing = pgTable("weekly_processing", {
   tripData: jsonb("trip_data"), // Raw TRIP file content
   invoice7Data: jsonb("invoice7_data"), // Raw 7-day invoice content  
   invoice30Data: jsonb("invoice30_data"), // Raw 30-day invoice content
-  tenantId: varchar("tenant_id", { length: 100 }), // Multi-tenant isolation
 });
 
 // New table for historical VRID tracking
@@ -86,7 +85,6 @@ export const payments = pgTable("payments", {
   paymentDate: timestamp("payment_date").defaultNow(),
   weekLabel: varchar("week_label", { length: 100 }).notNull(),
   paymentType: varchar("payment_type", { length: 50 }).default("partial"), // 'partial' or 'full'
-  tenantId: varchar("tenant_id", { length: 100 }), // Multi-tenant isolation
 });
 
 // New table for company balances tracking
