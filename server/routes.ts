@@ -1167,6 +1167,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Webhook endpoint for Stripe events
+  // Card verification endpoint - test with small amount then cancel
+  app.post("/api/verify-card", async (req, res) => {
+    try {
+      const { paymentMethodId, amount, currency } = req.body;
+
+      if (!stripe) {
+        return res.status(500).json({ error: "Stripe not configured" });
+      }
+
+      // Create a payment intent to test the card
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount), // amount in cents
+        currency: currency || 'usd',
+        payment_method: paymentMethodId,
+        confirm: true,
+        return_url: `${req.protocol}://${req.get('host')}/subscription-success`,
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: 'never'
+        }
+      });
+
+      // If successful, return the payment intent ID so we can cancel it
+      res.json({ 
+        success: true, 
+        paymentIntentId: paymentIntent.id,
+        status: paymentIntent.status 
+      });
+
+    } catch (error: any) {
+      console.error("Card verification error:", error);
+      
+      // Return user-friendly error messages
+      let errorMessage = "Card verification failed";
+      if (error.code === 'card_declined') {
+        errorMessage = "Cardul a fost respins de către bancă";
+      } else if (error.code === 'insufficient_funds') {
+        errorMessage = "Fonduri insuficiente pe card";
+      } else if (error.code === 'incorrect_cvc') {
+        errorMessage = "Codul CVC este incorect";
+      } else if (error.code === 'expired_card') {
+        errorMessage = "Cardul a expirat";
+      } else if (error.code === 'incorrect_number') {
+        errorMessage = "Numărul cardului este incorect";
+      }
+
+      res.status(400).json({ error: errorMessage });
+    }
+  });
+
+  // Cancel payment endpoint - immediately cancel the test payment
+  app.post("/api/cancel-payment", async (req, res) => {
+    try {
+      const { paymentIntentId } = req.body;
+
+      if (!stripe) {
+        return res.status(500).json({ error: "Stripe not configured" });
+      }
+
+      // Cancel the payment intent immediately
+      const canceledPayment = await stripe.paymentIntents.cancel(paymentIntentId);
+
+      res.json({ 
+        success: true, 
+        status: canceledPayment.status 
+      });
+
+    } catch (error: any) {
+      console.error("Payment cancellation error:", error);
+      res.status(400).json({ error: "Failed to cancel payment" });
+    }
+  });
+
   app.post("/api/stripe-webhook", async (req, res) => {
     try {
       // Handle Stripe webhook events for subscription updates

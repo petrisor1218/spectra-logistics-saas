@@ -221,7 +221,13 @@ function RegisterForm() {
         return;
       }
 
-      // Verific că cardul este complet și valid
+      // VERIFICARE COMPLETĂ STRIPE: Validez cardul prin încercare de plată $0.50 + anulare
+      toast({
+        title: "Se verifică cardul...",
+        description: "Validăm cardul cu Stripe (fără taxare)",
+        variant: "default",
+      });
+
       const { error: cardError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardNumberElement,
@@ -244,6 +250,50 @@ function RegisterForm() {
         toast({
           title: "Eroare",
           description: "Te rog completează toate detaliile cardului",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // TESTEZ CARDUL CU O PLATĂ MICĂ PENTRU VALIDARE REALĂ
+      try {
+        const testPaymentResponse = await fetch('/api/verify-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentMethodId: paymentMethod.id,
+            amount: 50, // $0.50 pentru test
+            currency: 'usd'
+          })
+        });
+
+        const testResult = await testPaymentResponse.json();
+        
+        if (!testPaymentResponse.ok) {
+          throw new Error(testResult.error || 'Card verification failed');
+        }
+
+        // ANULEAZĂ IMEDIAT PLATA DE TEST
+        if (testResult.paymentIntentId) {
+          await fetch('/api/cancel-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentIntentId: testResult.paymentIntentId
+            })
+          });
+        }
+
+        toast({
+          title: "✅ Card validat cu succes!",
+          description: "Cardul este valid și poate fi folosit pentru plăți",
+          variant: "default",
+        });
+
+      } catch (verificationError: any) {
+        toast({
+          title: "Card respins",
+          description: verificationError.message || "Cardul nu poate fi folosit pentru plăți. Te rog încearcă alt card.",
           variant: "destructive",
         });
         return;
