@@ -550,6 +550,12 @@ function RegisterForm() {
                 <strong>Obligatoriu:</strong> Cardul este necesar pentru verificarea identității. Nu vei fi taxat în perioada de probă de 3 zile.
               </p>
               
+              <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 mb-4">
+                <p className="text-blue-200 text-xs">
+                  <strong>Pentru testare folosește:</strong> 4242 4242 4242 4242, orice CVC (ex: 123), orice dată viitoare (ex: 12/30)
+                </p>
+              </div>
+              
               <div className="space-y-4">
                 {/* Card Number */}
                 <div>

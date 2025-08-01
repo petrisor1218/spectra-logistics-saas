@@ -1202,7 +1202,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return user-friendly error messages
       let errorMessage = "Card verification failed";
       if (error.code === 'card_declined') {
-        errorMessage = "Cardul a fost respins de către bancă";
+        if (error.decline_code === 'test_mode_live_card') {
+          errorMessage = "Pentru testare, folosește carduri de test Stripe: 4242 4242 4242 4242 (orice CVC/dată viitoare)";
+        } else {
+          errorMessage = "Cardul a fost respins de către bancă";
+        }
       } else if (error.code === 'insufficient_funds') {
         errorMessage = "Fonduri insuficiente pe card";
       } else if (error.code === 'incorrect_cvc') {
