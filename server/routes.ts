@@ -584,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } 
       
       // Additional fallback check
-      if (false) {
+      if (!user.tenantId && user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor') {
         // Safety fallback
         processing = weekLabel ? null : [];
         console.log(`⚠️ Unknown user ${user.username} - no weekly processing access`);
@@ -1066,7 +1066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      let companies;
+      let companies: any[];
 
       // Apply tenant isolation for companies
       if (user.tenantId) {
@@ -1153,7 +1153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      let drivers, companies;
+      let drivers: any[], companies: any[];
 
       // Apply tenant isolation for drivers
       if (user.tenantId) {
