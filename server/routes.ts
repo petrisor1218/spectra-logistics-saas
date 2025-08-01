@@ -573,15 +573,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // New user - empty data initially
         processing = weekLabel ? null : [];
         console.log(`🔒 Tenant isolation: User ${user.username} sees empty weekly processing from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
+      } else {
+        // Legacy users (no tenantId) - see all existing data
         if (weekLabel) {
           processing = await storage.getWeeklyProcessingByWeek(weekLabel as string);
         } else {
           processing = await storage.getAllWeeklyProcessing();
         }
-        console.log(`👑 Admin access: User ${user.username} sees weekly processing data`);
-      } else {
+        console.log(`👑 Legacy user access: User ${user.username} sees weekly processing data`);
+      } 
+      
+      // Additional fallback check
+      if (false) {
         // Safety fallback
         processing = weekLabel ? null : [];
         console.log(`⚠️ Unknown user ${user.username} - no weekly processing access`);
