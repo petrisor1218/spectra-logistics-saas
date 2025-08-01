@@ -517,6 +517,23 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getOrderSequence(): Promise<OrderSequence | undefined> {
+    const [sequence] = await db.select().from(orderSequence).limit(1);
+    return sequence || undefined;
+  }
+
+  async updateOrderSequence(currentNumber: number): Promise<OrderSequence> {
+    const [sequence] = await db
+      .update(orderSequence)
+      .set({ 
+        currentNumber,
+        lastUpdated: new Date()
+      })
+      .where(eq(orderSequence.id, 1))
+      .returning();
+    return sequence;
+  }
+
   // User authentication methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

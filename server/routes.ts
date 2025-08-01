@@ -623,6 +623,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Order sequence management routes
+  app.get("/api/order-sequence", async (req, res) => {
+    try {
+      const sequence = await storage.getOrderSequence();
+      if (!sequence) {
+        // Initialize if not exists
+        await storage.initializeOrderSequence();
+        const newSequence = await storage.getOrderSequence();
+        res.json(newSequence);
+      } else {
+        res.json(sequence);
+      }
+    } catch (error) {
+      console.error("Error getting order sequence:", error);
+      res.status(500).json({ error: "Failed to get order sequence" });
+    }
+  });
+
+  app.put("/api/order-sequence", async (req: any, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Only admin can modify order sequence
+      if (user.role !== 'admin' && user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor') {
+        return res.status(403).json({ error: 'Access denied - admin only' });
+      }
+
+      const { currentNumber } = req.body;
+      if (!currentNumber || currentNumber < 1) {
+        return res.status(400).json({ error: 'Current number must be greater than 0' });
+      }
+
+      const updatedSequence = await storage.updateOrderSequence(currentNumber);
+      res.json(updatedSequence);
+    } catch (error) {
+      console.error("Error updating order sequence:", error);
+      res.status(500).json({ error: "Failed to update order sequence" });
+    }
+  });
+
   // Admin routes for subscription management
   app.get("/api/admin/subscribers", async (req, res) => {
     try {
