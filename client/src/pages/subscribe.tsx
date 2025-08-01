@@ -69,11 +69,9 @@ function SubscribeForm({ planId }: { planId: string }) {
 
     try {
       // Pentru Setup Intent (trial), folosim confirmSetup în loc de confirmPayment
-      const { error } = await stripe.confirmSetup({
+      const { error, setupIntent } = await stripe.confirmSetup({
         elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/subscription-success`,
-        },
+        redirect: 'if_required',
       });
 
       if (error) {
@@ -91,12 +89,16 @@ function SubscribeForm({ planId }: { planId: string }) {
             variant: "destructive",
           });
         }
-      } else {
+      } else if (setupIntent?.status === 'succeeded') {
         toast({
           title: "Perioada de probă activată!",
           description: `${plan.trialDays} zile gratuite au început`,
           variant: "default",
         });
+        // Redirecționare manuală după succes
+        setTimeout(() => {
+          window.location.href = '/subscription-success';
+        }, 1500);
       }
     } catch (err: any) {
       console.error("Setup error:", err);
