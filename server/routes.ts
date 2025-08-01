@@ -1291,14 +1291,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // New user - empty data initially
         balances = [];
         console.log(`🔒 Tenant isolation: User ${user.username} sees ${balances.length} balances from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
-        balances = await storage.getCompanyBalances();
-        console.log(`👑 Admin access: User ${user.username} sees ${balances.length} balances`);
       } else {
-        // Safety fallback
-        balances = [];
-        console.log(`⚠️ Unknown user ${user.username} - no balance access`);
+        // Legacy users (no tenantId) - see all existing data
+        balances = await storage.getCompanyBalances();
+        console.log(`👑 Legacy user access: User ${user.username} sees ${balances.length} balances`);
       }
 
       res.json(balances);

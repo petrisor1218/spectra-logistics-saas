@@ -100,7 +100,6 @@ export const companyBalances = pgTable("company_balances", {
   paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // 'pending', 'partial', 'paid'
   lastUpdated: timestamp("last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-  tenantId: varchar("tenant_id", { length: 100 }), // Multi-tenant isolation
 });
 
 export const paymentHistory = pgTable("payment_history", {
