@@ -15,13 +15,16 @@ import { apiRequest } from "@/lib/queryClient";
 const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_demo';
 console.log('Frontend Stripe key starts with:', stripePublicKey.substring(0, 7));
 
-// Verifică că este cheia publică corectă
-if (stripePublicKey.startsWith('sk_')) {
-  console.error('⚠️ SECURITY ERROR: Secret key found in frontend! Using demo mode.');
-  const stripePromise = null;
-} else {
-  const stripePromise = stripePublicKey !== 'pk_test_demo' ? loadStripe(stripePublicKey) : null;
-}
+// Verifică că este cheia publică corectă și creează stripePromise
+const stripePromise = (() => {
+  if (stripePublicKey.startsWith('sk_')) {
+    console.error('⚠️ SECURITY ERROR: Secret key found in frontend! Using demo mode.');
+    return null;
+  } else if (stripePublicKey !== 'pk_test_demo') {
+    return loadStripe(stripePublicKey);
+  }
+  return null;
+})();
 
 const planDetails = {
   professional: {
