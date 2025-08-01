@@ -288,9 +288,16 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
       } else {
         toast({
           title: "Cont creat cu succes!",
-          description: "Bun venit la Transport Pro! Perioada ta de probă a început.",
+          description: "Bun venit la Transport Pro! Redirecționez către login...",
         });
-        onSuccess();
+        
+        // Disable form to prevent double submission
+        setIsProcessing(true);
+        
+        // Redirect to login page after 2 seconds
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
       }
     } catch (error: any) {
       let errorMessage = "A apărut o eroare. Te rog încearcă din nou.";
