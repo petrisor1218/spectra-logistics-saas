@@ -77,7 +77,8 @@ function SubscribeForm({ planId }: { planId: string }) {
       });
 
       if (error) {
-        if (error.message.includes("test mode") || error.message.includes("test card")) {
+        const errorMessage = error.message || "Eroare necunoscută";
+        if (errorMessage.includes("test mode") || errorMessage.includes("test card") || errorMessage.includes("declined")) {
           toast({
             title: "Card invalid pentru test",
             description: "Folosește unul dintre cardurile de test Stripe afișate mai sus",
@@ -86,7 +87,7 @@ function SubscribeForm({ planId }: { planId: string }) {
         } else {
           toast({
             title: "Eroare la configurarea abonamentului",
-            description: error.message,
+            description: errorMessage,
             variant: "destructive",
           });
         }
@@ -97,10 +98,11 @@ function SubscribeForm({ planId }: { planId: string }) {
           variant: "default",
         });
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("Setup error:", err);
       toast({
         title: "Eroare",
-        description: "A apărut o problemă la procesarea abonamentului",
+        description: err?.message || "A apărut o problemă la procesarea abonamentului",
         variant: "destructive",
       });
     } finally {
