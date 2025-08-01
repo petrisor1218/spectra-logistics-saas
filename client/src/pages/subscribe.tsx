@@ -163,9 +163,9 @@ function SubscribeForm({ planId }: { planId: string }) {
       {/* Payment Form */}
       <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
         <CardHeader>
-          <CardTitle>Finalizează abonamentul</CardTitle>
+          <CardTitle>Activează perioada de probă</CardTitle>
           <p className="text-gray-300">
-            Vei fi facturat după perioada de probă de {plan.trialDays} zile
+            🎁 Fără plată acum - facturarea începe după {plan.trialDays} zile
           </p>
         </CardHeader>
         <CardContent>
@@ -199,7 +199,7 @@ function SubscribeForm({ planId }: { planId: string }) {
                     Se procesează...
                   </>
                 ) : (
-                  `Începe perioada de probă (${plan.trialDays} zile gratuite)`
+                  `🎁 Activează ${plan.trialDays} zile gratuite`
                 )}
               </Button>
             </div>
@@ -236,6 +236,7 @@ export default function Subscribe() {
     })
       .then((response) => response.json())
       .then((data) => {
+        console.log(`✅ Trial setup created for ${data.trialDays || 3} days - no charge during trial`);
         setClientSecret(data.clientSecret);
       })
       .catch((error) => {

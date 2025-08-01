@@ -710,33 +710,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { planId, trialDays } = req.body;
+      const { planId, trialDays = 3 } = req.body;
       
-      // Plan pricing mapping
-      const planPricing = {
-        professional: { price: 9999 } // 99.99 EUR in cents
-      };
-
-      const plan = planPricing[planId as keyof typeof planPricing];
-      if (!plan) {
-        return res.status(400).json({ error: "Invalid plan" });
-      }
-
-      // Create payment intent for subscription with trial
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: plan.price,
-        currency: "eur",
-        automatic_payment_methods: {
-          enabled: true,
-        },
+      // Creează customer pentru user-ul curent (dacă nu există)
+      const customer = await stripe.customers.create({
+        email: `test@example.com`, // În producție, va fi email-ul real al user-ului
         metadata: {
           planId,
-          trialDays: trialDays.toString(),
-          type: 'subscription'
+          userId: 'demo-user'
         }
       });
 
-      res.json({ clientSecret: paymentIntent.client_secret });
+      // Pentru perioada de probă, creează un Setup Intent (nu Payment Intent)
+      // Aceasta va salva metoda de plată fără să perceapă bani
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customer.id,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+        metadata: {
+          planId,
+          trialDays: trialDays.toString(),
+          type: 'trial_setup'
+        }
+      });
+
+      console.log(`✅ Created trial setup for ${trialDays} days - no charge during trial`);
+      res.json({ 
+        clientSecret: setupIntent.client_secret,
+        customerId: customer.id,
+        trialDays 
+      });
     } catch (error: any) {
       console.error("Error creating subscription:", error);
       res.status(500).json({ 
