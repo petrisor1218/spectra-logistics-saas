@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Check, X, Loader2, CreditCard } from 'lucide-react';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY!);
 
 interface FormData {
   username: string;
@@ -16,7 +21,7 @@ interface FormData {
   companyName: string;
 }
 
-export default function SimpleRegister() {
+function RegisterForm() {
   const [formData, setFormData] = useState<FormData>({
     username: '',
     email: '',
@@ -34,8 +39,11 @@ export default function SimpleRegister() {
   const [emailCheck, setEmailCheck] = useState<{ available: boolean; message: string } | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string>('');
   
   const { toast } = useToast();
+  const stripe = useStripe();
+  const elements = useElements();
 
   // Debounced username check
   useEffect(() => {
@@ -158,16 +166,41 @@ export default function SimpleRegister() {
     return true;
   };
 
+  // Create Stripe setup intent when form is ready
+  useEffect(() => {
+    if (formData.username && formData.email && usernameCheck?.available && emailCheck?.available) {
+      createSetupIntent();
+    }
+  }, [formData.username, formData.email, usernameCheck, emailCheck]);
+
+  const createSetupIntent = async () => {
+    try {
+      const response = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: 'professional', trialDays: 3 })
+      });
+      
+      if (response.ok) {
+        const { clientSecret } = await response.json();
+        setClientSecret(clientSecret);
+      }
+    } catch (error) {
+      console.log('Stripe setup will be handled later');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
+    if (!stripe || !elements) return;
     
     setIsSubmitting(true);
 
     try {
-      // Direct registration without reservation system
-      const response = await fetch('/api/auth/register', {
+      // First, create the user account
+      const userResponse = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -182,9 +215,31 @@ export default function SimpleRegister() {
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!userResponse.ok) {
+        const errorData = await userResponse.json();
         throw new Error(errorData.error || 'Failed to create account');
+      }
+
+      // Then setup payment method for trial (no charge)
+      if (clientSecret) {
+        const cardElement = elements.getElement(CardElement);
+        if (cardElement) {
+          const { error } = await stripe.confirmSetup({
+            elements,
+            confirmParams: {
+              return_url: `${window.location.origin}/subscription-success`,
+            },
+          });
+
+          if (error) {
+            toast({
+              title: "Eroare la configurarea plății",
+              description: error.message,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
       }
 
       toast({
@@ -385,10 +440,41 @@ export default function SimpleRegister() {
               />
             </div>
 
+            {/* Payment Information */}
+            <div className="border-t border-white/20 pt-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <CreditCard className="w-5 h-5 text-blue-400" />
+                <Label className="text-white text-lg font-semibold">Detalii card (pentru trial)</Label>
+              </div>
+              <p className="text-gray-300 text-sm mb-4">
+                Nu vei fi taxat în perioada de probă de 3 zile. Cardul va fi folosit doar după expirarea trial-ului.
+              </p>
+              
+              <div className="bg-white/5 border border-white/20 rounded-lg p-4">
+                <CardElement
+                  options={{
+                    style: {
+                      base: {
+                        fontSize: '16px',
+                        color: '#ffffff',
+                        '::placeholder': {
+                          color: '#9ca3af',
+                        },
+                        backgroundColor: 'transparent',
+                      },
+                      invalid: {
+                        color: '#ef4444',
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isSubmitting || (usernameCheck?.available === false) || (emailCheck?.available === false)}
+              disabled={isSubmitting || (usernameCheck?.available === false) || (emailCheck?.available === false) || !stripe}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold"
             >
               {isSubmitting ? (
@@ -397,9 +483,13 @@ export default function SimpleRegister() {
                   Se creează contul...
                 </>
               ) : (
-                'Creează cont gratuit'
+                'Începe perioada de probă (3 zile gratuit)'
               )}
             </Button>
+            
+            <p className="text-xs text-gray-400 text-center">
+              Făcând click, accepți termenii și condițiile. Nu vei fi taxat în primul 3 zile.
+            </p>
 
             {/* Login Link */}
             <div className="text-center pt-4">
@@ -417,5 +507,13 @@ export default function SimpleRegister() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SimpleRegister() {
+  return (
+    <Elements stripe={stripePromise}>
+      <RegisterForm />
+    </Elements>
   );
 }
