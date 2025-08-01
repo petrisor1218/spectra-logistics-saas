@@ -32,6 +32,11 @@ interface UsernameCheckResult {
   message?: string;
 }
 
+interface EmailCheckResult {
+  available: boolean;
+  message?: string;
+}
+
 const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -43,6 +48,9 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [usernameCheck, setUsernameCheck] = useState<UsernameCheckResult | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameTimeout, setUsernameTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [emailCheck, setEmailCheck] = useState<EmailCheckResult | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailTimeout, setEmailTimeout] = useState<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState<RegistrationForm>({
     username: '',
@@ -77,6 +85,29 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
     }
   };
 
+  const checkEmailAvailability = async (email: string) => {
+    if (!email.trim() || !email.includes('@')) {
+      setEmailCheck(null);
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    try {
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      
+      const result = await response.json();
+      setEmailCheck(result);
+    } catch (error) {
+      setEmailCheck({ available: false, message: 'Eroare la verificare' });
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
+
   const validateStep1 = () => {
     if (!formData.username.trim()) {
       toast({
@@ -98,6 +129,14 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
       toast({
         title: "Email invalid",
         description: "Te rog introdu o adresă de email validă",
+        variant: "destructive"
+      });
+      return false;
+    }
+    if (emailCheck && !emailCheck.available) {
+      toast({
+        title: "Email indisponibil",
+        description: "Această adresă de email este deja înregistrată",
         variant: "destructive"
       });
       return false;
@@ -202,9 +241,17 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
         onSuccess();
       }
     } catch (error: any) {
+      let errorMessage = "A apărut o eroare. Te rog încearcă din nou.";
+      
+      if (error.message.includes('Username already exists')) {
+        errorMessage = "Acest nume de utilizator este deja folosit. Te rog alege altul.";
+      } else if (error.message.includes('Email already exists')) {
+        errorMessage = "Această adresă de email este deja înregistrată. Te rog folosește altă adresă.";
+      }
+      
       toast({
         title: "Eroare la înregistrare",
-        description: error.message || "A apărut o eroare. Te rog încearcă din nou.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -312,14 +359,55 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
                   <Mail className="w-4 h-4" />
                   Email
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="bg-gray-800 border-gray-600 text-white"
-                  placeholder="nume@companie.ro"
-                />
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({...formData, email: value});
+                      
+                      // Clear existing timeout
+                      if (emailTimeout) {
+                        clearTimeout(emailTimeout);
+                      }
+                      
+                      // Reset check status for immediate feedback
+                      setEmailCheck(null);
+                      
+                      // Set new timeout for debounced check
+                      const newTimeout = setTimeout(() => checkEmailAvailability(value), 800);
+                      setEmailTimeout(newTimeout);
+                    }}
+                    className={`bg-gray-800 border-gray-600 text-white pr-10 ${
+                      emailCheck 
+                        ? emailCheck.available 
+                          ? 'border-green-500' 
+                          : 'border-red-500'
+                        : ''
+                    }`}
+                    placeholder="nume@companie.ro"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    {isCheckingEmail && (
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {!isCheckingEmail && emailCheck && (
+                      emailCheck.available ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <X className="w-4 h-4 text-red-500" />
+                      )
+                    )}
+                  </div>
+                </div>
+                {emailCheck && !emailCheck.available && (
+                  <p className="text-xs text-red-400 mt-1">{emailCheck.message}</p>
+                )}
+                {emailCheck && emailCheck.available && (
+                  <p className="text-xs text-green-400 mt-1">Email disponibil</p>
+                )}
               </div>
 
               <div>

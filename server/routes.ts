@@ -627,6 +627,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      const existingEmailUser = await storage.getUserByEmail(email);
+      if (existingEmailUser) {
+        return res.status(400).json({ 
+          error: 'Email already exists' 
+        });
+      }
+
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -988,6 +995,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Webhook error:", error);
       res.status(400).json({ error: "Webhook failed" });
+    }
+  });
+
+  // Email availability check endpoint
+  app.post('/api/auth/check-email', async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email || !email.includes('@')) {
+        return res.json({
+          available: false,
+          message: 'Adresa de email nu este validă'
+        });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      
+      if (existingUser) {
+        res.json({
+          available: false,
+          message: 'Această adresă de email este deja înregistrată'
+        });
+      } else {
+        res.json({
+          available: true,
+          message: 'Email disponibil'
+        });
+      }
+    } catch (error) {
+      console.error('Error checking email:', error);
+      res.status(500).json({
+        available: false,
+        message: 'Eroare la verificarea email-ului'
+      });
     }
   });
 
