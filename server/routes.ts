@@ -1032,6 +1032,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user endpoint (admin only)
+  app.delete('/api/admin/users/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+      }
+
+      // Check if user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Prevent deleting admin users (safety check)
+      if (user.role === 'admin') {
+        return res.status(403).json({ error: 'Cannot delete admin users' });
+      }
+
+      // Delete the user
+      await storage.deleteUser(userId);
+      
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

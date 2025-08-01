@@ -134,29 +134,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteUser = (userId: number) => {
-    if (confirm('Ești sigur că vrei să ștergi acest utilizator?')) {
-      fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
-        .then(response => {
-          if (response.ok) {
-            toast({
-              title: "Utilizator șters",
-              description: "Utilizatorul a fost șters cu succes",
-              variant: "destructive",
-            });
-            window.location.reload();
-          }
-        })
-        .catch(() => {
-          toast({
-            title: "Eroare",
-            description: "Nu s-a putut șterge utilizatorul",
-            variant: "destructive",
-          });
-        });
-    }
-  };
-
   const handleAddSubscriber = () => {
     setEditForm({
       username: '',
@@ -214,6 +191,36 @@ export default function AdminDashboard() {
       description: `Conectez la baza de date pentru utilizatorul ID: ${userId}`,
     });
     console.log('Database access for user:', userId);
+  };
+
+  const handleDeleteUser = async (userId: number, username: string) => {
+    if (!confirm(`Ești sigur că vrei să ștergi utilizatorul "${username}"? Această acțiune nu poate fi anulată.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Utilizator șters",
+          description: `Utilizatorul "${username}" a fost șters cu succes`,
+        });
+        // Refresh the data
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Eroare",
+        description: error.message || "Nu s-a putut șterge utilizatorul",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredSubscribers = subscribers.filter((user: User) => {
@@ -464,6 +471,15 @@ export default function AdminDashboard() {
                                   title="Editare utilizator"
                                 >
                                   <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                                  onClick={() => handleDeleteUser(user.id, user.username)}
+                                  title="Șterge utilizator"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </Button>
                               </div>
                             </td>
