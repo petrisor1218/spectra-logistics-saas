@@ -7,12 +7,19 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: varchar("username", { length: 100 }).notNull().unique(),
   password: text("password").notNull(),
+  email: varchar("email", { length: 255 }).unique(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  role: varchar("role", { length: 20 }).notNull().default("subscriber"), // admin, subscriber
+  tenantId: varchar("tenant_id", { length: 100 }).unique(), // UUID pentru baza de date separată
+  companyName: varchar("company_name", { length: 200 }), // Numele companiei utilizatorului
   // Stripe fields for subscription management
   stripeCustomerId: varchar("stripe_customer_id", { length: 100 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 100 }),
   subscriptionStatus: varchar("subscription_status", { length: 50 }).default("inactive"), // inactive, trialing, active, canceled
   trialEndsAt: timestamp("trial_ends_at"),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -28,6 +35,7 @@ export const companies = pgTable("companies", {
   county: varchar("county", { length: 100 }),
   country: varchar("country", { length: 100 }).default("Romania"),
   contact: text("contact"),
+  tenantId: varchar("tenant_id", { length: 100 }), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 

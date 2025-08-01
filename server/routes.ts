@@ -477,6 +477,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes for subscription management
+  app.get("/api/admin/subscribers", async (req, res) => {
+    try {
+      const subscribers = await storage.getAllUsers();
+      res.json(subscribers);
+    } catch (error) {
+      console.error("Error fetching subscribers:", error);
+      res.status(500).json({ error: "Failed to fetch subscribers" });
+    }
+  });
+
+  app.get("/api/admin/analytics", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const analytics = {
+        totalSubscribers: users.length,
+        activeSubscriptions: users.filter(u => u.subscriptionStatus === 'active').length,
+        trialUsers: users.filter(u => u.subscriptionStatus === 'trialing').length,
+        monthlyRevenue: users.filter(u => u.subscriptionStatus === 'active').length * 99.99
+      };
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get("/api/admin/subscriber/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "Subscriber not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching subscriber:", error);
+      res.status(500).json({ error: "Failed to fetch subscriber" });
+    }
+  });
+
+  app.put("/api/admin/subscriber/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const updatedUser = await storage.updateUser(id, updateData);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating subscriber:", error);
+      res.status(500).json({ error: "Failed to update subscriber" });
+    }
+  });
+
   app.post("/api/transport-orders", async (req, res) => {
     try {
       console.log("Received transport order data:", req.body);

@@ -11,6 +11,7 @@ import NotFound from "@/pages/not-found";
 import Pricing from "@/pages/pricing";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -42,6 +43,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
