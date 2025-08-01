@@ -65,7 +65,7 @@ class TenantDatabaseManager {
   // Creează toate tabelele în schema tenant-ului
   private async createTenantTables(schemaName: string): Promise<void> {
     const createTableQueries = [
-      // Companies table
+      // Companies table (fără tenant_id pentru că schema este deja separată)
       sql`CREATE TABLE IF NOT EXISTS ${sql.identifier(schemaName)}.companies (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -173,7 +173,7 @@ class TenantDatabaseManager {
   // Inițializează datele default pentru tenant
   private async initializeTenantData(tenantDb: ReturnType<typeof drizzle>): Promise<void> {
     try {
-      // Adaugă compania default
+      // Adaugă compania default (fără tenant_id pentru că schema este deja separată)
       await tenantDb.insert(schema.companies).values({
         name: 'SC FAST & EXPRESS SRL',
         commissionRate: '0.02',

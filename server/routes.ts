@@ -1,7 +1,16 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema } from "@shared/schema";
+import { 
+  companies, 
+  drivers, 
+  insertPaymentSchema, 
+  insertWeeklyProcessingSchema, 
+  insertTransportOrderSchema, 
+  insertCompanySchema, 
+  insertDriverSchema, 
+  insertUserSchema 
+} from "@shared/schema";
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
 import connectPg from 'connect-pg-simple';
@@ -290,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company routes with tenant isolation
+  // Company routes with separate tenant databases
   app.get("/api/companies", async (req: any, res) => {
     try {
       if (!req.session?.userId) {
@@ -302,30 +311,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      // Apply tenant isolation for new users
-      let companies: any[] = [];
-      if (user.tenantId && user.tenantId !== null) {
-        // New user - see only their isolated data (empty initially)
-        companies = await storage.getAllCompanies(user.tenantId);
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${companies.length} companies from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
-        companies = await storage.getAllCompanies();
-        console.log(`👑 Admin access: User ${user.username} sees ${companies.length} companies`);
-      } else {
-        // Safety fallback - empty data for unknown users
-        companies = [];
-        console.log(`⚠️ Unknown user ${user.username} - no data access`);
+      // Pentru utilizatorii existenți fără tenantId, întoarce datele vechi temporar
+      if (!user.tenantId) {
+        console.log(`⚠️ Legacy user ${user.username} - using old system temporarily`);
+        const companies = await storage.getAllCompanies();
+        return res.json(companies);
       }
 
-      res.json(companies);
+      console.log(`🏢 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
+      
+      try {
+        // Obține baza de date separată pentru tenant
+        const { tenantDatabaseManager } = await import('./tenant-database.js');
+        const tenantDb = await tenantDatabaseManager.getTenantDatabase(user.tenantId);
+        
+        const companiesData = await tenantDb.select().from(companies);
+        console.log(`✅ Separate DB: User ${user.username} sees ${companiesData.length} companies from separate database`);
+        res.json(companiesData);
+      } catch (dbError) {
+        console.error(`❌ Error accessing tenant database for ${user.username}:`, dbError);
+        // Fallback pentru erori de bază de date
+        console.log(`🔄 Fallback: Using old system for ${user.username}`);
+        const companies = await storage.getAllCompanies();
+        res.json(companies);
+      }
     } catch (error) {
-      console.error('Error fetching companies:', error);
+      console.error("Error fetching companies:", error);
       res.status(500).json({ error: "Failed to fetch companies" });
     }
   });
 
-  // Driver routes with tenant isolation
+  // Driver routes with separate tenant databases
   app.get("/api/drivers", async (req: any, res) => {
     try {
       if (!req.session?.userId) {
@@ -337,21 +353,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      // Apply tenant isolation
-      let drivers: any[] = [];
-      if (user.tenantId) {
-        // New user - empty data initially
-        drivers = [];
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${drivers.length} drivers from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
-        drivers = await storage.getAllDrivers();
-        console.log(`👑 Admin access: User ${user.username} sees ${drivers.length} drivers`);
-      } else {
-        drivers = [];
+      // Pentru utilizatorii existenți fără tenantId, întoarce datele vechi temporar
+      if (!user.tenantId) {
+        console.log(`⚠️ Legacy user ${user.username} - using old system temporarily`);
+        const drivers = await storage.getAllDrivers();
+        return res.json(drivers);
       }
 
-      res.json(drivers);
+      console.log(`👥 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
+      
+      try {
+        // Obține baza de date separată pentru tenant
+        const { tenantDatabaseManager } = await import('./tenant-database.js');
+        const tenantDb = await tenantDatabaseManager.getTenantDatabase(user.tenantId);
+        
+        const driversData = await tenantDb.select().from(drivers);
+        console.log(`✅ Separate DB: User ${user.username} sees ${driversData.length} drivers from separate database`);
+        res.json(driversData);
+      } catch (dbError) {
+        console.error(`❌ Error accessing tenant database for ${user.username}:`, dbError);
+        // Fallback pentru erori de bază de date
+        console.log(`🔄 Fallback: Using old system for ${user.username}`);
+        const drivers = await storage.getAllDrivers();
+        res.json(drivers);
+      }
     } catch (error) {
       console.error('Error fetching drivers:', error);
       res.status(500).json({ error: "Failed to fetch drivers" });
