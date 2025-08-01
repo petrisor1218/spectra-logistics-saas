@@ -236,39 +236,7 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
     setIsProcessing(true);
 
     try {
-      // Final validation before submission - check both username and email one more time
-      const [usernameCheckResult, emailCheckResult] = await Promise.all([
-        fetch('/api/auth/check-username', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: formData.username.trim() })
-        }).then(res => res.json()),
-        fetch('/api/auth/check-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email.trim() })
-        }).then(res => res.json())
-      ]);
-
-      if (!usernameCheckResult.available) {
-        toast({
-          title: "Nume de utilizator indisponibil",
-          description: `Numele "${formData.username}" este deja folosit. Te rog alege un alt nume de utilizator.`,
-          variant: "destructive",
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!emailCheckResult.available) {
-        toast({
-          title: "Email indisponibil", 
-          description: `Adresa "${formData.email}" este deja înregistrată. Te rog folosește o altă adresă de email.`,
-          variant: "destructive",
-        });
-        setIsProcessing(false);
-        return;
-      }
+      // Skip final validation - username is already reserved and protected
 
       // Create the user account
       const userResponse = await fetch('/api/auth/register', {

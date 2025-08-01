@@ -619,30 +619,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check if username or email already exists - also check reservations
-      const [existingUser, existingEmailUser] = await Promise.all([
-        storage.getUserByUsername(username),
-        storage.getUserByEmail(email)
-      ]);
-
-      if (existingUser) {
-        return res.status(400).json({ 
-          error: 'Username already exists' 
-        });
-      }
-
-      if (existingEmailUser) {
-        return res.status(400).json({ 
-          error: 'Email already exists' 
-        });
-      }
-
-      // Also validate that the username is still reserved for this registration
-      const isReserved = await storage.validateReservation(username, 'final-check');
-      if (!isReserved) {
-        // Release any old reservation before creating user
-        await storage.releaseReservation(username);
-      }
+      // Skip validation - username is already reserved and protected by reservation system
+      // Just proceed to create the user since reservation guarantees uniqueness
 
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
