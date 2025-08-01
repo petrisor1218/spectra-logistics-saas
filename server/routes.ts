@@ -619,19 +619,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check if username or email already exists
-      const existingUser = await storage.getUserByUsername(username);
+      // Check if username or email already exists - also check reservations
+      const [existingUser, existingEmailUser] = await Promise.all([
+        storage.getUserByUsername(username),
+        storage.getUserByEmail(email)
+      ]);
+
       if (existingUser) {
         return res.status(400).json({ 
           error: 'Username already exists' 
         });
       }
 
-      const existingEmailUser = await storage.getUserByEmail(email);
       if (existingEmailUser) {
         return res.status(400).json({ 
           error: 'Email already exists' 
         });
+      }
+
+      // Also validate that the username is still reserved for this registration
+      const isReserved = await storage.validateReservation(username, 'final-check');
+      if (!isReserved) {
+        // Release any old reservation before creating user
+        await storage.releaseReservation(username);
       }
 
       // Hash the password
@@ -649,6 +659,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionStatus
       });
 
+      // Release the username reservation after successful creation
+      await storage.releaseReservation(username);
+
       // Don't return the password in the response
       const { password: _, ...userResponse } = newUser;
 
@@ -659,6 +672,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error registering user:', error);
       res.status(500).json({ error: 'Failed to register user' });
+    }
+  });
+
+  // Username reservation endpoint (to prevent race conditions)
+  app.post('/api/auth/reserve-username', async (req, res) => {
+    try {
+      const { username, email } = req.body;
+
+      if (!username || !email) {
+        return res.status(400).json({
+          error: 'Username and email are required'
+        });
+      }
+
+      // Check if username or email already exists in main users table
+      const [existingUser, existingEmailUser] = await Promise.all([
+        storage.getUserByUsername(username),
+        storage.getUserByEmail(email)
+      ]);
+
+      if (existingUser) {
+        return res.status(400).json({ 
+          error: 'Username already exists' 
+        });
+      }
+
+      if (existingEmailUser) {
+        return res.status(400).json({ 
+          error: 'Email already exists' 
+        });
+      }
+
+      // Reserve the username
+      const token = await storage.reserveUsername(username, email);
+
+      res.json({
+        success: true,
+        token,
+        message: 'Username reserved successfully'
+      });
+    } catch (error) {
+      console.error('Error reserving username:', error);
+      res.status(400).json({ 
+        error: 'Username or email already taken' 
+      });
     }
   });
 

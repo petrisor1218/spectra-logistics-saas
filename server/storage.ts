@@ -8,6 +8,7 @@ import {
   historicalTrips,
   orderSequence,
   companyBalances,
+  usernameReservations,
   type User, 
   type InsertUser,
   type Company,
@@ -28,7 +29,9 @@ import {
   type OrderSequence,
   type InsertOrderSequence,
   type CompanyBalance,
-  type InsertCompanyBalance
+  type InsertCompanyBalance,
+  type UsernameReservation,
+  type InsertUsernameReservation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -39,6 +42,11 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Username reservation methods (to prevent race conditions)
+  reserveUsername(username: string, email: string): Promise<string>; // Returns reservation token
+  validateReservation(username: string, token: string): Promise<boolean>;
+  releaseReservation(username: string): Promise<void>;
   
   // Company methods
   getAllCompanies(): Promise<Company[]>;
@@ -112,12 +120,55 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  // Username reservation methods to prevent race conditions
+  async reserveUsername(username: string, email: string): Promise<string> {
+    // Clean up expired reservations first
+    await db.delete(usernameReservations).where(sql`expires_at < NOW()`);
+    
+    // Generate a simple token (timestamp-based)
+    const token = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    try {
+      await db.insert(usernameReservations).values({
+        username,
+        email,
+        expiresAt,
+      });
+      return token;
+    } catch (error) {
+      // If username is already reserved or exists, throw error
+      throw new Error('Username already reserved or taken');
+    }
+  }
+
+  async validateReservation(username: string, token: string): Promise<boolean> {
+    // Clean up expired reservations
+    await db.delete(usernameReservations).where(sql`expires_at < NOW()`);
+    
+    const [reservation] = await db
+      .select()
+      .from(usernameReservations)
+      .where(eq(usernameReservations.username, username));
+
+    return !!reservation && new Date() < new Date(reservation.expiresAt);
+  }
+
+  async releaseReservation(username: string): Promise<void> {
+    await db.delete(usernameReservations).where(eq(usernameReservations.username, username));
   }
 
   // Company methods

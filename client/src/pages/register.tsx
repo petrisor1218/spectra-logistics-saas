@@ -51,6 +51,7 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [emailCheck, setEmailCheck] = useState<EmailCheckResult | null>(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [emailTimeout, setEmailTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [reservationToken, setReservationToken] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<RegistrationForm>({
     username: '',
@@ -180,9 +181,46 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && validateStep1()) {
-      setStep(2);
+      // Reserve the username when moving to step 2
+      try {
+        setIsProcessing(true);
+        const response = await fetch('/api/auth/reserve-username', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            username: formData.username.trim(), 
+            email: formData.email.trim() 
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to reserve username');
+        }
+
+        const result = await response.json();
+        setReservationToken(result.token);
+        
+        toast({
+          title: "Username rezervat",
+          description: "Contul tău este acum protejat pentru următorii 10 minute.",
+          variant: "default",
+        });
+
+        setStep(2);
+      } catch (error: any) {
+        toast({
+          title: "Eroare la rezervare",
+          description: error.message.includes('already taken') 
+            ? `Numele "${formData.username}" sau emailul "${formData.email}" au fost luate între timp. Te rog reîncarcă pagina și încearcă din nou.`
+            : "Te rog încearcă din nou.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsProcessing(false);
+      }
     } else if (step === 2 && validateStep2()) {
       setStep(3);
     }

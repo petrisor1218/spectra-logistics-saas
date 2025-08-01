@@ -204,6 +204,18 @@ export const insertOrderSequenceSchema = createInsertSchema(orderSequence).omit(
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// Temporary username reservations to prevent race conditions during registration
+export const usernameReservations = pgTable("username_reservations", {
+  id: serial("id").primaryKey(),
+  username: varchar("username", { length: 50 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
+  reservedAt: timestamp("reserved_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export type UsernameReservation = typeof usernameReservations.$inferSelect;
+export type InsertUsernameReservation = typeof usernameReservations.$inferInsert;
+
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;
 
