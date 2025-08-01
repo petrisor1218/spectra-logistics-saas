@@ -68,7 +68,8 @@ function SubscribeForm({ planId }: { planId: string }) {
     setIsLoading(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
+      // Pentru Setup Intent (trial), folosim confirmSetup în loc de confirmPayment
+      const { error } = await stripe.confirmSetup({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/subscription-success`,
@@ -77,9 +78,15 @@ function SubscribeForm({ planId }: { planId: string }) {
 
       if (error) {
         toast({
-          title: "Eroare la procesarea plății",
+          title: "Eroare la configurarea abonamentului",
           description: error.message,
           variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Perioada de probă activată!",
+          description: `${plan.trialDays} zile gratuite au început`,
+          variant: "default",
         });
       }
     } catch (err) {
