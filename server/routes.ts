@@ -20,7 +20,7 @@ if (stripeSecretKey) {
   const isLive = stripeSecretKey.startsWith('sk_live_');
   console.log(`STRIPE_SECRET_KEY starts with: ${keyStart} (${isLive ? '🔴 LIVE MODE - PLĂȚI REALE' : '🟡 TEST MODE - CARDURI DE TEST'})`);
   stripe = new Stripe(stripeSecretKey, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2025-07-30.basil",
   });
 } else {
   console.warn('⚠️ STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      req.session.userId = user.id;
+      (req.session as any).userId = user.id;
       res.json({ 
         message: 'Login successful', 
         user: { 
@@ -299,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Apply tenant isolation for new users
-      let companies;
+      let companies: any[] = [];
       if (user.tenantId && user.tenantId !== null) {
         // New user - see only their isolated data (empty initially)
         companies = await storage.getAllCompanies(user.tenantId);
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Apply tenant isolation
-      let drivers;
+      let drivers: any[] = [];
       if (user.tenantId) {
         // New user - empty data initially
         drivers = [];
@@ -382,19 +382,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment routes
-  app.get("/api/payments", async (req, res) => {
+  // Payment routes with tenant isolation
+  app.get("/api/payments", async (req: any, res) => {
     try {
-      const { weekLabel } = req.query;
-      
-      if (weekLabel) {
-        const payments = await storage.getPaymentsByWeek(weekLabel as string);
-        res.json(payments);
-      } else {
-        const payments = await storage.getAllPayments();
-        res.json(payments);
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
       }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      const { weekLabel } = req.query;
+      let payments: any[] = [];
+
+      // Apply tenant isolation for payments
+      if (user.tenantId) {
+        // New user - empty data initially
+        payments = [];
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${payments.length} payments from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data
+        if (weekLabel) {
+          payments = await storage.getPaymentsByWeek(weekLabel as string);
+        } else {
+          payments = await storage.getAllPayments();
+        }
+        console.log(`👑 Admin access: User ${user.username} sees ${payments.length} payments`);
+      } else {
+        // Safety fallback
+        payments = [];
+        console.log(`⚠️ Unknown user ${user.username} - no payments access`);
+      }
+
+      res.json(payments);
     } catch (error) {
+      console.error("Error fetching payments:", error);
       res.status(500).json({ error: "Failed to fetch payments" });
     }
   });
@@ -501,38 +525,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/weekly-processing", async (req, res) => {
+  app.get("/api/weekly-processing", async (req: any, res) => {
     try {
-      const { weekLabel } = req.query;
-      
-      if (weekLabel) {
-        const processing = await storage.getWeeklyProcessingByWeek(weekLabel as string);
-        res.json(processing);
-      } else {
-        const allProcessing = await storage.getAllWeeklyProcessing();
-        res.json(allProcessing);
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
       }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      const { weekLabel } = req.query;
+      let processing;
+
+      // Apply tenant isolation for weekly processing
+      if (user.tenantId) {
+        // New user - empty data initially
+        processing = weekLabel ? null : [];
+        console.log(`🔒 Tenant isolation: User ${user.username} sees empty weekly processing from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data
+        if (weekLabel) {
+          processing = await storage.getWeeklyProcessingByWeek(weekLabel as string);
+        } else {
+          processing = await storage.getAllWeeklyProcessing();
+        }
+        console.log(`👑 Admin access: User ${user.username} sees weekly processing data`);
+      } else {
+        // Safety fallback
+        processing = weekLabel ? null : [];
+        console.log(`⚠️ Unknown user ${user.username} - no weekly processing access`);
+      }
+
+      res.json(processing);
     } catch (error) {
+      console.error("Error fetching weekly processing:", error);
       res.status(500).json({ error: "Failed to fetch weekly processing data" });
     }
   });
 
-  // Transport orders routes
-  app.get("/api/transport-orders", async (req, res) => {
+  // Transport orders routes with tenant isolation
+  app.get("/api/transport-orders", async (req: any, res) => {
     try {
-      const { weekLabel, companyName } = req.query;
-      
-      if (weekLabel) {
-        const orders = await storage.getTransportOrdersByWeek(weekLabel as string);
-        res.json(orders);
-      } else if (companyName) {
-        const orders = await storage.getTransportOrdersByCompany(companyName as string);
-        res.json(orders);
-      } else {
-        const orders = await storage.getAllTransportOrders();
-        res.json(orders);
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
       }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      const { weekLabel, companyName } = req.query;
+      let orders: any[] = [];
+
+      // Apply tenant isolation for transport orders
+      if (user.tenantId) {
+        // New user - empty data initially
+        orders = [];
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${orders.length} transport orders from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data with filters
+        if (weekLabel) {
+          orders = await storage.getTransportOrdersByWeek(weekLabel as string);
+        } else if (companyName) {
+          orders = await storage.getTransportOrdersByCompany(companyName as string);
+        } else {
+          orders = await storage.getAllTransportOrders();
+        }
+        console.log(`👑 Admin access: User ${user.username} sees ${orders.length} transport orders`);
+      } else {
+        // Safety fallback
+        orders = [];
+        console.log(`⚠️ Unknown user ${user.username} - no transport orders access`);
+      }
+
+      res.json(orders);
     } catch (error) {
+      console.error("Error fetching transport orders:", error);
       res.status(500).json({ error: "Failed to fetch transport orders" });
     }
   });
@@ -837,8 +908,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/transport-orders", async (req, res) => {
+  app.post("/api/transport-orders", async (req: any, res) => {
     try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Only allow owner to create transport orders for now
+      if (user.tenantId) {
+        return res.status(403).json({ error: 'Access denied - tenant isolation active' });
+      }
+      
+      if (user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor') {
+        return res.status(403).json({ error: 'Access denied - admin only' });
+      }
+
       console.log("Received transport order data:", req.body);
       
       // Convert orderDate string to Date object if needed
@@ -1027,7 +1116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Apply tenant isolation for company balances
-      let balances;
+      let balances: any[] = [];
       if (user.tenantId) {
         // New user - empty data initially
         balances = [];
