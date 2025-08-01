@@ -351,7 +351,15 @@ export default function Home() {
                     <label className="text-sm font-medium text-gray-300">Perioada plăților:</label>
                     <select 
                       value={selectedWeek}
-                      onChange={(e) => setProcessingWeek(e.target.value)}
+                      onChange={(e) => {
+                        const weekLabel = e.target.value;
+                        if (weekLabel) {
+                          loadWeeklyProcessingByWeek(weekLabel);
+                        } else {
+                          setProcessedData({});
+                          setSelectedWeek('');
+                        }
+                      }}
                       className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="">Selectează săptămâna</option>

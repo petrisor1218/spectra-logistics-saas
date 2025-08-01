@@ -397,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Weekly processing routes
-  app.post("/api/weekly-processing", requireAuth, async (req, res) => {
+  app.post("/api/weekly-processing", async (req, res) => {
     try {
       const { weekLabel, data, processedAt } = req.body;
       
@@ -418,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/weekly-processing", requireAuth, async (req, res) => {
+  app.get("/api/weekly-processing", async (req, res) => {
     try {
       const { weekLabel } = req.query;
       
