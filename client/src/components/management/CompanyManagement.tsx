@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Save, X, Building, Phone, MapPin, CreditCard, Trash2, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { StableInput } from '@/components/ui/stable-input';
 
 interface Company {
   id: number;
@@ -40,7 +41,7 @@ export function CompanyManagement() {
     fetchCompanies();
   }, []);
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     try {
       const response = await fetch('/api/companies');
       if (response.ok) {
@@ -57,9 +58,9 @@ export function CompanyManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handleSave = async (companyData: Partial<Company>) => {
+  const handleSave = useCallback(async (companyData: Partial<Company>) => {
     try {
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId ? `/api/companies/${editingId}` : '/api/companies';
@@ -83,7 +84,8 @@ export function CompanyManagement() {
           location: '',
           county: '',
           country: 'Romania',
-          contact: ''
+          contact: '',
+          orderNumberStart: 1554
         });
         toast({
           title: "Succes",
@@ -100,7 +102,7 @@ export function CompanyManagement() {
         variant: "destructive"
       });
     }
-  };
+  }, [editingId, fetchCompanies, toast]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Sigur doriți să ștergeți această companie?')) return;
@@ -176,10 +178,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Nume Companie *
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.name || ''}
-            onChange={(e) => onChange('name', e.target.value)}
+            onChange={(value) => onChange('name', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="Introduceti numele companiei"
           />
@@ -189,11 +190,11 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Rata comision (decimal) *
           </label>
-          <input
+          <StableInput
             type="number"
             step="0.0001"
             value={data.commissionRate || ''}
-            onChange={(e) => onChange('commissionRate', e.target.value)}
+            onChange={(value) => onChange('commissionRate', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="0.04"
           />
@@ -203,10 +204,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             CIF
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.cif || ''}
-            onChange={(e) => onChange('cif', e.target.value)}
+            onChange={(value) => onChange('cif', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="RO12345678"
           />
@@ -216,10 +216,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Nr. Registrul Comerțului
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.tradeRegisterNumber || ''}
-            onChange={(e) => onChange('tradeRegisterNumber', e.target.value)}
+            onChange={(value) => onChange('tradeRegisterNumber', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="J40/1234/2020"
           />
@@ -229,10 +228,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Adresă
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.address || ''}
-            onChange={(e) => onChange('address', e.target.value)}
+            onChange={(value) => onChange('address', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="Str. Exemplu, Nr. 1"
           />
@@ -242,10 +240,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Localitate
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.location || ''}
-            onChange={(e) => onChange('location', e.target.value)}
+            onChange={(value) => onChange('location', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="București"
           />
@@ -255,10 +252,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Județ
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.county || ''}
-            onChange={(e) => onChange('county', e.target.value)}
+            onChange={(value) => onChange('county', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="București"
           />
@@ -268,10 +264,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Țară
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.country || ''}
-            onChange={(e) => onChange('country', e.target.value)}
+            onChange={(value) => onChange('country', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="România"
           />
@@ -281,10 +276,10 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Număr start comenzi *
           </label>
-          <input
+          <StableInput
             type="number"
             value={data.orderNumberStart || 1554}
-            onChange={(e) => onChange('orderNumberStart', parseInt(e.target.value) || 1554)}
+            onChange={(value) => onChange('orderNumberStart', parseInt(value) || 1554)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="1554"
             min="1"
@@ -295,10 +290,9 @@ export function CompanyManagement() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Contact
           </label>
-          <input
-            type="text"
+          <StableInput
             value={data.contact || ''}
-            onChange={(e) => onChange('contact', e.target.value)}
+            onChange={(value) => onChange('contact', value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="+40 123 456 789, email@company.com"
           />
