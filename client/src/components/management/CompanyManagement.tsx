@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Save, X, Building, Phone, MapPin, CreditCard, Trash2, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -130,9 +130,38 @@ export function CompanyManagement() {
     setShowAddForm(false);
   };
 
-  const CompanyForm = ({ data, onChange, onSave, onCancel }: {
+  const handleFormChange = useCallback((field: string, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleSaveForm = useCallback(() => {
+    handleSave(formData);
+  }, [formData, handleSave]);
+
+  const handleCancelAdd = useCallback(() => {
+    setShowAddForm(false);
+    setFormData({
+      name: '',
+      commissionRate: '0.04',
+      cif: '',
+      tradeRegisterNumber: '',
+      address: '',
+      location: '',
+      county: '',
+      country: 'Romania',
+      contact: '',
+      orderNumberStart: 1554
+    });
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingId(null);
+    setFormData({});
+  }, []);
+
+  const CompanyForm = memo(({ data, onChange, onSave, onCancel }: {
     data: Partial<Company>;
-    onChange: (field: string, value: string) => void;
+    onChange: (field: string, value: string | number) => void;
     onSave: () => void;
     onCancel: () => void;
   }) => (
@@ -255,7 +284,7 @@ export function CompanyManagement() {
           <input
             type="number"
             value={data.orderNumberStart || 1554}
-            onChange={(e) => onChange('orderNumberStart', e.target.value)}
+            onChange={(e) => onChange('orderNumberStart', parseInt(e.target.value) || 1554)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="1554"
             min="1"
@@ -299,7 +328,7 @@ export function CompanyManagement() {
         </motion.button>
       </div>
     </motion.div>
-  );
+  ));
 
   if (loading) {
     return (
@@ -332,23 +361,9 @@ export function CompanyManagement() {
         {showAddForm && (
           <CompanyForm
             data={formData}
-            onChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
-            onSave={() => handleSave(formData)}
-            onCancel={() => {
-              setShowAddForm(false);
-              setFormData({
-                name: '',
-                commissionRate: '0.04',
-                cif: '',
-                tradeRegisterNumber: '',
-                address: '',
-                location: '',
-                county: '',
-                country: 'Romania',
-                contact: '',
-                orderNumberStart: 1554
-              });
-            }}
+            onChange={handleFormChange}
+            onSave={handleSaveForm}
+            onCancel={handleCancelAdd}
           />
         )}
       </AnimatePresence>
@@ -364,12 +379,9 @@ export function CompanyManagement() {
             {editingId === company.id ? (
               <CompanyForm
                 data={formData}
-                onChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
-                onSave={() => handleSave(formData)}
-                onCancel={() => {
-                  setEditingId(null);
-                  setFormData({});
-                }}
+                onChange={handleFormChange}
+                onSave={handleSaveForm}
+                onCancel={handleCancelEdit}
               />
             ) : (
               <div>
