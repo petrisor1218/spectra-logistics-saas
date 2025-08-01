@@ -10,6 +10,7 @@ import Stripe from "stripe";
 let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
+  console.log('STRIPE_SECRET_KEY starts with:', process.env.STRIPE_SECRET_KEY.substring(0, 10));
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2023-10-16",
   });
@@ -699,10 +700,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe subscription routes
   app.post("/api/create-subscription", async (req, res) => {
     try {
-      if (!stripe) {
+      const keyStart = process.env.STRIPE_SECRET_KEY?.substring(0, 7);
+      if (!stripe || keyStart === 'pk_test') {
         return res.status(500).json({ 
           error: "Stripe not configured", 
-          message: "Please set STRIPE_SECRET_KEY" 
+          message: keyStart === 'pk_test' 
+            ? "Secret key required (currently using publishable key)" 
+            : "Please set STRIPE_SECRET_KEY" 
         });
       }
 
