@@ -77,14 +77,35 @@ export function SavedDataCalendar({
     setSortOrder(sortOrder === 'recent' ? 'oldest' : 'recent');
   };
 
-  // Sort saved weeks based on user preference
+  // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
+  const parseRomanianWeekDate = (weekLabel: string): Date => {
+    // Extract start date from "DD mmm. - DD mmm." format
+    const startDateStr = weekLabel.split(' - ')[0];
+    const monthMap: Record<string, number> = {
+      'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
+      'iul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'noi': 10, 'dec': 11
+    };
+    
+    const parts = startDateStr.split(' ');
+    const day = parseInt(parts[0]);
+    const monthStr = parts[1].replace('.', '');
+    const month = monthMap[monthStr] ?? 0;
+    const year = 2025; // Assuming current year
+    
+    return new Date(year, month, day);
+  };
+
+  // Sort saved weeks based on user preference using proper date parsing
   const sortedSavedWeeks = [...savedWeeks].sort((a, b) => {
+    const dateA = parseRomanianWeekDate(a.weekLabel);
+    const dateB = parseRomanianWeekDate(b.weekLabel);
+    
     if (sortOrder === 'recent') {
-      // Recent first: reverse alphabetical order works for "DD mmm. - DD mmm." format
-      return b.weekLabel.localeCompare(a.weekLabel);
+      // Recent first: newer dates first
+      return dateB.getTime() - dateA.getTime();
     } else {
-      // Oldest first: normal alphabetical order
-      return a.weekLabel.localeCompare(b.weekLabel);
+      // Oldest first: older dates first
+      return dateA.getTime() - dateB.getTime();
     }
   });
 
