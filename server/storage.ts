@@ -50,6 +50,7 @@ export interface IStorage {
   
   // Company methods
   getAllCompanies(): Promise<Company[]>;
+  getCompaniesByTenant(tenantId: string): Promise<Company[]>;
   getCompanyByName(name: string): Promise<Company | undefined>;
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
@@ -57,6 +58,7 @@ export interface IStorage {
   
   // Driver methods
   getAllDrivers(): Promise<Driver[]>;
+  getDriversByTenant(tenantId: string): Promise<Driver[]>;
   getDriversByCompany(companyId: number): Promise<Driver[]>;
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver>;
@@ -173,6 +175,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(companies);
   }
 
+  async getCompaniesByTenant(tenantId: string): Promise<Company[]> {
+    return await db.select().from(companies).where(eq(companies.tenantId, tenantId));
+  }
+
   async getCompanyByName(name: string, tenantId?: string): Promise<Company | undefined> {
     if (tenantId) {
       const [company] = await db.select().from(companies)
@@ -208,9 +214,13 @@ export class DatabaseStorage implements IStorage {
     await db.delete(companies).where(eq(companies.id, id));
   }
 
-  // Driver methods
+  // Driver methods with tenant isolation
   async getAllDrivers(): Promise<Driver[]> {
     return await db.select().from(drivers);
+  }
+
+  async getDriversByTenant(tenantId: string): Promise<Driver[]> {
+    return await db.select().from(drivers).where(eq(drivers.tenantId, tenantId));
   }
 
   async getDriversByCompany(companyId: number): Promise<Driver[]> {

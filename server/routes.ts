@@ -970,10 +970,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company management routes
-  app.get("/api/companies", async (req, res) => {
+  // Company management routes with tenant isolation
+  app.get("/api/companies", async (req: any, res) => {
     try {
-      const companies = await storage.getAllCompanies();
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      let companies;
+
+      // Apply tenant isolation for companies
+      if (user.tenantId) {
+        // New user - get only their tenant companies
+        companies = await storage.getCompaniesByTenant(user.tenantId);
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${companies.length} companies from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data
+        companies = await storage.getAllCompanies();
+        console.log(`👑 Admin access: User ${user.username} sees ${companies.length} companies`);
+      } else {
+        // Safety fallback
+        companies = [];
+        console.log(`⚠️ Unknown user ${user.username} - no companies access`);
+      }
+
       res.json(companies);
     } catch (error) {
       console.error("Error fetching companies:", error);
@@ -981,10 +1006,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/companies", async (req, res) => {
+  app.post("/api/companies", async (req: any, res) => {
     try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
       const validatedData = insertCompanySchema.parse(req.body);
-      const company = await storage.createCompany(validatedData);
+      
+      // Add tenant_id for tenant isolation
+      const companyData = {
+        ...validatedData,
+        tenantId: user.tenantId // Associate company with user's tenant
+      };
+
+      const company = await storage.createCompany(companyData);
+      console.log(`🔒 Company created for tenant ${user.tenantId}: ${company.name}`);
       res.json(company);
     } catch (error) {
       console.error("Error creating company:", error);
@@ -1015,11 +1057,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver management routes with company join  
-  app.get("/api/drivers", async (req, res) => {
+  // Driver management routes with company join and tenant isolation
+  app.get("/api/drivers", async (req: any, res) => {
     try {
-      const drivers = await storage.getAllDrivers();
-      const companies = await storage.getAllCompanies();
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      let drivers, companies;
+
+      // Apply tenant isolation for drivers
+      if (user.tenantId) {
+        // New user - get only their tenant data
+        drivers = await storage.getDriversByTenant(user.tenantId);
+        companies = await storage.getCompaniesByTenant(user.tenantId);
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${drivers.length} drivers from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data
+        drivers = await storage.getAllDrivers();
+        companies = await storage.getAllCompanies();
+        console.log(`👑 Admin access: User ${user.username} sees ${drivers.length} drivers`);
+      } else {
+        // Safety fallback
+        drivers = [];
+        companies = [];
+        console.log(`⚠️ Unknown user ${user.username} - no drivers access`);
+      }
       
       const result = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
@@ -1073,10 +1141,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/drivers", async (req, res) => {
+  app.post("/api/drivers", async (req: any, res) => {
     try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
       const validatedData = insertDriverSchema.parse(req.body);
-      const driver = await storage.createDriver(validatedData);
+      
+      // Add tenant_id for tenant isolation
+      const driverData = {
+        ...validatedData,
+        tenantId: user.tenantId // Associate driver with user's tenant
+      };
+
+      const driver = await storage.createDriver(driverData);
+      console.log(`🔒 Driver created for tenant ${user.tenantId}: ${driver.name}`);
       res.json(driver);
     } catch (error) {
       console.error("Error creating driver:", error);
