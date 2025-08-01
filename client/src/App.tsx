@@ -31,14 +31,13 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/admin" component={AdminDashboard} />
         <Route path="/pricing" component={Pricing} />
         <Route path="/register" component={SimpleRegister} />
         <Route path="/subscribe/:planId" component={Subscribe} />
         <Route path="/subscription-success" component={SubscriptionSuccess} />
         <Route path="/login" component={LoginPage} />
-        <Route path="/" component={Home} />
-        <Route path="*" component={Home} />
+        <Route path="/" component={LoginPage} />
+        <Route path="*" component={LoginPage} />
       </Switch>
     );
   }
@@ -48,6 +47,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/register" component={Home} />
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
       <Route path="/login" component={Home} />

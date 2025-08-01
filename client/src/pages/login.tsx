@@ -81,8 +81,8 @@ export default function LoginPage() {
             
             {/* Credențiale pentru testare rapidă */}
             <div className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 p-2 rounded space-y-1">
-              <div><strong>Admin:</strong> petrisor / Olanda99&</div>
-              <div><strong>Demo:</strong> admin / admin123</div>
+              <div><strong>Admin:</strong> petrisor / ••••••••</div>
+              <div><strong>Demo:</strong> admin / ••••••••</div>
             </div>
           </CardHeader>
           <CardContent>
@@ -139,10 +139,21 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-2">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Sistem de management transport și plăți
               </p>
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Nu ai cont?{' '}
+                  <a 
+                    href="/register" 
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline"
+                  >
+                    Înregistrează-te aici
+                  </a>
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

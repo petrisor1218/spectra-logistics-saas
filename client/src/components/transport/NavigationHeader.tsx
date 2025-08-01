@@ -50,18 +50,20 @@ export function NavigationHeader() {
               <span className="text-sm text-gray-400">☀️</span>
             </div>
             
-            {/* Admin Dashboard Button */}
-            <Button
-              onClick={() => {
-                console.log('Navigating to admin dashboard...');
-                window.location.href = '/admin';
-              }}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              size="sm"
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Admin
-            </Button>
+            {/* Admin Dashboard Button - Only for admins */}
+            {user?.role === 'admin' && (
+              <Button
+                onClick={() => {
+                  console.log('Navigating to admin dashboard...');
+                  window.location.href = '/admin';
+                }}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                size="sm"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Admin
+              </Button>
+            )}
 
             {/* User Info */}
             <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-300">

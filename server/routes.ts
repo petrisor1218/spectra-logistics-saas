@@ -231,7 +231,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
-      res.json({ message: 'Login successful', user: { id: user.id, username: user.username } });
+      res.json({ 
+        message: 'Login successful', 
+        user: { 
+          id: user.id, 
+          username: user.username,
+          email: user.email,
+          role: user.role || 'subscriber'
+        } 
+      });
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -251,7 +259,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.session?.userId) {
       storage.getUser(req.session.userId).then(user => {
         if (user) {
-          res.json({ id: user.id, username: user.username });
+          res.json({ 
+            id: user.id, 
+            username: user.username,
+            email: user.email,
+            role: user.role || 'subscriber'
+          });
         } else {
           res.status(401).json({ error: 'User not found' });
         }

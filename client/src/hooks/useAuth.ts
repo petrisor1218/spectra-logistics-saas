@@ -5,6 +5,8 @@ import { getQueryFn } from '@/lib/queryClient';
 interface User {
   id: number;
   username: string;
+  role?: string;
+  email?: string;
 }
 
 export function useAuth() {
