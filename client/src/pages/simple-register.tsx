@@ -163,6 +163,16 @@ function RegisterForm() {
       return false;
     }
 
+    // VALIDARE OBLIGATORIE PENTRU CARD
+    if (!stripe || !elements) {
+      toast({
+        title: "Eroare",
+        description: "Sistemul de plată nu este disponibil. Te rog reîncarcă pagina.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -199,7 +209,42 @@ function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      // First, create the user account
+      // PRIMUL: Validez cardul înainte de orice altceva
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        toast({
+          title: "Eroare",
+          description: "Te rog introdu detaliile cardului pentru a continua",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verific că cardul este complet și valid
+      const { error: cardError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (cardError) {
+        toast({
+          title: "Card invalid",
+          description: cardError.message || "Te rog verifică detaliile cardului",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!paymentMethod) {
+        toast({
+          title: "Eroare",
+          description: "Te rog completează toate detaliile cardului",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // AL DOILEA: Creez contul doar DUPĂ ce cardul este validat
       const userResponse = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +256,8 @@ function RegisterForm() {
           lastName: formData.lastName.trim(),
           companyName: formData.companyName.trim(),
           role: 'subscriber',
-          subscriptionStatus: 'trialing'
+          subscriptionStatus: 'trialing',
+          paymentMethodId: paymentMethod.id // Trimit și ID-ul metodei de plată
         })
       });
 
@@ -220,25 +266,22 @@ function RegisterForm() {
         throw new Error(errorData.error || 'Failed to create account');
       }
 
-      // Then setup payment method for trial (no charge)
+      // AL TREILEA: Setup subscription cu cardul validat
       if (clientSecret) {
-        const cardElement = elements.getElement(CardElement);
-        if (cardElement) {
-          const { error } = await stripe.confirmSetup({
-            elements,
-            confirmParams: {
-              return_url: `${window.location.origin}/subscription-success`,
-            },
-          });
+        const { error } = await stripe.confirmSetup({
+          elements,
+          confirmParams: {
+            return_url: `${window.location.origin}/subscription-success`,
+          },
+        });
 
-          if (error) {
-            toast({
-              title: "Eroare la configurarea plății",
-              description: error.message,
-              variant: "destructive",
-            });
-            return;
-          }
+        if (error) {
+          toast({
+            title: "Eroare la configurarea plății",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
         }
       }
 
@@ -464,7 +507,7 @@ function RegisterForm() {
                 <Label className="text-white text-lg font-semibold">Detalii card (pentru trial)</Label>
               </div>
               <p className="text-gray-300 text-sm mb-4">
-                Nu vei fi taxat în perioada de probă de 3 zile. Cardul va fi folosit doar după expirarea trial-ului.
+                <strong>Obligatoriu:</strong> Cardul este necesar pentru verificarea identității. Nu vei fi taxat în perioada de probă de 3 zile.
               </p>
               
               <div className="bg-white/5 border border-white/20 rounded-lg p-4">
@@ -505,7 +548,7 @@ function RegisterForm() {
             </Button>
             
             <p className="text-xs text-gray-400 text-center">
-              Făcând click, accepți termenii și condițiile. Nu vei fi taxat în primul 3 zile.
+              Făcând click, accepți termenii și condițiile. Cardul este obligatoriu pentru verificare. Nu vei fi taxat în primul 3 zile.
             </p>
 
             {/* Login Link */}
