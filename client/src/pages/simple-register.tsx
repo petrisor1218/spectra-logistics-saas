@@ -243,23 +243,40 @@ function RegisterForm() {
       }
 
       toast({
-        title: "Cont creat cu succes!",
-        description: "Te redirecționez către pagina de login...",
+        title: "🎉 Cont creat cu succes!",
+        description: "Bun venit! Te redirecționez către pagina de login...",
         variant: "default"
       });
 
-      // Redirect to login after 2 seconds
+      // Clear form to prevent re-submission
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        firstName: '',
+        lastName: '',
+        companyName: ''
+      });
+
+      // Redirect immediately
       setTimeout(() => {
         window.location.href = '/login';
-      }, 2000);
+      }, 1500);
 
     } catch (error: any) {
       let errorMessage = "A apărut o eroare. Te rog încearcă din nou.";
       
       if (error.message.includes('Username already exists')) {
         errorMessage = "Numele de utilizator este deja folosit. Te rog alege altul.";
+        // Clear username to allow user to try again
+        setFormData(prev => ({ ...prev, username: '' }));
+        setUsernameCheck(null);
       } else if (error.message.includes('Email already exists')) {
         errorMessage = "Adresa de email este deja înregistrată. Te rog folosește o altă adresă.";
+        // Clear email to allow user to try again
+        setFormData(prev => ({ ...prev, email: '' }));
+        setEmailCheck(null);
       }
       
       toast({
@@ -474,8 +491,8 @@ function RegisterForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isSubmitting || (usernameCheck?.available === false) || (emailCheck?.available === false) || !stripe}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold"
+              disabled={isSubmitting || (usernameCheck?.available === false) || (emailCheck?.available === false) || !stripe || isCheckingUsername || isCheckingEmail}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
