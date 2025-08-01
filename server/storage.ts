@@ -164,13 +164,23 @@ export class DatabaseStorage implements IStorage {
     await db.delete(usernameReservations).where(eq(usernameReservations.username, username));
   }
 
-  // Company methods
-  async getAllCompanies(): Promise<Company[]> {
+  // Company methods with tenant isolation
+  async getAllCompanies(tenantId?: string): Promise<Company[]> {
+    if (tenantId) {
+      return await db.select().from(companies).where(eq(companies.tenantId, tenantId));
+    }
+    // Admin/owner sees all companies (for existing data)
     return await db.select().from(companies);
   }
 
-  async getCompanyByName(name: string): Promise<Company | undefined> {
-    const [company] = await db.select().from(companies).where(eq(companies.name, name));
+  async getCompanyByName(name: string, tenantId?: string): Promise<Company | undefined> {
+    let query = db.select().from(companies).where(eq(companies.name, name));
+    
+    if (tenantId) {
+      query = query.where(eq(companies.tenantId, tenantId));
+    }
+    
+    const [company] = await query;
     return company || undefined;
   }
 
@@ -240,9 +250,15 @@ export class DatabaseStorage implements IStorage {
     await db.delete(drivers).where(eq(drivers.id, id));
   }
 
-  // Weekly processing methods
-  async getWeeklyProcessing(weekLabel: string): Promise<WeeklyProcessing | undefined> {
-    const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
+  // Weekly processing methods with tenant isolation
+  async getWeeklyProcessing(weekLabel: string, tenantId?: string): Promise<WeeklyProcessing | undefined> {
+    let query = db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
+    
+    if (tenantId) {
+      query = query.where(eq(weeklyProcessing.tenantId, tenantId));
+    }
+    
+    const [processing] = await query;
     return processing || undefined;
   }
 
@@ -259,7 +275,13 @@ export class DatabaseStorage implements IStorage {
     return processing || undefined;
   }
 
-  async getAllWeeklyProcessing(): Promise<WeeklyProcessing[]> {
+  async getAllWeeklyProcessing(tenantId?: string): Promise<WeeklyProcessing[]> {
+    if (tenantId) {
+      return await db.select().from(weeklyProcessing)
+        .where(eq(weeklyProcessing.tenantId, tenantId))
+        .orderBy(desc(weeklyProcessing.processingDate));
+    }
+    // Admin/owner sees all data
     return await db.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
   }
 

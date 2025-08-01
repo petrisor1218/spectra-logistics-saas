@@ -271,7 +271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: user.id, 
             username: user.username,
             email: user.email,
-            role: user.role || 'subscriber'
+            role: user.role || 'subscriber',
+            tenantId: user.tenantId, // Include tenant info for frontend
+            subscriptionStatus: user.subscriptionStatus
           });
         } else {
           res.status(401).json({ error: 'User not found' });
@@ -284,22 +286,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company routes
-  app.get("/api/companies", async (req, res) => {
+  // Company routes with tenant isolation
+  app.get("/api/companies", async (req: any, res) => {
     try {
-      const companies = await storage.getAllCompanies();
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Apply tenant isolation for new users
+      let companies;
+      if (user.tenantId && user.tenantId !== null) {
+        // New user - see only their isolated data (empty initially)
+        companies = await storage.getAllCompanies(user.tenantId);
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${companies.length} companies from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data
+        companies = await storage.getAllCompanies();
+        console.log(`👑 Admin access: User ${user.username} sees ${companies.length} companies`);
+      } else {
+        // Safety fallback - empty data for unknown users
+        companies = [];
+        console.log(`⚠️ Unknown user ${user.username} - no data access`);
+      }
+
       res.json(companies);
     } catch (error) {
+      console.error('Error fetching companies:', error);
       res.status(500).json({ error: "Failed to fetch companies" });
     }
   });
 
-  // Driver routes
-  app.get("/api/drivers", async (req, res) => {
+  // Driver routes with tenant isolation
+  app.get("/api/drivers", async (req: any, res) => {
     try {
-      const drivers = await storage.getAllDrivers();
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Apply tenant isolation
+      let drivers;
+      if (user.tenantId) {
+        // New user - empty data initially
+        drivers = [];
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${drivers.length} drivers from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data
+        drivers = await storage.getAllDrivers();
+        console.log(`👑 Admin access: User ${user.username} sees ${drivers.length} drivers`);
+      } else {
+        drivers = [];
+      }
+
       res.json(drivers);
     } catch (error) {
+      console.error('Error fetching drivers:', error);
       res.status(500).json({ error: "Failed to fetch drivers" });
     }
   });
@@ -668,7 +718,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create the user
+      // Generate unique tenant ID for complete data isolation
+      const tenantId = `tenant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create the user with isolated tenant
       const newUser = await storage.createUser({
         username,
         email,
@@ -677,8 +730,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName,
         companyName,
         role,
-        subscriptionStatus
+        subscriptionStatus,
+        tenantId: tenantId, // Each user gets isolated data space
+        trialEndsAt: subscriptionStatus === 'trialing' ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null
       });
+      
+      console.log(`🔒 NEW TENANT CREATED: ${tenantId} for user: ${username}`);
+      console.log(`✅ User has isolated database - no access to existing data`);
 
       // Release the username reservation after successful creation
       await storage.releaseReservation(username);
@@ -957,9 +1015,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company balance endpoints
-  app.get("/api/company-balances", async (req, res) => {
+  app.get("/api/company-balances", async (req: any, res) => {
     try {
-      const balances = await storage.getCompanyBalances();
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Apply tenant isolation for company balances
+      let balances;
+      if (user.tenantId) {
+        // New user - empty data initially
+        balances = [];
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${balances.length} balances from tenant ${user.tenantId}`);
+      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
+        // Owner - see all existing data
+        balances = await storage.getCompanyBalances();
+        console.log(`👑 Admin access: User ${user.username} sees ${balances.length} balances`);
+      } else {
+        // Safety fallback
+        balances = [];
+        console.log(`⚠️ Unknown user ${user.username} - no balance access`);
+      }
+
       res.json(balances);
     } catch (error) {
       console.error("Error fetching company balances:", error);
