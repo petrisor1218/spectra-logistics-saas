@@ -77,11 +77,19 @@ function SubscribeForm({ planId }: { planId: string }) {
       });
 
       if (error) {
-        toast({
-          title: "Eroare la configurarea abonamentului",
-          description: error.message,
-          variant: "destructive",
-        });
+        if (error.message.includes("test mode") || error.message.includes("test card")) {
+          toast({
+            title: "Card invalid pentru test",
+            description: "Folosește unul dintre cardurile de test Stripe afișate mai sus",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Eroare la configurarea abonamentului",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Perioada de probă activată!",
@@ -176,6 +184,15 @@ function SubscribeForm({ planId }: { planId: string }) {
           </p>
         </CardHeader>
         <CardContent>
+          <div className="bg-blue-500/20 p-4 rounded-lg border border-blue-500/30 mb-6">
+            <h4 className="font-medium text-blue-300 mb-2">Carduri de test Stripe</h4>
+            <div className="text-sm text-gray-300 space-y-1">
+              <p><strong>Visa:</strong> 4242 4242 4242 4242</p>
+              <p><strong>Mastercard:</strong> 5555 5555 5555 4444</p>
+              <p><strong>CVV:</strong> orice 3 cifre (ex: 123)</p>
+              <p><strong>Data:</strong> orice dată viitoare (ex: 12/26)</p>
+            </div>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <PaymentElement 
               options={{
