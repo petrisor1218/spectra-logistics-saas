@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Truck, Bell, LogOut, User } from "lucide-react";
+import { Truck, Bell, LogOut, User, Shield } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,16 @@ export function NavigationHeader() {
               <span className="text-sm text-gray-400">☀️</span>
             </div>
             
+            {/* Admin Dashboard Button */}
+            <Button
+              onClick={() => window.location.href = '/admin'}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              size="sm"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Admin
+            </Button>
+
             {/* User Info */}
             <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-300">
               <User size={16} />
