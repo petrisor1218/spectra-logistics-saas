@@ -15,12 +15,12 @@ const stripeSecretKey = process.env.STRIPE_LIVE_SECRET_KEY || process.env.STRIPE
 if (stripeSecretKey) {
   const keyStart = stripeSecretKey.substring(0, 10);
   const isLive = stripeSecretKey.startsWith('sk_live_');
-  console.log(`STRIPE_SECRET_KEY starts with: ${keyStart} (${isLive ? 'LIVE MODE' : 'TEST MODE'})`);
+  console.log(`STRIPE_SECRET_KEY starts with: ${keyStart} (${isLive ? '🔴 LIVE MODE - PLĂȚI REALE' : '🟡 TEST MODE - CARDURI DE TEST'})`);
   stripe = new Stripe(stripeSecretKey, {
     apiVersion: "2024-06-20",
   });
 } else {
-  console.warn('STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
+  console.warn('⚠️ STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
 }
 
 // Create default user if it doesn't exist
