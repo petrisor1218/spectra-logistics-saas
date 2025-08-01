@@ -4,6 +4,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationsDropdown } from "@/components/ui/notifications-dropdown";
 
 export function NavigationHeader() {
   const { theme, toggleTheme } = useTheme();
@@ -72,16 +73,7 @@ export function NavigationHeader() {
             </div>
 
             {/* Notifications */}
-            <motion.div 
-              className="relative"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <button className="w-10 h-10 glass-effect rounded-xl flex items-center justify-center hover-glow">
-                <Bell size={18} />
-              </button>
-              <span className="notification-badge absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-            </motion.div>
+            <NotificationsDropdown user={user || null} />
 
             {/* Logout Button */}
             <Button

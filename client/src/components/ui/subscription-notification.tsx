@@ -5,8 +5,8 @@ import { Clock, Calendar, AlertTriangle, CheckCircle, X } from 'lucide-react';
 interface User {
   id: number;
   username: string;
-  email: string;
-  subscriptionStatus: string;
+  email?: string;
+  subscriptionStatus?: string;
   trialEndsAt?: string;
   subscriptionEndsAt?: string;
 }
