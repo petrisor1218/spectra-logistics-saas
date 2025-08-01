@@ -69,6 +69,19 @@ export const payments = pgTable("payments", {
   paymentType: varchar("payment_type", { length: 50 }).default("partial"), // 'partial' or 'full'
 });
 
+// New table for company balances tracking
+export const companyBalances = pgTable("company_balances", {
+  id: serial("id").primaryKey(),
+  companyName: varchar("company_name", { length: 100 }).notNull(),
+  weekLabel: varchar("week_label", { length: 100 }).notNull(),
+  totalInvoiced: decimal("total_invoiced", { precision: 10, scale: 2 }).notNull(), // Total amount invoiced
+  totalPaid: decimal("total_paid", { precision: 10, scale: 2 }).default("0"), // Amount paid so far
+  outstandingBalance: decimal("outstanding_balance", { precision: 10, scale: 2 }).notNull(), // Amount still owed
+  paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // 'pending', 'partial', 'paid'
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const paymentHistory = pgTable("payment_history", {
   id: serial("id").primaryKey(),
   paymentId: integer("payment_id").references(() => payments.id),
@@ -145,6 +158,12 @@ export const insertPaymentSchema = createInsertSchema(payments).omit({
   paymentDate: true,
 });
 
+export const insertCompanyBalanceSchema = createInsertSchema(companyBalances).omit({
+  id: true,
+  lastUpdated: true,
+  createdAt: true,
+});
+
 export const insertPaymentHistorySchema = createInsertSchema(paymentHistory).omit({
   id: true,
   createdAt: true,
@@ -192,3 +211,6 @@ export type HistoricalTrip = typeof historicalTrips.$inferSelect;
 
 export type InsertOrderSequence = z.infer<typeof insertOrderSequenceSchema>;
 export type OrderSequence = typeof orderSequence.$inferSelect;
+
+export type InsertCompanyBalance = z.infer<typeof insertCompanyBalanceSchema>;
+export type CompanyBalance = typeof companyBalances.$inferSelect;

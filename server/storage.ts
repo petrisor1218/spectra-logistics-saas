@@ -7,6 +7,7 @@ import {
   paymentHistory,
   historicalTrips,
   orderSequence,
+  companyBalances,
   type User, 
   type InsertUser,
   type Company,
@@ -25,7 +26,9 @@ import {
   type HistoricalTrip,
   type InsertHistoricalTrip,
   type OrderSequence,
-  type InsertOrderSequence
+  type InsertOrderSequence,
+  type CompanyBalance,
+  type InsertCompanyBalance
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -454,6 +457,70 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+  
+  // Company balance methods
+  async getCompanyBalances(): Promise<CompanyBalance[]> {
+    return await db.select().from(companyBalances).orderBy(desc(companyBalances.lastUpdated));
+  }
+
+  async getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined> {
+    const [balance] = await db
+      .select()
+      .from(companyBalances)
+      .where(eq(companyBalances.companyName, companyName))
+      .where(eq(companyBalances.weekLabel, weekLabel));
+    return balance || undefined;
+  }
+
+  async createOrUpdateCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance> {
+    const existing = await this.getCompanyBalanceByWeek(balance.companyName, balance.weekLabel);
+    
+    if (existing) {
+      // Update existing balance
+      const [updated] = await db
+        .update(companyBalances)
+        .set({
+          totalInvoiced: balance.totalInvoiced,
+          outstandingBalance: balance.outstandingBalance,
+          paymentStatus: balance.paymentStatus,
+          lastUpdated: new Date()
+        })
+        .where(eq(companyBalances.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new balance
+      const [created] = await db
+        .insert(companyBalances)
+        .values(balance)
+        .returning();
+      return created;
+    }
+  }
+
+  async updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance> {
+    const existing = await this.getCompanyBalanceByWeek(companyName, weekLabel);
+    if (!existing) {
+      throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
+    }
+
+    const newTotalPaid = parseFloat(existing.totalPaid) + paidAmount;
+    const newOutstandingBalance = parseFloat(existing.totalInvoiced) - newTotalPaid;
+    const newStatus = newOutstandingBalance <= 0 ? 'paid' : newTotalPaid > 0 ? 'partial' : 'pending';
+
+    const [updated] = await db
+      .update(companyBalances)
+      .set({
+        totalPaid: newTotalPaid.toString(),
+        outstandingBalance: newOutstandingBalance.toString(),
+        paymentStatus: newStatus,
+        lastUpdated: new Date()
+      })
+      .where(eq(companyBalances.id, existing.id))
+      .returning();
+    
+    return updated;
   }
 }
 

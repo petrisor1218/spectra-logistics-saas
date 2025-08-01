@@ -691,6 +691,9 @@ export function useTransportData() {
           })
         });
         console.log(`💾 Date salvate pentru săptămâna ${processingWeek} cu ${tripData.length} cursuri în istoric`);
+        
+        // Create company balances
+        await createCompanyBalances(processingWeek, results);
       } catch (error) {
         console.log('Eroare la salvarea datelor:', error);
       }
@@ -973,6 +976,63 @@ export function useTransportData() {
 
     // Force re-render
     setProcessedData({...processedData});
+  };
+
+  // Create company balances when processing data
+  const createCompanyBalances = async (weekLabel: string, processedData: any) => {
+    try {
+      if (!processedData || typeof processedData !== 'object') {
+        console.log('Nu există date procesate pentru crearea bilanțurilor');
+        return;
+      }
+
+      // Extract company totals from processed data
+      const companyTotals: Record<string, { totalInvoiced: number, drivers: string[] }> = {};
+
+      // Go through each company in processed data
+      Object.keys(processedData).forEach(companyName => {
+        if (companyName === 'Unmatched' || companyName === 'Totals') return;
+        
+        const companyData = processedData[companyName];
+        if (companyData && companyData.Totals) {
+          const totalInvoiced = parseFloat(companyData.Totals.Total_without_commission) || 0;
+          const drivers = Object.keys(companyData).filter(key => key !== 'Totals');
+          
+          companyTotals[companyName] = {
+            totalInvoiced,
+            drivers
+          };
+        }
+      });
+
+      // Create balance entries for each company
+      for (const [companyName, data] of Object.entries(companyTotals)) {
+        if (data.totalInvoiced > 0) {
+          try {
+            await fetch('/api/company-balances', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                companyName,
+                weekLabel,
+                totalInvoiced: data.totalInvoiced.toString(),
+                totalPaid: '0',
+                outstandingBalance: data.totalInvoiced.toString(),
+                paymentStatus: 'pending'
+              }),
+            });
+            
+            console.log(`💰 Bilanț creat pentru ${companyName}: ${data.totalInvoiced} EUR`);
+          } catch (error) {
+            console.error(`Eroare la crearea bilanțului pentru ${companyName}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Eroare la crearea bilanțurilor:', error);
+    }
   };
 
   return {

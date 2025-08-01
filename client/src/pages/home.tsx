@@ -15,6 +15,7 @@ import { TransportOrdersView } from "@/components/transport/TransportOrdersView"
 import WeeklyReportsView from "@/components/transport/WeeklyReportsView";
 import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
+import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import { useTransportData } from "@/hooks/useTransportData";
 
 export default function Home() {
@@ -78,6 +79,7 @@ export default function Home() {
     { id: 'upload', label: 'Încărcare Fișiere', icon: Upload },
     { id: 'calculations', label: 'Calcule și Totale', icon: Calculator },
     { id: 'payments', label: 'Evidența Plăților', icon: DollarSign },
+    { id: 'balances', label: 'Bilanțuri Companii', icon: BarChart3 },
     { id: 'reports', label: 'Rapoarte Săptămânale', icon: BarChart3 },
     { id: 'orders', label: 'Comenzi Transport', icon: Truck },
     { id: 'management', label: 'Gestionare', icon: Settings },
@@ -370,6 +372,17 @@ export default function Home() {
                   selectedWeek={selectedWeek || ''}
                 />
               </div>
+            )}
+
+            {/* Company Balances Tab */}
+            {activeTab === 'balances' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CompanyBalancesView />
+              </motion.div>
             )}
 
             {/* Weekly Reports Tab */}
