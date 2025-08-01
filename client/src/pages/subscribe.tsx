@@ -212,7 +212,7 @@ export default function Subscribe() {
     }
 
     // Skip Stripe setup if keys are not configured
-    if (!stripePromise) {
+    if (!stripePromise || stripePublicKey === 'pk_test_demo') {
       setClientSecret("demo_client_secret");
       setIsLoading(false);
       return;
