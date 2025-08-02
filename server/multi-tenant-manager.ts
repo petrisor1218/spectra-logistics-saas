@@ -404,6 +404,15 @@ class MultiTenantManager {
           .values(driver)
           .returning();
         return newDriver;
+      },
+      
+      async updateDriver(id: number, driverData: any) {
+        const [updatedDriver] = await db
+          .update(schema.drivers)
+          .set(driverData)
+          .where(eq(schema.drivers.id, id))
+          .returning();
+        return updatedDriver;
       }
     };
   }

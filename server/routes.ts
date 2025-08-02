@@ -352,47 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver routes with separate tenant databases
-  app.get("/api/drivers", async (req: any, res) => {
-    try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
 
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
-
-      // Pentru utilizatorii existenți fără tenantId, întoarce datele vechi temporar
-      if (!user.tenantId) {
-        console.log(`⚠️ Legacy user ${user.username} - using old system temporarily`);
-        const drivers = await storage.getAllDrivers();
-        return res.json(drivers);
-      }
-
-      console.log(`👥 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
-      
-      try {
-        // Obține baza de date separată pentru tenant folosind noul multi-tenant manager
-        const { multiTenantManager } = await import('./multi-tenant-manager.js');
-        const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
-        
-        const driversData = await tenantDb.select().from(drivers);
-        console.log(`✅ Separate DB: User ${user.username} sees ${driversData.length} drivers from separate database`);
-        res.json(driversData);
-      } catch (dbError) {
-        console.error(`❌ Error accessing tenant database for ${user.username}:`, dbError);
-        // Fallback pentru erori de bază de date
-        console.log(`🔄 Fallback: Using old system for ${user.username}`);
-        const drivers = await storage.getAllDrivers();
-        res.json(drivers);
-      }
-    } catch (error) {
-      console.error('Error fetching drivers:', error);
-      res.status(500).json({ error: "Failed to fetch drivers" });
-    }
-  });
 
   // Weekly processing routes
   app.get("/api/processing/:weekLabel", async (req, res) => {
@@ -1230,14 +1190,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let drivers: any[], companies: any[];
 
-      // Apply tenant isolation for drivers
-      if (user.tenantId) {
-        // New user - get only their tenant data
-        drivers = await storage.getDriversByTenant(user.tenantId);
-        companies = await storage.getCompaniesByTenant(user.tenantId);
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${drivers.length} drivers from tenant ${user.tenantId}`);
+      // Apply tenant isolation for drivers using multi-tenant system
+      if (user.tenantId && user.tenantId !== 'main') {
+        // New user - get only their tenant data from separate database
+        try {
+          const { multiTenantManager } = await import('./multi-tenant-manager.js');
+          const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+          
+          drivers = await tenantStorage.getAllDrivers();
+          companies = await tenantStorage.getAllCompanies();
+          console.log(`👥 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
+          console.log(`✅ Separate DB: User ${user.username} sees ${drivers.length} drivers from separate database`);
+        } catch (error) {
+          console.error(`❌ Error accessing tenant database for ${user.username}:`, error);
+          drivers = [];
+          companies = [];
+        }
       } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
+        // Owner - see all existing data from main database
         drivers = await storage.getAllDrivers();
         companies = await storage.getAllCompanies();
         console.log(`👑 Admin access: User ${user.username} sees ${drivers.length} drivers`);
@@ -1317,11 +1287,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fiecare tenant are propria bază de date separată
       let driver;
       
-      if (user.tenantId) {
+      if (user.tenantId && user.tenantId !== 'main') {
         // Utilizator cu tenant - creează în baza sa separată
         try {
-          const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
-          driver = await tenantDb.createDriver(validatedData);
+          const { multiTenantManager } = await import('./multi-tenant-manager.js');
+          const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+          driver = await tenantStorage.createDriver(validatedData);
           console.log(`🔒 Driver created in tenant ${user.tenantId}: ${driver.name}`);
         } catch (error) {
           console.error(`❌ Error creating driver in tenant database:`, error);
@@ -1344,7 +1315,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertDriverSchema.partial().parse(req.body);
-      const driver = await storage.updateDriver(id, validatedData);
+      
+      // Get user for tenant isolation
+      const user = await storage.getUser(req.session?.userId);
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      let driver;
+      
+      // Use tenant-specific database for driver update
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        console.log(`📝 Updating driver ${id} in tenant database ${user.tenantId}`);
+        driver = await tenantStorage.updateDriver(id, validatedData);
+        console.log(`✅ Successfully updated driver ${id} in tenant ${user.tenantId}`);
+      } else {
+        // Main user - use regular storage
+        driver = await storage.updateDriver(id, validatedData);
+      }
+      
       res.json(driver);
     } catch (error) {
       console.error("Error updating driver:", error);
@@ -1355,7 +1347,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/drivers/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteDriver(id);
+      
+      // Get user for tenant isolation
+      const user = await storage.getUser(req.session?.userId);
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Use tenant-specific database for driver deletion
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        console.log(`🗑️ Deleting driver ${id} from tenant database ${user.tenantId}`);
+        await tenantStorage.deleteDriver(id);
+        console.log(`✅ Successfully deleted driver ${id} from tenant ${user.tenantId}`);
+      } else {
+        // Main user - use regular storage
+        await storage.deleteDriver(id);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting driver:", error);
