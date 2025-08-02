@@ -266,12 +266,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/logout', (req, res) => {
-    req.session.destroy((err: any) => {
-      if (err) {
-        return res.status(500).json({ error: 'Could not log out' });
-      }
+    if (req.session) {
+      req.session.destroy((err: any) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+          return res.status(500).json({ error: 'Could not log out' });
+        }
+        // Clear the session cookie
+        res.clearCookie('connect.sid');
+        console.log('🚪 User logged out successfully');
+        res.json({ message: 'Logout successful' });
+      });
+    } else {
+      // No session exists, consider it a successful logout
       res.json({ message: 'Logout successful' });
-    });
+    }
   });
 
   app.get('/api/auth/user', (req: any, res) => {
@@ -905,6 +914,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Release the username reservation after successful creation
       await storage.releaseReservation(username);
+
+      // Auto-login the new user after successful registration
+      if (req.session) {
+        req.session.userId = newUser.id;
+        console.log(`🔐 Auto-logged in new user: ${username} (ID: ${newUser.id})`);
+      }
 
       // Don't return the password in the response
       const { password: _, ...userResponse } = newUser;

@@ -288,15 +288,15 @@ const RegistrationForm = ({ onSuccess }: { onSuccess: () => void }) => {
       } else {
         toast({
           title: "Cont creat cu succes!",
-          description: "Bun venit la Transport Pro! Redirecționez către login...",
+          description: "Bun venit la Transport Pro! Redirecționez către dashboard...",
         });
         
         // Disable form to prevent double submission
         setIsProcessing(true);
         
-        // Redirect to login page after 2 seconds
+        // Redirect to home after successful registration (user is auto-logged in)
         setTimeout(() => {
-          window.location.href = '/login';
+          window.location.href = '/';
         }, 2000);
       }
     } catch (error: any) {
