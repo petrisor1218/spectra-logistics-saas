@@ -156,10 +156,15 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
 
   const fetchDrivers = useCallback(async () => {
     try {
+      console.log('🔄 Încărcare șoferi din API...');
       const response = await fetch('/api/drivers');
       if (response.ok) {
         const data = await response.json();
+        console.log('👥 Șoferi primiți din API:', data.length, data);
         setDrivers(data);
+        console.log('✅ Lista șoferilor actualizată în state');
+      } else {
+        console.error('❌ Eroare la încărcarea șoferilor - status:', response.status);
       }
     } catch (error) {
       console.error('Error fetching drivers:', error);
@@ -234,7 +239,11 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
 
       if (response.ok) {
         console.log('✅ Șofer salvat cu succes, resetez formularul...');
+        
+        // Force refresh drivers list
+        console.log('🔄 Forțez reîncărcarea listei de șoferi...');
         await fetchDrivers();
+        
         setEditingId(null);
         setShowAddForm(false);
         setFormData({
@@ -242,7 +251,10 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
           companyId: null,
           nameVariants: []
         });
+        
         console.log('🔄 Stare resetată pentru următorul șofer');
+        console.log('👥 Numărul de șoferi în state după salvare:', drivers.length);
+        
         toast({
           title: "Succes",
           description: editingId ? "Șoferul a fost actualizat" : "Șoferul a fost adăugat",
