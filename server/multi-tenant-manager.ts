@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
 import * as schema from '../shared/schema.js';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 
 neonConfig.webSocketConstructor = ws;
 
@@ -350,6 +350,62 @@ class MultiTenantManager {
     }
     
     this.tenantDatabases.clear();
+  }
+
+  /**
+   * Obține un storage izolat pentru tenant specific
+   */
+  async getTenantStorage(tenantId: string) {
+    const db = await this.getTenantDatabase(tenantId);
+    
+    // Returnează un obiect cu metodele necesare pentru operații pe tenant
+    return {
+      // Company operations
+      async deleteCompany(id: number): Promise<void> {
+        // First delete all drivers for this company
+        await db.delete(schema.drivers).where(eq(schema.drivers.companyId, id));
+        // Then delete the company
+        await db.delete(schema.companies).where(eq(schema.companies.id, id));
+      },
+      
+      async getAllCompanies() {
+        return await db.select().from(schema.companies);
+      },
+      
+      async createCompany(company: any) {
+        const [newCompany] = await db
+          .insert(schema.companies)
+          .values(company)
+          .returning();
+        return newCompany;
+      },
+      
+      async updateCompany(id: number, companyData: any) {
+        const [updatedCompany] = await db
+          .update(schema.companies)
+          .set(companyData)
+          .where(eq(schema.companies.id, id))
+          .returning();
+        return updatedCompany;
+      },
+      
+      // Driver operations
+      async deleteDriver(id: number): Promise<void> {
+        await db.delete(schema.drivers).where(eq(schema.drivers.id, id));
+      },
+      
+      async getAllDrivers() {
+        return await db.select().from(schema.drivers);
+      },
+      
+      async createDriver(driver: any) {
+        const [newDriver] = await db
+          .insert(schema.drivers)
+          .values(driver)
+          .returning();
+        return newDriver;
+      }
+    };
   }
 
   /**

@@ -1165,7 +1165,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/companies/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      await storage.deleteCompany(id);
+      
+      // Get user for tenant isolation
+      const user = await storage.getUser(req.session?.userId);
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Use tenant-specific database for company deletion
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        console.log(`🗑️ Deleting company ${id} from tenant database ${user.tenantId}`);
+        
+        // Delete from tenant database
+        await tenantStorage.deleteCompany(id);
+        console.log(`✅ Successfully deleted company ${id} from tenant ${user.tenantId}`);
+      } else {
+        // Main user - use regular storage
+        await storage.deleteCompany(id);
+      }
+      
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting company:", error);
