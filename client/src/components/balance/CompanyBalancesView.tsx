@@ -167,6 +167,12 @@ export default function CompanyBalancesView() {
 
   // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
+    // Guard against undefined or null weekLabel
+    if (!weekLabel || typeof weekLabel !== 'string') {
+      console.warn('Invalid weekLabel received:', weekLabel);
+      return new Date(); // Return current date as fallback
+    }
+
     // Extract start date from "DD mmm. - DD mmm." format
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
@@ -374,13 +380,13 @@ export default function CompanyBalancesView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {companyBalances.map((balance) => (
-                    <div key={`${balance.companyName}-${balance.weekLabel}`} 
+                  {companyBalances.map((balance, balanceIndex) => (
+                    <div key={`${balance.companyName || 'unknown'}-${balance.weekLabel || 'no-week'}-${balance.id || balanceIndex}`} 
                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(balance.paymentStatus || 'pending')}
                         <div>
-                          <div className="font-medium">{balance.weekLabel}</div>
+                          <div className="font-medium">{balance.weekLabel || 'Săptămână nespecificată'}</div>
                           <div className="text-sm text-muted-foreground">
                             Facturat: {formatCurrency(parseFloat(balance.totalInvoiced || '0'))} | 
                             Plătit: {formatCurrency(parseFloat(balance.totalPaid || '0'))}
