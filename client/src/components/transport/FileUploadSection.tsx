@@ -11,6 +11,11 @@ interface FileUploadSectionProps {
   invoice7FileRef: React.RefObject<HTMLInputElement>;
   invoice30FileRef: React.RefObject<HTMLInputElement>;
   handleFileUpload: (file: File, type: string) => void;
+  uploadedFileNames: {
+    trip?: string;
+    invoice7?: string;
+    invoice30?: string[];
+  };
 }
 
 export function FileUploadSection({
@@ -21,7 +26,8 @@ export function FileUploadSection({
   tripFileRef,
   invoice7FileRef,
   invoice30FileRef,
-  handleFileUpload
+  handleFileUpload,
+  uploadedFileNames
 }: FileUploadSectionProps) {
   const uploadSections = [
     {
@@ -120,10 +126,28 @@ export function FileUploadSection({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <div className="flex items-center text-green-400">
-                  <CheckCircle size={16} className="mr-2" />
-                  <span className="text-sm">{section.fileName} uploaded</span>
-                </div>
+                {section.type === 'invoice30' && uploadedFileNames.invoice30 ? (
+                  <div className="space-y-1">
+                    {uploadedFileNames.invoice30.map((fileName, index) => (
+                      <div key={index} className="flex items-center text-green-400">
+                        <CheckCircle size={16} className="mr-2" />
+                        <span className="text-sm">{fileName} uploaded</span>
+                      </div>
+                    ))}
+                    <div className="text-xs text-gray-400 mt-1">
+                      Total: {invoice30Data?.length || 0} înregistrări combinate
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-green-400">
+                    <CheckCircle size={16} className="mr-2" />
+                    <span className="text-sm">
+                      {section.type === 'trip' && uploadedFileNames.trip ? uploadedFileNames.trip :
+                       section.type === 'invoice7' && uploadedFileNames.invoice7 ? uploadedFileNames.invoice7 :
+                       section.fileName} uploaded
+                    </span>
+                  </div>
+                )}
               </motion.div>
             )}
           </motion.div>

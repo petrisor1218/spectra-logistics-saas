@@ -97,6 +97,13 @@ export function useTransportData() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   
+  // Track uploaded file names for display
+  const [uploadedFileNames, setUploadedFileNames] = useState<{
+    trip?: string;
+    invoice7?: string;
+    invoice30?: string[];
+  }>({});
+  
   const tripFileRef = useRef<HTMLInputElement>(null);
   const invoice7FileRef = useRef<HTMLInputElement>(null);
   const invoice30FileRef = useRef<HTMLInputElement>(null);
@@ -255,6 +262,7 @@ export function useTransportData() {
           const normalizedCompanyName = company.name.toLowerCase().trim();
           const normalizedSelected = selectedCompany.toLowerCase().trim();
           
+          // More flexible matching for companies
           if ((normalizedCompanyName.includes('fast') && normalizedCompanyName.includes('express')) && 
               normalizedSelected.includes('fast')) {
             targetCompanyId = company.id;
@@ -265,14 +273,18 @@ export function useTransportData() {
             targetCompanyId = company.id;
             console.log(`✅ Potrivire găsită: Stef Trans -> ${company.name} (ID: ${company.id})`);
             break;
-          } else if ((normalizedCompanyName.includes('cargo') && normalizedCompanyName.includes('sped')) && 
-                     (normalizedSelected.includes('cargo') || normalizedSelected.includes('de cargo'))) {
+          } else if (normalizedCompanyName.includes('cargo') && 
+                     (normalizedSelected.includes('cargo') || normalizedSelected.includes('de cargo') || normalizedSelected.includes('speed'))) {
             targetCompanyId = company.id;
             console.log(`✅ Potrivire găsită: DE Cargo Speed -> ${company.name} (ID: ${company.id})`);
             break;
           } else if (normalizedCompanyName.includes('toma') && normalizedSelected.includes('toma')) {
             targetCompanyId = company.id;
             console.log(`✅ Potrivire găsită: Toma -> ${company.name} (ID: ${company.id})`);
+            break;
+          } else if (normalizedCompanyName.includes('daniel') && normalizedSelected.includes('daniel')) {
+            targetCompanyId = company.id;
+            console.log(`✅ Potrivire găsită: Daniel Ontheroad -> ${company.name} (ID: ${company.id})`);
             break;
           }
         }
@@ -604,8 +616,10 @@ export function useTransportData() {
       
       if (type === 'trip') {
         setTripData(data);
+        setUploadedFileNames(prev => ({ ...prev, trip: file.name }));
       } else if (type === 'invoice7') {
         setInvoice7Data(data);
+        setUploadedFileNames(prev => ({ ...prev, invoice7: file.name }));
       } else if (type === 'invoice30') {
         // Support multiple invoice30 files - combine with existing data
         setInvoice30Data((prev: any) => {
@@ -615,6 +629,10 @@ export function useTransportData() {
           }
           return data;
         });
+        setUploadedFileNames(prev => ({ 
+          ...prev, 
+          invoice30: prev.invoice30 ? [...prev.invoice30, file.name] : [file.name]
+        }));
       }
       
     } catch (error: any) {
@@ -1128,6 +1146,7 @@ export function useTransportData() {
     tripFileRef,
     invoice7FileRef,
     invoice30FileRef,
+    uploadedFileNames,
     
     // Actions
     setActiveTab,

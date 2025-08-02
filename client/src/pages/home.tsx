@@ -42,6 +42,7 @@ export default function Home() {
     tripFileRef,
     invoice7FileRef,
     invoice30FileRef,
+    uploadedFileNames,
     
     // Actions
     setActiveTab,
@@ -197,6 +198,7 @@ export default function Home() {
                   invoice7FileRef={invoice7FileRef}
                   invoice30FileRef={invoice30FileRef}
                   handleFileUpload={handleFileUpload}
+                  uploadedFileNames={uploadedFileNames}
                 />
               </div>
             )}
