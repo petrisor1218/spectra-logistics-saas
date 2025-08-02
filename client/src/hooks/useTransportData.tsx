@@ -459,10 +459,43 @@ export function useTransportData() {
     return date >= twoYearsAgo && date <= now;
   };
 
-  // File processing - DO NOT MODIFY!
+  // Extended Excel processing with multi-sheet support
   const parseExcel = (arrayBuffer: ArrayBuffer) => {
     try {
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      console.log('📊 Excel fișier detectat cu taburile:', workbook.SheetNames);
+      
+      // Check if this is a Payment Details format
+      if (workbook.SheetNames.includes('Payment Details')) {
+        console.log('🔍 Detectat format Payment Details - folosesc tabul specific');
+        const worksheet = workbook.Sheets['Payment Details'];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (jsonData.length < 2) return [];
+        
+        // For Payment Details format: VRID on column E (index 4), Amount on column AF (index 31)
+        const processedData: any[] = [];
+        
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i] as any[];
+          const vrid = row[4]; // Column E (0-indexed = 4)
+          const amount = row[31]; // Column AF (0-indexed = 31)
+          
+          if (vrid && amount && !isNaN(parseFloat(amount))) {
+            processedData.push({
+              'Tour ID': vrid,
+              'Load ID': vrid, // Backup field
+              'Gross Pay Amt (Excl. Tax)': parseFloat(amount)
+            });
+          }
+        }
+        
+        console.log(`✅ Procesat Payment Details: ${processedData.length} înregistrări găsite`);
+        console.log('📋 Primele 3 înregistrări:', processedData.slice(0, 3));
+        return processedData;
+      }
+      
+      // Standard format processing (existing logic)
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -472,13 +505,16 @@ export function useTransportData() {
       const headers = jsonData[0] as string[];
       const rows = jsonData.slice(1);
       
-      return rows.map(row => {
+      const result = rows.map(row => {
         const obj: any = {};
         headers.forEach((header, index) => {
           obj[header] = (row as any[])[index] || '';
         });
         return obj;
       }).filter(row => Object.values(row).some(val => val !== '' && val !== null && val !== undefined));
+      
+      console.log(`✅ Procesat format standard: ${result.length} înregistrări găsite`);
+      return result;
       
     } catch (error) {
       console.error('Eroare la parsarea Excel:', error);
@@ -531,7 +567,14 @@ export function useTransportData() {
       } else if (type === 'invoice7') {
         setInvoice7Data(data);
       } else if (type === 'invoice30') {
-        setInvoice30Data(data);
+        // Support multiple invoice30 files - combine with existing data
+        setInvoice30Data(prev => {
+          if (prev && prev.length > 0) {
+            console.log(`🔄 Combinând cu datele existente: ${prev.length} + ${data.length} înregistrări`);
+            return [...prev, ...data];
+          }
+          return data;
+        });
       }
       
     } catch (error: any) {
