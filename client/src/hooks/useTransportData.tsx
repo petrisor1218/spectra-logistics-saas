@@ -587,8 +587,9 @@ export function useTransportData() {
 
   // Data processing with dynamic driver loading
   const processData = async () => {
-    if (!tripData || !invoice7Data || !invoice30Data) {
-      alert('Vă rugăm să încărcați toate fișierele necesare.');
+    // Allow processing with trip + at least one invoice type
+    if (!tripData || (!invoice7Data && !invoice30Data)) {
+      alert('Vă rugăm să încărcați fișierul TRIP și cel puțin o factură (7 zile sau 30 zile).');
       return;
     }
 
@@ -673,8 +674,13 @@ export function useTransportData() {
         });
       };
 
-      processInvoice(invoice7Data, '7_days');
-      processInvoice(invoice30Data, '30_days');
+      // Process available invoice types
+      if (invoice7Data) {
+        processInvoice(invoice7Data, '7_days');
+      }
+      if (invoice30Data) {
+        processInvoice(invoice30Data, '30_days');
+      }
 
       setProcessedData(results);
       setSelectedWeek(processingWeek);
@@ -712,11 +718,11 @@ export function useTransportData() {
             weekLabel: processingWeek,
             processedData: results,
             tripData: tripData, // Save raw TRIP data
-            invoice7Data: invoice7Data, // Save raw invoice data
-            invoice30Data: invoice30Data, // Save raw invoice data
+            invoice7Data: invoice7Data || [], // Save raw invoice data (empty if not provided)
+            invoice30Data: invoice30Data || [], // Save raw invoice data (empty if not provided)
             tripDataCount: tripData.length,
-            invoice7Count: invoice7Data.length,
-            invoice30Count: invoice30Data.length
+            invoice7Count: invoice7Data?.length || 0,
+            invoice30Count: invoice30Data?.length || 0
           })
         });
         console.log(`💾 Date salvate pentru săptămâna ${processingWeek} cu ${tripData.length} cursuri în istoric`);
