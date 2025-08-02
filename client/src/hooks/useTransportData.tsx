@@ -220,10 +220,16 @@ export function useTransportData() {
   // Add driver to database after user confirmation
   const addDriverToDatabase = async (driverName: string, selectedCompany: string) => {
     try {
+      console.log(`🚛 Tentativa de adăugare șofer: "${driverName}" la compania: "${selectedCompany}"`);
+      
       // Check if driver already exists first
       const existingDriversResponse = await fetch('/api/drivers');
+      console.log('📋 Verificare șoferi existenți - status:', existingDriversResponse.status);
+      
       if (existingDriversResponse.ok) {
         const existingDrivers = await existingDriversResponse.json();
+        console.log(`📊 Găsiți ${existingDrivers.length} șoferi existenți în baza de date`);
+        
         const existingDriver = existingDrivers.find((d: any) => 
           d.name.toLowerCase().trim() === driverName.toLowerCase().trim()
         );
@@ -259,6 +265,12 @@ export function useTransportData() {
         }
         
         if (targetCompanyId) {
+          console.log(`🎯 Compania găsită! ID: ${targetCompanyId} pentru "${selectedCompany}"`);
+          console.log('📤 Trimit cererea POST către /api/drivers cu:', {
+            name: driverName,
+            companyId: targetCompanyId
+          });
+          
           const response = await fetch('/api/drivers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -268,11 +280,24 @@ export function useTransportData() {
             })
           });
           
+          console.log('📥 Răspuns POST /api/drivers - status:', response.status);
+          
           if (response.ok) {
-            console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`);
+            const newDriver = await response.json();
+            console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`, newDriver);
             await loadDriversFromDatabase();
             return selectedCompany;
+          } else {
+            const errorText = await response.text();
+            console.error('❌ Eroare la adăugarea șoferului:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: errorText
+            });
           }
+        } else {
+          console.error('❌ Nu am găsit compania în baza de date:', selectedCompany);
+          console.log('📋 Companiile disponibile:', companies.map(c => `${c.name} (ID: ${c.id})`));
         }
       }
     } catch (error) {
