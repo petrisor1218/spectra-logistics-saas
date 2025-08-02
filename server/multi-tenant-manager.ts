@@ -36,61 +36,75 @@ class MultiTenantManager {
   }
 
   /**
-   * CRITICAL FIX: Creează schema PostgreSQL complet separată pentru tenant
+   * Creează o bază de date complet separată pentru un tenant nou
    */
   async createTenantDatabase(tenantId: string): Promise<string> {
     try {
-      // CRITICAL: Schema nume simplificat
-      const schemaName = `tenant_${tenantId.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+      const databaseName = `tenant_${tenantId.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+      const schemaName = databaseName;
       
-      console.log(`🔨 CREATING ISOLATED SCHEMA: ${schemaName} for tenant: ${tenantId}`);
+      // Verifică dacă schema deja există
+      const existingSchemas = await this.mainDb.execute(sql`
+        SELECT schema_name 
+        FROM information_schema.schemata 
+        WHERE schema_name = ${schemaName}
+      `);
       
-      // STEP 1: Creează schema separată FORȚAT
-      await this.mainDb.execute(sql`DROP SCHEMA IF EXISTS ${sql.identifier(schemaName)} CASCADE`);
-      await this.mainDb.execute(sql`CREATE SCHEMA ${sql.identifier(schemaName)}`);
-      console.log(`✅ Fresh schema created: ${schemaName}`);
-      
-      // STEP 2: Creează toate tabelele în schema separată
-      await this.createTenantTables(schemaName);
-      console.log(`✅ Tables created in schema: ${schemaName}`);
-      
-      // STEP 3: Creează conexiunea dedicată tenant-ului cu search_path permanent
-      const tenantConnectionString = `${process.env.DATABASE_URL}?options=-c%20search_path%3D${schemaName}`;
-      const tenantPool = new Pool({ 
-        connectionString: tenantConnectionString
-      });
-      
-      const tenantDb = drizzle(tenantPool, { schema });
-      
-      // STEP 4: FORȚAT TEST - verifică că suntem în schema corectă
-      const schemaTest = await tenantDb.execute(sql`SELECT current_schema()`);
-      const currentSchema = schemaTest.rows[0]?.current_schema;
-      
-      if (currentSchema !== schemaName) {
-        // ULTIMĂ ÎNCERCARE: forțează manual search_path
-        await tenantDb.execute(sql`SET search_path TO ${sql.identifier(schemaName)}`);
-        const retestSchema = await tenantDb.execute(sql`SELECT current_schema()`);
-        console.log(`🔍 FORCED SCHEMA: ${JSON.stringify(retestSchema)}`);
+      if (existingSchemas.length === 0) {
+        console.log(`🔨 Creating separate database: ${databaseName} for tenant: ${tenantId}`);
+        
+        // Creează schema separată
+        await this.mainDb.execute(sql`CREATE SCHEMA IF NOT EXISTS ${sql.identifier(schemaName)}`);
+        
+        // Creează toate tabelele în schema separată
+        await this.createTenantTables(schemaName);
+        
+        // Creează conexiunea cu search_path setat pe schema tenant-ului
+        const tenantConnectionString = this.buildTenantConnectionString(schemaName);
+        const tenantPool = new Pool({ 
+          connectionString: tenantConnectionString,
+          options: `--search_path=${schemaName},public`
+        });
+        
+        const tenantDb = drizzle(tenantPool, { schema });
+        
+        // Salvează conexiunea tenant-ului
+        this.tenantDatabases.set(tenantId, {
+          db: tenantDb,
+          pool: tenantPool,
+          databaseName: schemaName,
+          connectionString: tenantConnectionString
+        });
+        
+        // Inițializează datele default pentru tenant
+        await this.initializeTenantData(tenantDb, tenantId);
+        
+        console.log(`✅ Successfully created separate database schema ${schemaName} for tenant ${tenantId}`);
+      } else {
+        console.log(`✅ Using existing tenant database schema ${schemaName} for tenant ${tenantId}`);
+        
+        // Creează conexiunea pentru schema existentă
+        const tenantConnectionString = this.buildTenantConnectionString(schemaName);
+        const tenantPool = new Pool({ 
+          connectionString: tenantConnectionString,
+          options: `--search_path=${schemaName},public`
+        });
+        
+        const tenantDb = drizzle(tenantPool, { schema });
+        
+        // Salvează conexiunea tenant-ului
+        this.tenantDatabases.set(tenantId, {
+          db: tenantDb,
+          pool: tenantPool,
+          databaseName: schemaName,
+          connectionString: tenantConnectionString
+        });
       }
       
-      console.log(`🔒 ISOLATION CONFIRMED: Tenant ${tenantId} locked to schema: ${currentSchema || schemaName}`);
-      
-      // STEP 5: Salvează conexiunea tenant-ului
-      this.tenantDatabases.set(tenantId, {
-        db: tenantDb,
-        pool: tenantPool,
-        databaseName: schemaName,
-        connectionString: tenantConnectionString
-      });
-      
-      // STEP 6: Inițializează datele default pentru tenant
-      await this.initializeTenantData(tenantDb, tenantId);
-      
-      console.log(`✅ TENANT ISOLATION SUCCESS: ${tenantId} → ${schemaName}`);
-      return tenantConnectionString;
+      return this.buildTenantConnectionString(schemaName);
       
     } catch (error) {
-      console.error(`❌ CRITICAL ERROR: Failed to create tenant database for ${tenantId}:`, error);
+      console.error(`❌ Failed to create tenant database for ${tenantId}:`, error);
       throw new Error(`Failed to create tenant database: ${error}`);
     }
   }
@@ -256,7 +270,7 @@ class MultiTenantManager {
   }
 
   /**
-   * CRITICAL FIX: Inițializează datele default DOAR în schema tenant-ului
+   * Inițializează datele default pentru un tenant nou
    */
   private async initializeTenantData(db: ReturnType<typeof drizzle>, tenantId: string): Promise<void> {
     try {
@@ -400,16 +414,10 @@ class MultiTenantManager {
   }
 
   /**
-   * Obține un storage izolat pentru tenant specific cu search_path forțat
+   * Obține un storage izolat pentru tenant specific
    */
   async getTenantStorage(tenantId: string) {
     const db = await this.getTenantDatabase(tenantId);
-    
-    // CRITICAL: Forțează search_path pe schema tenant-ului pentru fiecare query
-    const schemaName = `tenant_${tenantId.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
-    await db.execute(sql`SET search_path TO ${sql.identifier(schemaName)}`);
-    
-    console.log(`🔒 FORCED ISOLATION: Storage for tenant ${tenantId} locked to schema ${schemaName}`);
     
     // Importăm DatabaseStorage și creăm o instanță cu baza de date tenant
     const { DatabaseStorage } = await import('./storage.js');
