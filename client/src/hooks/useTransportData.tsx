@@ -254,8 +254,11 @@ export function useTransportData() {
         const companies = await companiesResponse.json();
         let targetCompanyId = null;
         
-        // Find company ID by matching selected company name
-        for (const company of companies) {
+        // Find company ID by matching selected company name - exclude main company
+        const transportCompanies = companies.filter(c => !c.isMainCompany);
+        console.log('🚚 Companiile de transport disponibile:', transportCompanies.map(c => `${c.name} (ID: ${c.id})`));
+        
+        for (const company of transportCompanies) {
           console.log(`🔍 Verificare companie: "${company.name}" vs "${selectedCompany}"`);
           
           // Normalize company names for comparison  
