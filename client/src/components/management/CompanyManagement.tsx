@@ -195,15 +195,28 @@ export function CompanyManagement() {
       setLoading(true);
       const response = await fetch('/api/companies', {
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
       });
       if (response.ok) {
         const data = await response.json();
-        // Clear any existing duplicates by filtering unique IDs
-        const uniqueCompanies = data.filter((company: any, index: number, array: any[]) => 
-          array.findIndex(c => c.id === company.id) === index
-        );
+        console.log(`🏢 API returned ${data.length} companies:`, data.map(c => `${c.name} (ID: ${c.id})`));
+        
+        // Clear any existing duplicates by filtering unique IDs and names
+        const uniqueCompanies = data.reduce((acc: any[], current: any) => {
+          const existsById = acc.find(item => item.id === current.id);
+          const existsByName = acc.find(item => item.name === current.name && item.id !== current.id);
+          
+          if (!existsById && !existsByName) {
+            acc.push(current);
+          } else {
+            console.log(`🚫 Skipping duplicate company: ${current.name} (ID: ${current.id})`);
+          }
+          return acc;
+        }, []);
+        
+        console.log(`✅ Setting ${uniqueCompanies.length} unique companies in state`);
         setCompanies(uniqueCompanies);
       }
     } catch (error) {
@@ -355,12 +368,15 @@ export function CompanyManagement() {
     );
   }
 
+  // Add debugging info for companies
+  console.log(`🎯 CompanyManagement render: ${companies.length} companies in state`);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
           <Building className="w-6 h-6" />
-          <span>Gestionare Companii</span>
+          <span>Gestionare Companii ({companies.length})</span>
         </h2>
 
         <motion.button
@@ -387,9 +403,9 @@ export function CompanyManagement() {
       </AnimatePresence>
 
       <div className="grid gap-4">
-        {companies.map((company) => (
+        {companies.map((company, index) => (
           <motion.div
-            key={company.id}
+            key={`company-${company.id}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="glass-card p-6 rounded-xl border border-white/10"
