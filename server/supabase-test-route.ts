@@ -3,6 +3,7 @@ import supabaseMultiTenantManager from "./supabase-multi-tenant-manager.js";
 import { supabaseTenantManager } from "./supabase-tenant-manager.js";
 import { migrateMainUserToSupabase } from "./migrate-to-supabase.js";
 import { createSupabaseTables } from "./execute-supabase-sql.js";
+import { createSupabaseSchema } from "./create-supabase-schema.js";
 
 /**
  * Rute de test pentru sistemul Supabase multi-tenant
@@ -105,7 +106,40 @@ export function registerSupabaseTestRoutes(app: Express) {
     }
   });
 
-  // Creează tabelele în Supabase
+  // Creează schema completă în Supabase
+  app.post("/api/supabase/create-schema", async (req, res) => {
+    try {
+      console.log('🔨 Creating complete Supabase schema...');
+      
+      const result = await createSupabaseSchema();
+      
+      if (result.success) {
+        res.json({
+          status: 'success',
+          message: result.message,
+          results: result.results,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          status: 'error',
+          message: result.error,
+          results: result.results,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Schema creation failed:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Creează tabelele în Supabase (legacy method)
   app.post("/api/supabase/create-tables", async (req, res) => {
     try {
       console.log('🔨 Creating Supabase tables...');
