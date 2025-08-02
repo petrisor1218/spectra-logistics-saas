@@ -612,9 +612,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get next order number
-  app.get("/api/next-order-number", async (req, res) => {
+  app.get("/api/next-order-number", async (req: any, res) => {
     try {
-      const nextNumber = await storage.getNextOrderNumber();
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      let nextNumber;
+      
+      // Use tenant-specific database for order number
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        nextNumber = await tenantStorage.getNextOrderNumber();
+        console.log(`📋 Next order number for tenant ${user.tenantId}: ${nextNumber}`);
+      } else {
+        // Main user - use regular storage
+        nextNumber = await storage.getNextOrderNumber();
+      }
+      
       res.json({ orderNumber: nextNumber });
     } catch (error) {
       console.error("Error getting next order number:", error);
@@ -988,12 +1010,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      // Only allow owner to create transport orders for now
-      if (user.tenantId) {
-        return res.status(403).json({ error: 'Access denied - tenant isolation active' });
-      }
-      
-      if (user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor') {
+      // Allow tenant users to create transport orders in their own database
+      if (user.tenantId && user.tenantId !== 'main') {
+        // Tenant user - use their isolated database
+        console.log(`🚛 Creating transport order for tenant user: ${user.username}`);
+      } else if (user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor') {
+        // Main database - only allow owner
         return res.status(403).json({ error: 'Access denied - admin only' });
       }
 
@@ -1008,7 +1030,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Processed order data:", orderData);
       
       const validatedData = insertTransportOrderSchema.parse(orderData);
-      const order = await storage.createTransportOrder(validatedData);
+      let order;
+      
+      // Use tenant-specific database for transport order creation
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        console.log(`🚛 Creating transport order in tenant database ${user.tenantId}`);
+        order = await tenantStorage.createTransportOrder(validatedData);
+        console.log(`✅ Transport order created successfully in tenant ${user.tenantId}: ${order.id}`);
+      } else {
+        // Main user - use regular storage
+        order = await storage.createTransportOrder(validatedData);
+        console.log(`👑 Legacy transport order created: ${order.id}`);
+      }
+      
       res.json(order);
     } catch (error: any) {
       console.error("Error creating transport order:", error);
