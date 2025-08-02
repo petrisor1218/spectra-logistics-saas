@@ -271,79 +271,68 @@ class MultiTenantManager {
 
   /**
    * Inițializează datele default pentru un tenant nou
-   * NOTA: Pentru testarea SaaS, tenant-ul TEST rămâne complet gol
    */
   private async initializeTenantData(db: ReturnType<typeof drizzle>, tenantId: string): Promise<void> {
     try {
-      // Inițializează doar secvența pentru numerele de comenzi (necesar pentru funcționarea sistemului)
+      // Inițializează secvența pentru numerele de comenzi
       await db.insert(schema.orderSequence).values({
         currentNumber: 1000 + Math.floor(Math.random() * 100) // Fiecare tenant începe cu un număr diferit
       }).onConflictDoNothing();
 
-      // IMPORTANT: Nu mai populez companiile automat pentru TEST tenant
-      // Clientul nou trebuie să aibă posibilitatea să testeze sistemul gol complet
-      const isTestTenant = tenantId.includes('tenant_1754113011277_752jg7hxg') || 
-                          tenantId === 'test' || 
-                          tenantId.toLowerCase().includes('test');
-      
-      if (!isTestTenant) {
-        // Pentru tenant-ii reali (nu test), adaugă companiile default
-        const defaultCompanies = [
-          {
-            name: 'FAST EXPRESS',
-            commissionRate: '0.0400',
-            cif: '35986465',
-            tradeRegisterNumber: '',
-            address: '',
-            location: '',
-            county: '',
-            country: 'Romania',
-            contact: ''
-          },
-          {
-            name: 'DE CARGO SPEED',
-            commissionRate: '0.0400',
-            cif: '23456',
-            tradeRegisterNumber: '',
-            address: '',
-            location: '',
-            county: '',
-            country: 'Romania',
-            contact: ''
-          },
-          {
-            name: 'STEF TRANS ',
-            commissionRate: '0.0400',
-            cif: '',
-            tradeRegisterNumber: '',
-            address: '',
-            location: '',
-            county: '',
-            country: 'Romania',
-            contact: ''
-          },
-          {
-            name: 'TOMA',
-            commissionRate: '0.0400',
-            cif: '',
-            tradeRegisterNumber: '',
-            address: '',
-            location: '',
-            county: '',
-            country: 'Romania',
-            contact: ''
-          }
-        ];
-
-        for (const company of defaultCompanies) {
-          await db.insert(schema.companies).values(company).onConflictDoNothing();
+      // Adaugă companiile default pentru tenant (fără tenantId pentru că schema e separată)
+      // Companii de transport reale (nu mai creăm companii dummy)
+      const defaultCompanies = [
+        {
+          name: 'FAST EXPRESS',
+          commissionRate: '0.0400',
+          cif: '35986465',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
+          country: 'Romania',
+          contact: ''
+        },
+        {
+          name: 'DE CARGO SPEED',
+          commissionRate: '0.0400',
+          cif: '23456',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
+          country: 'Romania',
+          contact: ''
+        },
+        {
+          name: 'STEF TRANS ',
+          commissionRate: '0.0400',
+          cif: '',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
+          country: 'Romania',
+          contact: ''
+        },
+        {
+          name: 'TOMA',
+          commissionRate: '0.0400',
+          cif: '',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
+          country: 'Romania',
+          contact: ''
         }
-        
-        console.log(`✅ Initialized default companies for tenant ${tenantId}`);
-      } else {
-        console.log(`🧪 TEST TENANT - Nu populez companiile automat pentru testare: ${tenantId}`);
+      ];
+
+      for (const company of defaultCompanies) {
+        await db.insert(schema.companies).values(company).onConflictDoNothing();
       }
 
+      console.log(`✅ Initialized default data for tenant ${tenantId}`);
     } catch (error) {
       console.error(`Error initializing tenant data for ${tenantId}:`, error);
       throw error;

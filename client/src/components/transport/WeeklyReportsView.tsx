@@ -111,37 +111,25 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
   const tableData = useMemo(() => {
     if (!currentCompanyData?.VRID_details) return [];
     
-    return Object.entries(currentCompanyData.VRID_details).map(([vrid, details]) => {
-      // Safe access with defaults
-      const days7 = details['7_days'] || 0;
-      const days30 = details['30_days'] || 0;
-      const commission = details.commission || 0;
-      
-      return {
-        vrid,
-        sum7Days: days7,
-        sum30Days: days30,
-        totalInvoice: days7 + days30,
-        commission,
-        totalNet: (days7 + days30) - commission
-      };
-    });
+    return Object.entries(currentCompanyData.VRID_details).map(([vrid, details]) => ({
+      vrid,
+      sum7Days: details['7_days'],
+      sum30Days: details['30_days'],
+      totalInvoice: details['7_days'] + details['30_days'],
+      commission: details.commission,
+      totalNet: (details['7_days'] + details['30_days']) - details.commission
+    }));
   }, [currentCompanyData]);
 
   const totals = useMemo(() => {
     if (!currentCompanyData) return null;
     
-    // Safe access with defaults to prevent undefined errors
-    const total7Days = currentCompanyData.Total_7_days || 0;
-    const total30Days = currentCompanyData.Total_30_days || 0;
-    const totalCommission = currentCompanyData.Total_comision || 0;
-    
     return {
-      total7Days,
-      total30Days,
-      totalInvoice: total7Days + total30Days,
-      totalCommission,
-      totalNet: (total7Days + total30Days) - totalCommission
+      total7Days: currentCompanyData.Total_7_days,
+      total30Days: currentCompanyData.Total_30_days,
+      totalInvoice: currentCompanyData.Total_7_days + currentCompanyData.Total_30_days,
+      totalCommission: currentCompanyData.Total_comision,
+      totalNet: (currentCompanyData.Total_7_days + currentCompanyData.Total_30_days) - currentCompanyData.Total_comision
     };
   }, [currentCompanyData]);
 
