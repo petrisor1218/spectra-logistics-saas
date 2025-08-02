@@ -253,17 +253,51 @@ class MultiTenantManager {
       }).onConflictDoNothing();
 
       // Adaugă companiile default pentru tenant (fără tenantId pentru că schema e separată)
+      // Companii de transport reale (nu mai creăm companii dummy)
       const defaultCompanies = [
         {
-          name: 'Transport Company SRL',
-          commissionRate: '0.0400', // 4%
-          cif: `RO${Math.floor(Math.random() * 90000000) + 10000000}`,
-          tradeRegisterNumber: `J40/${Math.floor(Math.random() * 90000) + 10000}/2024`,
-          address: 'Adresa companiei de transport',
-          location: 'București',
-          county: 'București',
+          name: 'FAST EXPRESS',
+          commissionRate: '0.0400',
+          cif: '35986465',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
           country: 'Romania',
-          contact: 'contact@transport.ro'
+          contact: ''
+        },
+        {
+          name: 'DE CARGO SPEED',
+          commissionRate: '0.0400',
+          cif: '23456',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
+          country: 'Romania',
+          contact: ''
+        },
+        {
+          name: 'STEF TRANS ',
+          commissionRate: '0.0400',
+          cif: '',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
+          country: 'Romania',
+          contact: ''
+        },
+        {
+          name: 'TOMA',
+          commissionRate: '0.0400',
+          cif: '',
+          tradeRegisterNumber: '',
+          address: '',
+          location: '',
+          county: '',
+          country: 'Romania',
+          contact: ''
         }
       ];
 
