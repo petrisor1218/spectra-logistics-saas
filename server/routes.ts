@@ -591,9 +591,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let orders: any[] = [];
 
       // Apply tenant isolation for transport orders
-      if (user.tenantId) {
-        // New user - empty data initially
-        orders = [];
+      if (user.tenantId && user.tenantId !== 'main') {
+        // Tenant user - read from tenant database
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        if (weekLabel) {
+          orders = await tenantStorage.getTransportOrdersByWeek(weekLabel as string);
+        } else if (companyName) {
+          orders = await tenantStorage.getTransportOrdersByCompany(companyName as string);
+        } else {
+          orders = await tenantStorage.getAllTransportOrders();
+        }
         console.log(`🔒 Tenant isolation: User ${user.username} sees ${orders.length} transport orders from tenant ${user.tenantId}`);
       } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
         // Owner - see all existing data with filters
