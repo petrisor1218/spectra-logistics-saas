@@ -5,7 +5,3 @@ builder = "nixpacks"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
-
-[env]
-NODE_ENV = "production"
-PORT = "3000"
