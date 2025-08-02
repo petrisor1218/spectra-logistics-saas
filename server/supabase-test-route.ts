@@ -2,6 +2,7 @@ import type { Express } from "express";
 import supabaseMultiTenantManager from "./supabase-multi-tenant-manager.js";
 import { supabaseTenantManager } from "./supabase-tenant-manager.js";
 import { migrateMainUserToSupabase } from "./migrate-to-supabase.js";
+import { createSupabaseTables } from "./execute-supabase-sql.js";
 
 /**
  * Rute de test pentru sistemul Supabase multi-tenant
@@ -104,6 +105,37 @@ export function registerSupabaseTestRoutes(app: Express) {
     }
   });
 
+  // Creează tabelele în Supabase
+  app.post("/api/supabase/create-tables", async (req, res) => {
+    try {
+      console.log('🔨 Creating Supabase tables...');
+      
+      const result = await createSupabaseTables();
+      
+      if (result.success) {
+        res.json({
+          status: 'success',
+          message: 'Supabase tables created successfully',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          status: 'error',
+          message: result.error,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Table creation failed:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Migrare date utilizator principal în Supabase
   app.post("/api/supabase/migrate-main-user", async (req, res) => {
     try {
@@ -128,6 +160,44 @@ export function registerSupabaseTestRoutes(app: Express) {
       
     } catch (error) {
       console.error('❌ Migration failed:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  // Activează sistemul Supabase pentru utilizatorul principal
+  app.post("/api/supabase/activate-main-user", async (req, res) => {
+    try {
+      console.log('🚀 Activating Supabase for main user...');
+      
+      // Test că tabelele există și sunt populate
+      const mainSupabase = supabaseMultiTenantManager.getMainSupabase();
+      
+      const [companiesTest, driversTest, weeklyTest] = await Promise.all([
+        mainSupabase.from('companies').select('*').eq('tenant_id', 'main').limit(1),
+        mainSupabase.from('drivers').select('*').eq('tenant_id', 'main').limit(1),
+        mainSupabase.from('weekly_processing').select('*').eq('tenant_id', 'main').limit(1)
+      ]);
+      
+      const result = {
+        status: 'success',
+        message: 'Supabase activated for main user',
+        data: {
+          companies: companiesTest.data?.length || 0,
+          drivers: driversTest.data?.length || 0,
+          weeklyProcessing: weeklyTest.data?.length || 0
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('✅ Supabase activation complete');
+      res.json(result);
+      
+    } catch (error) {
+      console.error('❌ Supabase activation failed:', error);
       res.status(500).json({
         status: 'error',
         message: error instanceof Error ? error.message : 'Unknown error',

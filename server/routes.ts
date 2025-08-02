@@ -1,12 +1,16 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { SupabaseMainStorage } from "./supabase-main-storage.js";
 import { registerTenantRoutes } from "./tenant-routes.js";
 import { multiTenantManager } from "./multi-tenant-manager.js";
 import { IsolationEnforcer, isolationMiddleware } from "./isolation-enforcer.js";
 import supabaseMultiTenantManager from "./supabase-multi-tenant-manager.js";
 import { supabaseTenantManager } from "./supabase-tenant-manager.js";
 import { registerSupabaseTestRoutes } from "./supabase-test-route.js";
+
+// Create Supabase storage instance for main user
+const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.getMainSupabase());
 import { 
   companies, 
   drivers, 
