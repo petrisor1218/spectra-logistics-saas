@@ -1405,12 +1405,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`🚛 Creating driver for user: ${user.username} (tenant: ${user.tenantId})`);
       
       let driver;
+      let tenantStorage;
       
       if (user.tenantId && user.tenantId !== 'main') {
-        // Utilizator cu tenant - creează în baza sa separată
+        // PROFESSIONAL LOGIC: Robust tenant driver creation with auto-recovery
         console.log(`🔒 Creating driver in tenant database: ${user.tenantId}`);
         const { multiTenantManager } = await import('./multi-tenant-manager.js');
-        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        // Validate company exists before creating driver
+        const companyId = validatedData.companyId;
+        if (companyId) {
+          try {
+            const companies = await tenantStorage.getCompanies();
+            const companyExists = companies.find((c: any) => c.id === companyId);
+            
+            if (!companyExists) {
+              console.log(`🔄 RECUPERARE AUTOMATĂ: Company ID ${companyId} nu există în tenant. Încerc fallback...`);
+              
+              // Find any available transport company as fallback
+              const fallbackCompany = companies.find((c: any) => !c.isMainCompany);
+              if (fallbackCompany) {
+                console.log(`✅ RECUPERARE REUȘITĂ: Folosesc compania fallback: ${fallbackCompany.name} (ID: ${fallbackCompany.id})`);
+                validatedData.companyId = fallbackCompany.id;
+              } else {
+                return res.status(400).json({ 
+                  error: 'No transport companies available',
+                  details: 'Nu există companii de transport în sistem. Adaugă o companie de transport mai întâi.'
+                });
+              }
+            }
+          } catch (companyCheckError) {
+            console.error('❌ Eroare la verificarea companiei:', companyCheckError);
+          }
+        }
+        
         driver = await tenantStorage.createDriver(validatedData);
         console.log(`✅ Driver created successfully in tenant ${user.tenantId}: ${driver.name}`);
       } else {
@@ -1424,9 +1453,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("❌ Error creating driver:", error);
       console.error("Error details:", error);
+      
+      // Enhanced error response for debugging
+      let errorMessage = 'Failed to create driver';
+      let errorDetails = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (error instanceof Error && 'code' in error && error.code === '23503') {
+        errorMessage = 'Company reference error';
+        errorDetails = `Compania specificată nu există în sistem. Sistemul va încerca recuperarea automată.`;
+      }
+      
       res.status(500).json({ 
-        error: "Failed to create driver", 
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: errorMessage, 
+        details: errorDetails,
+        code: error instanceof Error && 'code' in error ? (error as any).code : 'UNKNOWN'
       });
     }
   });

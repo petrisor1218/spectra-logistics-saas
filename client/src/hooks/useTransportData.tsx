@@ -254,42 +254,94 @@ export function useTransportData() {
         const companies = await companiesResponse.json();
         let targetCompanyId = null;
         
-        // Find company ID by matching selected company name - exclude main company
-        const transportCompanies = companies.filter(c => !c.isMainCompany);
-        console.log('🚚 Companiile de transport disponibile:', transportCompanies.map(c => `${c.name} (ID: ${c.id})`));
+        // PROFESSIONAL LOGIC: Robust company matching with auto-recovery
+        const transportCompanies = companies.filter((c: any) => !c.isMainCompany);
+        console.log('🚚 Companiile de transport disponibile:', transportCompanies.map((c: any) => `${c.name} (ID: ${c.id})`));
         
-        for (const company of transportCompanies) {
-          console.log(`🔍 Verificare companie: "${company.name}" vs "${selectedCompany}"`);
+        // Smart company matching with fuzzy logic
+        const findCompanyByName = (searchName: string) => {
+          const normalized = searchName.toLowerCase().trim();
           
-          // Normalize company names for comparison  
-          const normalizedCompanyName = company.name.toLowerCase().trim();
-          const normalizedSelected = selectedCompany.toLowerCase().trim();
+          // Exact name matching first (highest priority)
+          let match = transportCompanies.find((c: any) => 
+            c.name.toLowerCase().trim() === normalized ||
+            c.name.toLowerCase().replace(/\s+/g, '') === normalized.replace(/\s+/g, '')
+          );
+          if (match) return match;
           
-          // More flexible matching for companies
-          if ((normalizedCompanyName.includes('fast') && normalizedCompanyName.includes('express')) && 
-              normalizedSelected.includes('fast')) {
-            targetCompanyId = company.id;
-            console.log(`✅ Potrivire găsită: Fast Express -> ${company.name} (ID: ${company.id})`);
-            break;
-          } else if ((normalizedCompanyName.includes('stef') && normalizedCompanyName.includes('trans')) && 
-                     normalizedSelected.includes('stef')) {
-            targetCompanyId = company.id;
-            console.log(`✅ Potrivire găsită: Stef Trans -> ${company.name} (ID: ${company.id})`);
-            break;
-          } else if (normalizedCompanyName.includes('cargo') && 
-                     (normalizedSelected.includes('cargo') || normalizedSelected.includes('de cargo') || normalizedSelected.includes('speed'))) {
-            targetCompanyId = company.id;
-            console.log(`✅ Potrivire găsită: DE Cargo Speed -> ${company.name} (ID: ${company.id})`);
-            break;
-          } else if (normalizedCompanyName.includes('toma') && normalizedSelected.includes('toma')) {
-            targetCompanyId = company.id;
-            console.log(`✅ Potrivire găsită: Toma -> ${company.name} (ID: ${company.id})`);
-            break;
-          } else if (normalizedCompanyName.includes('daniel') && normalizedSelected.includes('daniel')) {
-            targetCompanyId = company.id;
-            console.log(`✅ Potrivire găsită: Daniel Ontheroad -> ${company.name} (ID: ${company.id})`);
-            break;
+          // Keyword matching (medium priority)
+          if (normalized.includes('fast')) {
+            match = transportCompanies.find((c: any) => 
+              c.name.toLowerCase().includes('fast') && c.name.toLowerCase().includes('express')
+            );
+            if (match) return match;
           }
+          
+          if (normalized.includes('stef')) {
+            match = transportCompanies.find((c: any) => 
+              c.name.toLowerCase().includes('stef') && c.name.toLowerCase().includes('trans')
+            );
+            if (match) return match;
+          }
+          
+          if (normalized.includes('cargo') || normalized.includes('speed')) {
+            match = transportCompanies.find((c: any) => 
+              c.name.toLowerCase().includes('cargo') || c.name.toLowerCase().includes('speed')
+            );
+            if (match) return match;
+          }
+          
+          if (normalized.includes('toma')) {
+            match = transportCompanies.find((c: any) => 
+              c.name.toLowerCase().includes('toma')
+            );
+            if (match) return match;
+          }
+          
+          // Fallback: create company if missing (lowest priority - auto-recovery)
+          return null;
+        };
+        
+        let targetCompany = findCompanyByName(selectedCompany);
+        
+        // AUTO-RECOVERY: If company doesn't exist, create it automatically
+        if (!targetCompany) {
+          console.log(`🔄 RECUPERARE AUTOMATĂ: Compania "${selectedCompany}" nu există. O creez automat...`);
+          
+          const newCompanyData = {
+            name: selectedCompany.toUpperCase(),
+            commissionRate: selectedCompany.toLowerCase().includes('fast') ? 0.02 : 0.04,
+            cif: '',
+            tradeRegisterNumber: '',
+            address: '',
+            location: '',
+            county: '',
+            country: 'Romania',
+            contact: '',
+            isMainCompany: false
+          };
+          
+          try {
+            const createResponse = await fetch('/api/companies', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(newCompanyData)
+            });
+            
+            if (createResponse.ok) {
+              const newCompany = await createResponse.json();
+              console.log(`✅ RECUPERARE REUȘITĂ: Compania "${selectedCompany}" creată cu ID: ${newCompany.id}`);
+              targetCompany = newCompany;
+              targetCompanyId = newCompany.id;
+            } else {
+              console.error('❌ RECUPERARE EȘUATĂ: Nu am putut crea compania automaticly');
+            }
+          } catch (error) {
+            console.error('❌ EROARE RECUPERARE:', error);
+          }
+        } else {
+          targetCompanyId = targetCompany.id;
+          console.log(`✅ Companie găsită: ${targetCompany.name} (ID: ${targetCompany.id})`);
         }
         
         if (targetCompanyId) {
@@ -324,10 +376,8 @@ export function useTransportData() {
             });
           }
         } else {
-          console.error('❌ Nu am găsit compania în baza de date:', selectedCompany);
-          console.log('📋 Companiile disponibile:', companies.map(c => `${c.name} (ID: ${c.id})`));
-        console.log(`🔍 Căutare companie pentru: "${selectedCompany}"`);
-        console.log('🔍 Normalizat:', selectedCompany.toLowerCase().trim());
+          console.error('❌ RECUPERARE COMPLETĂ EȘUATĂ pentru:', selectedCompany);
+          console.log('📋 Companiile disponibile:', companies.map((c: any) => `${c.name} (ID: ${c.id})`));
         }
       }
     } catch (error) {
