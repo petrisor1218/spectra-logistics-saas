@@ -485,6 +485,23 @@ export class SupabaseMainStorage {
     return this.getAllTransportOrders();
   }
 
+  async getWeeklyProcessingByWeek(weekLabel: string): Promise<WeeklyProcessing[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('weekly_processing')
+        .select('*')
+        .eq('tenant_id', 'main')
+        .eq('week_label', weekLabel)
+        .order('processing_date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error(`❌ Error fetching weekly processing by week ${weekLabel}:`, error);
+      return [];
+    }
+  }
+
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
     try {
       const orderData = {
