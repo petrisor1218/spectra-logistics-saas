@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3 } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, RefreshCw } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -257,6 +257,21 @@ export default function Home() {
                             </p>
                           </div>
                         )}
+                        
+                        <motion.button
+                          onClick={async () => {
+                            // Force reprocess data with fresh driver mappings
+                            await loadDriversFromDatabase();
+                            await processData();
+                          }}
+                          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-4 py-3 rounded-xl text-white font-medium flex items-center space-x-2 transition-all duration-300 shadow-lg hover:shadow-blue-500/25"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          disabled={loading}
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          <span>Reprocesează</span>
+                        </motion.button>
                         
                         <motion.button
                           onClick={saveProcessedData}
