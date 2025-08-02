@@ -1,0 +1,12 @@
+node_modules/
+.git/
+.replit
+.env*
+!.env.example
+*.log
+.DS_Store
+attached_assets/
+cookies.txt
+recovery_script.js
+create_balances_for_existing_data.js
+ISOLATION_ANALYSIS.md
