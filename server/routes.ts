@@ -310,6 +310,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Main company management routes
+  app.get("/api/main-company", async (req: any, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Get main company from tenant database
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        const { CompanyManagementExtensions } = await import('./storage-extensions.js');
+        
+        const mainCompany = await CompanyManagementExtensions.getMainCompany(tenantStorage);
+        res.json(mainCompany || null);
+      } else {
+        // Legacy user - get from main database
+        const { CompanyManagementExtensions } = await import('./storage-extensions.js');
+        const mainCompany = await CompanyManagementExtensions.getMainCompany(storage);
+        res.json(mainCompany || null);
+      }
+    } catch (error) {
+      console.error("Error fetching main company:", error);
+      res.status(500).json({ error: "Failed to fetch main company" });
+    }
+  });
+
+  app.post("/api/main-company", async (req: any, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      const companyData = req.body;
+      console.log("Creating/updating main company:", companyData);
+
+      // Save main company to tenant database
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        const { CompanyManagementExtensions } = await import('./storage-extensions.js');
+        
+        const mainCompany = await CompanyManagementExtensions.saveMainCompany(tenantStorage, companyData);
+        console.log(`✅ Main company saved for tenant ${user.tenantId}:`, mainCompany.name);
+        res.status(201).json(mainCompany);
+      } else {
+        // Legacy user - save to main database
+        const { CompanyManagementExtensions } = await import('./storage-extensions.js');
+        const mainCompany = await CompanyManagementExtensions.saveMainCompany(storage, companyData);
+        console.log(`✅ Main company saved for legacy user:`, mainCompany.name);
+        res.status(201).json(mainCompany);
+      }
+    } catch (error: any) {
+      console.error("Error saving main company:", error);
+      res.status(500).json({ 
+        error: "Failed to save main company",
+        details: error.message
+      });
+    }
+  });
+
+  app.put("/api/main-company", async (req: any, res) => {
+    try {
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      const companyData = req.body;
+      console.log("Updating main company:", companyData);
+
+      // Update main company in tenant database
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        const { CompanyManagementExtensions } = await import('./storage-extensions.js');
+        
+        const mainCompany = await CompanyManagementExtensions.saveMainCompany(tenantStorage, companyData);
+        console.log(`✅ Main company updated for tenant ${user.tenantId}:`, mainCompany.name);
+        res.json(mainCompany);
+      } else {
+        // Legacy user - update in main database
+        const { CompanyManagementExtensions } = await import('./storage-extensions.js');
+        const mainCompany = await CompanyManagementExtensions.saveMainCompany(storage, companyData);
+        console.log(`✅ Main company updated for legacy user:`, mainCompany.name);
+        res.json(mainCompany);
+      }
+    } catch (error: any) {
+      console.error("Error updating main company:", error);
+      res.status(500).json({ 
+        error: "Failed to update main company",
+        details: error.message
+      });
+    }
+  });
+
   // Company routes with separate tenant databases
   app.get("/api/companies", async (req: any, res) => {
     try {

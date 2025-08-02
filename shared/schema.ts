@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -35,6 +35,7 @@ export const companies = pgTable("companies", {
   county: varchar("county", { length: 100 }),
   country: varchar("country", { length: 100 }).default("Romania"),
   contact: text("contact"),
+  isMainCompany: boolean("is_main_company").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

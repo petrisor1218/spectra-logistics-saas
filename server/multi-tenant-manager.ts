@@ -126,6 +126,7 @@ class MultiTenantManager {
         county VARCHAR(100),
         country VARCHAR(100) DEFAULT 'Romania',
         contact TEXT,
+        is_main_company BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
       )`,
       

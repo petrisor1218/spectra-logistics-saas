@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, RefreshCw } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, RefreshCw, Building2 } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -17,6 +17,7 @@ import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import { SubscriptionNotification } from "@/components/ui/subscription-notification";
+import { MainCompanySettings } from "@/components/settings/MainCompanySettings";
 import { useTransportData } from "@/hooks/useTransportData";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -86,6 +87,7 @@ export default function Home() {
     { id: 'balances', label: 'Bilanțuri Companii', icon: BarChart3 },
     { id: 'reports', label: 'Rapoarte Săptămânale', icon: BarChart3 },
     { id: 'orders', label: 'Comenzi Transport', icon: Truck },
+    { id: 'company', label: 'Compania Mea', icon: Building2 },
     { id: 'management', label: 'Gestionare', icon: Settings },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'history', label: 'Istoric Săptămânal', icon: History }
@@ -433,6 +435,17 @@ export default function Home() {
             {/* Transport Orders Tab */}
             {activeTab === 'orders' && (
               <TransportOrdersView />
+            )}
+
+            {/* Main Company Tab */}
+            {activeTab === 'company' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <MainCompanySettings />
+              </motion.div>
             )}
 
             {/* Management Tab */}
