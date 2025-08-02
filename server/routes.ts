@@ -11,6 +11,9 @@ import { registerSupabaseTestRoutes } from "./supabase-test-route.js";
 
 // Create Supabase storage instance for main user
 const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.getMainSupabase());
+
+// Switch to use Supabase for main user (Petrisor)
+const USE_SUPABASE_FOR_MAIN = true;
 import { 
   companies, 
   drivers, 
