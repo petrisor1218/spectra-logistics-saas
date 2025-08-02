@@ -60,6 +60,24 @@ Preferred communication style: Simple, everyday language.
 - **Demo Users**: Admin user (admin/admin123) and subscriber user (Fastexpress/Olanda99) created
 - **Evidence System**: Clear visibility into all subscriber activities and subscription statuses
 
+### 🔒 CRITICAL DATA ISOLATION FIX - August 2, 2025
+
+**Issue Identified**: Severe data leakage between main user (Petrisor) and tenant databases
+- Personal data (drivers like "Feleaga Cristian") was being copied to all tenant schemas
+- Root cause: `seedDatabase()` function in routes.ts contained Petrisor's personal business data
+- Violation of multi-tenant isolation principles - tenants should never see main user's data
+
+**Actions Taken**:
+- Removed all personal companies (Fast & Express S.R.L., Daniel Ontheroad S.R.L.) from tenant seeding
+- Eliminated personal drivers from tenant databases (26+ records cleaned)
+- Updated seeding to only include generic transport companies for tenants
+- Maintained complete separation: Main user data stays in main schema only
+
+**Trade-off**: Some legitimate drivers detected from uploaded TRIP files were accidentally removed
+- These were drivers found in CSV uploads, not personal data
+- User will need to re-upload and re-process TRIP files to restore detected drivers
+- System now correctly maintains true multi-tenant isolation
+
 ### ✅ Complete Database Separation System - August 1, 2025 (UPGRADED)
 - **MultiTenantManager**: Completely rewritten system for 100% database isolation
 - **Separate PostgreSQL Schemas**: Each subscriber gets their own dedicated schema (tenant_[id])
