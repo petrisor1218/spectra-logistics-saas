@@ -360,8 +360,9 @@ export class DatabaseStorage implements IStorage {
 
   // Transport orders methods
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
+    const dbConn = this.getDb();
     // Create the order
-    const [transportOrder] = await db
+    const [transportOrder] = await dbConn
       .insert(transportOrders)
       .values(order)
       .returning();
@@ -373,19 +374,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTransportOrders(): Promise<TransportOrder[]> {
-    return await db.select().from(transportOrders).orderBy(desc(transportOrders.createdAt));
+    const dbConn = this.getDb();
+    return await dbConn.select().from(transportOrders).orderBy(desc(transportOrders.createdAt));
   }
 
   async getTransportOrdersByWeek(weekLabel: string): Promise<TransportOrder[]> {
-    return await db.select().from(transportOrders).where(eq(transportOrders.weekLabel, weekLabel));
+    const dbConn = this.getDb();
+    return await dbConn.select().from(transportOrders).where(eq(transportOrders.weekLabel, weekLabel));
   }
 
   async getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]> {
-    return await db.select().from(transportOrders).where(eq(transportOrders.companyName, companyName));
+    const dbConn = this.getDb();
+    return await dbConn.select().from(transportOrders).where(eq(transportOrders.companyName, companyName));
   }
 
   async updateTransportOrder(id: number, updates: Partial<InsertTransportOrder>): Promise<TransportOrder> {
-    const [transportOrder] = await db
+    const dbConn = this.getDb();
+    const [transportOrder] = await dbConn
       .update(transportOrders)
       .set(updates)
       .where(eq(transportOrders.id, id))
@@ -394,7 +399,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTransportOrder(id: number): Promise<void> {
-    await db.delete(transportOrders).where(eq(transportOrders.id, id));
+    const dbConn = this.getDb();
+    await dbConn.delete(transportOrders).where(eq(transportOrders.id, id));
   }
 
   // Historical trips methods
