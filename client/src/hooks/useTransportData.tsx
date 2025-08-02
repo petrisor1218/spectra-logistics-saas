@@ -787,6 +787,9 @@ export function useTransportData() {
         
         // Create company balances
         await createCompanyBalances(processingWeek, results);
+        
+        // Generate transport orders automatically
+        await generateTransportOrders(processingWeek, results);
       } catch (error) {
         console.log('Eroare la salvarea datelor:', error);
       }
@@ -1125,6 +1128,69 @@ export function useTransportData() {
       }
     } catch (error) {
       console.error('Eroare la crearea bilanțurilor:', error);
+    }
+  };
+
+  // Generate transport orders automatically from processed data
+  const generateTransportOrders = async (weekLabel: string, processedData: any) => {
+    try {
+      if (!processedData || typeof processedData !== 'object') {
+        console.log('Nu există date procesate pentru generarea comenzilor');
+        return;
+      }
+
+      // Go through each company in processed data
+      for (const [companyName, companyData] of Object.entries(processedData)) {
+        if (companyName === 'Unmatched' || companyName === 'Totals') continue;
+        
+        const data = companyData as any;
+        if (!data || !data.VRID_details) continue;
+
+        // Collect all VRIDs for this company
+        const vrids = Object.keys(data.VRID_details);
+        if (vrids.length === 0) continue;
+
+        // Calculate total amount (7 days + 30 days)
+        const total7Days = parseFloat(data.Total_7_days) || 0;
+        const total30Days = parseFloat(data.Total_30_days) || 0;
+        const totalAmount = total7Days + total30Days;
+
+        if (totalAmount <= 0) continue;
+
+        try {
+          // Get next order number
+          const orderResponse = await fetch('/api/next-order-number');
+          if (!orderResponse.ok) continue;
+          
+          const { orderNumber } = await orderResponse.json();
+
+          // Create transport order
+          const response = await fetch('/api/transport-orders', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              orderNumber: orderNumber.toString(),
+              companyName,
+              orderDate: new Date().toISOString(),
+              weekLabel,
+              vrids,
+              totalAmount: totalAmount.toFixed(2),
+              route: 'DE-BE-NL', // Default route
+              status: 'draft'
+            }),
+          });
+
+          if (response.ok) {
+            console.log(`🚛 Comandă de transport generată pentru ${companyName}: ${orderNumber} (${totalAmount.toFixed(2)} EUR, ${vrids.length} VRID-uri)`);
+          }
+        } catch (error) {
+          console.error(`Eroare la generarea comenzii pentru ${companyName}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Eroare la generarea comenzilor de transport:', error);
     }
   };
 
