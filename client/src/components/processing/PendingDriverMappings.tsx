@@ -30,6 +30,21 @@ export function PendingDriverMappings({
 
   // Initialize selected companies with suggestions when pendingMappings changes
   useEffect(() => {
+    // Remove duplicates by driver name to prevent React key errors
+    const uniqueMappings = pendingMappings.reduce((acc, mapping) => {
+      if (!acc.find(m => m.driverName === mapping.driverName)) {
+        acc.push(mapping);
+      }
+      return acc;
+    }, [] as typeof pendingMappings);
+    
+    // Update parent if duplicates were found
+    if (uniqueMappings.length !== pendingMappings.length) {
+      console.log(`🔧 Eliminat ${pendingMappings.length - uniqueMappings.length} duplicate din pending mappings`);
+      setPendingMappings(uniqueMappings);
+      return; // Exit early, useEffect will run again with clean data
+    }
+    
     const initialSelections: Record<string, string> = {};
     pendingMappings.forEach(mapping => {
       if (!selectedCompanies[mapping.driverName]) {
@@ -176,11 +191,12 @@ export function PendingDriverMappings({
               const allOptions = [mapping.suggestedCompany, ...mapping.alternatives];
               const selectedCompany = selectedCompanies[mapping.driverName] || mapping.suggestedCompany;
               
-              // selectedCompany is now properly initialized via useEffect
+              // Create unique key to avoid React duplicate key warnings
+              const uniqueKey = `${mapping.driverName}-${index}-${mapping.suggestedCompany}`;
               
               return (
                 <motion.div
-                  key={mapping.driverName}
+                  key={uniqueKey}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
@@ -203,8 +219,8 @@ export function PendingDriverMappings({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="glass-dropdown">
-                            {allOptions.map((company) => (
-                              <SelectItem key={company} value={company}>
+                            {allOptions.map((company, companyIndex) => (
+                              <SelectItem key={`${company}-${companyIndex}-${mapping.driverName}`} value={company}>
                                 <span className="flex items-center">
                                   {company}
                                   {company === mapping.suggestedCompany && (
