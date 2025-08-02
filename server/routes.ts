@@ -65,17 +65,8 @@ async function seedDatabase() {
 
     // Create companies with real data from business registry
     const companies = [
-      { 
-        name: "Fast & Express S.R.L.", 
-        commissionRate: "0.02",
-        cif: "RO35986465",
-        tradeRegisterNumber: "J34/227/2016",
-        address: "Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42",
-        location: "Alexandria",
-        county: "Teleorman",
-        country: "Romania",
-        contact: ""
-      },
+      // REMOVED: Fast & Express S.R.L. - această companie aparține utilizatorului principal (Petrisor)
+      // și nu trebuie să fie în tenant databases
       { 
         name: "Stef Trans S.R.L.", 
         commissionRate: "0.04",
@@ -98,17 +89,8 @@ async function seedDatabase() {
         country: "Romania",
         contact: "Ginel, 0763698696, decargosped@gmail.com"
       },
-      { 
-        name: "Daniel Ontheroad S.R.L.", 
-        commissionRate: "0.04",
-        cif: "RO40383134",
-        tradeRegisterNumber: "J34/27/2019",
-        address: "Str. Sos. Turnu Magurele, 4-6, Bl:601, Sc:a, Et:2, Ap:10",
-        location: "Alexandria",
-        county: "Teleorman",
-        country: "Romania",
-        contact: "Mariana, 0762653911, feleagadanut@gmail.com"
-      },
+      // REMOVED: Daniel Ontheroad S.R.L. - această companie aparține utilizatorului principal (Petrisor)
+      // și nu trebuie să apară în bazele de date ale tenant-ilor
       { 
         name: "Bis General", 
         commissionRate: "0.04",
@@ -130,33 +112,8 @@ async function seedDatabase() {
 
     // Driver-company mapping (real data from business registry)
     const driverMappings = [
-      // Fast & Express S.R.L. drivers
-      { drivers: ["ADRIAN MIRON", "Adrian miron"], company: "Fast & Express S.R.L.", phone: "0740-111111", email: "adrian.miron@fastexpress.ro" },
-      { drivers: ["Andrei Serban Badea"], company: "Fast & Express S.R.L.", phone: "0740-111112", email: "andrei.badea@fastexpress.ro" },
-      { drivers: ["Petrisor Besteala"], company: "Fast & Express S.R.L.", phone: "0740-111113", email: "petrisor.besteala@fastexpress.ro" },
-      { drivers: ["Georgian Florentin Moise"], company: "Fast & Express S.R.L.", phone: "0740-111114", email: "georgian.moise@fastexpress.ro" },
-      { drivers: ["Gabriel Marian Ivan"], company: "Fast & Express S.R.L.", phone: "0740-111115", email: "gabriel.ivan@fastexpress.ro" },
-      { drivers: ["Olteanu Ionut"], company: "Fast & Express S.R.L.", phone: "0740-111116", email: "ionut.olteanu@fastexpress.ro" },
-      { drivers: ["Marius Condila"], company: "Fast & Express S.R.L.", phone: "0740-111117", email: "marius.condila@fastexpress.ro" },
-      { drivers: ["Teodor Petrișor Chiar"], company: "Fast & Express S.R.L.", phone: "0740-111118", email: "teodor.chiar@fastexpress.ro" },
-      { drivers: ["Tiberiu Iulian Ivan"], company: "Fast & Express S.R.L.", phone: "0740-111119", email: "tiberiu.ivan@fastexpress.ro" },
-      { drivers: ["Marius Adrian Badea"], company: "Fast & Express S.R.L.", phone: "0740-111120", email: "marius.badea@fastexpress.ro" },
-      { drivers: ["Florin Oprea"], company: "Fast & Express S.R.L.", phone: "0740-111121", email: "florin.oprea@fastexpress.ro" },
-      { drivers: ["George Mihaita Butnaru"], company: "Fast & Express S.R.L.", phone: "0740-111122", email: "george.butnaru@fastexpress.ro" },
-      { drivers: ["Dan Costinel Savu"], company: "Fast & Express S.R.L.", phone: "0740-111123", email: "dan.savu@fastexpress.ro" },
-      { drivers: ["Iosip Ionel"], company: "Fast & Express S.R.L.", phone: "0740-111124", email: "iosip.ionel@fastexpress.ro" },
-      { drivers: ["Andrei Tanase"], company: "Fast & Express S.R.L.", phone: "0740-111125", email: "andrei.tanase@fastexpress.ro" },
-      { drivers: ["Pana Stefan Daniel"], company: "Fast & Express S.R.L.", phone: "0740-111126", email: "stefan.pana@fastexpress.ro" },
-      { drivers: ["Vasilică Roman"], company: "Fast & Express S.R.L.", phone: "0740-111127", email: "vasilica.roman@fastexpress.ro" },
-      { drivers: ["Florin Nicolae Sanislai"], company: "Fast & Express S.R.L.", phone: "0740-111128", email: "florin.sanislai@fastexpress.ro" },
-      
-      // Daniel Ontheroad S.R.L. drivers
-      { drivers: ["Costica Mihalcea"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653911", email: "costica.mihalcea@danielontheroad.ro" },
-      { drivers: ["Adrian Budescu"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653912", email: "adrian.budescu@danielontheroad.ro" },
-      { drivers: ["Danut Feleaga"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653913", email: "danut.feleaga@danielontheroad.ro" },
-      { drivers: ["Razvan Jurubita"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653914", email: "razvan.jurubita@danielontheroad.ro" },
-      { drivers: ["Feleagă Marian"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653915", email: "marian.feleaga@danielontheroad.ro" },
-      { drivers: ["Dimitrov F"], company: "Daniel Ontheroad S.R.L.", phone: "0762-653916", email: "dimitrov.f@danielontheroad.ro" },
+      // REMOVED: All Fast & Express S.R.L. and Daniel Ontheroad S.R.L. drivers
+      // Aceștia sunt datele personale ale utilizatorului principal (Petrisor) și nu trebuie să apară în tenant databases
       
       // De Cargo Sped S.R.L. drivers
       { drivers: ["Cernat Lucian Marian"], company: "De Cargo Sped S.R.L.", phone: "0763-698696", email: "lucian.cernat@decargosped.ro" },
