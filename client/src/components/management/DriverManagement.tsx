@@ -214,6 +214,9 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
 
   const handleSave = useCallback(async (driverData: Partial<Driver>) => {
     try {
+      console.log('🔄 Salvare șofer - date:', driverData);
+      console.log('🏢 Companiile disponibile în handleSave:', companies.length, companies.map(c => `${c.name} (ID: ${c.id})`));
+      
       const variants = driverData.name ? generateNameVariants(driverData.name) : [];
       const dataToSave = {
         ...driverData,
@@ -230,6 +233,7 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
       });
 
       if (response.ok) {
+        console.log('✅ Șofer salvat cu succes, resetez formularul...');
         await fetchDrivers();
         setEditingId(null);
         setShowAddForm(false);
@@ -238,6 +242,7 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
           companyId: null,
           nameVariants: []
         });
+        console.log('🔄 Stare resetată pentru următorul șofer');
         toast({
           title: "Succes",
           description: editingId ? "Șoferul a fost actualizat" : "Șoferul a fost adăugat",
@@ -253,7 +258,7 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
         variant: "destructive"
       });
     }
-  }, [editingId, fetchDrivers, generateNameVariants, toast]);
+  }, [editingId, fetchDrivers, generateNameVariants, toast, companies]);
 
   const handleDelete = useCallback(async (id: number) => {
     if (!confirm('Sigur doriți să ștergeți acest șofer?')) return;
@@ -315,9 +320,16 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
   }, []);
 
   const handleStartAdd = useCallback(() => {
+    console.log('🆕 Începe adăugarea unui șofer nou');
+    console.log('🏢 Companiile disponibile la start:', companies.length, companies.map(c => `${c.name} (ID: ${c.id})`));
     setShowAddForm(true);
     setEditingId(null);
-  }, []);
+    setFormData({
+      name: '',
+      companyId: null,
+      nameVariants: []
+    });
+  }, [companies]);
 
   if (loading) {
     return (
