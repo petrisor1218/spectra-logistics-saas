@@ -2,239 +2,71 @@
 
 ## Overview
 
-This is a modern React-based transport payment management application built with Express.js backend and PostgreSQL database. The system helps manage payment tracking for transport companies, with features for file uploads, data processing, commission calculations, and payment history management.
+This is a modern React-based transport payment management application with an Express.js backend and PostgreSQL database. The system tracks payments for transport companies, offering features for file uploads, data processing, commission calculations, and payment history management. It aims to provide a robust, multi-tenant SaaS solution for transport companies, ensuring complete data isolation for each subscriber. The business vision is to offer a scalable and efficient tool for financial management in the transport sector, with a subscription-based monetization model.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-## Recent System Completion - August 1, 2025
-
-### ✅ Complete Registration & Subscription System - August 1, 2025
-- **Integrated Registration Flow**: Single-page registration combining account creation with subscription setup
-- **Real-Time Validation**: Instant feedback for username and email availability with visual indicators
-- **Smart Error Handling**: Detailed error messages for duplicate usernames/emails with user-friendly language
-- **3-Step Process**: Account details → Personal info → Payment setup (no charge during 3-day trial)
-- **Enhanced UX**: Green/red validation icons, debounced API calls, and step-by-step progress indicators
-
-### ✅ Subscription-Based Monetization System - August 1, 2025
-- **Single Plan Model**: Transport Pro at 99.99€/month with 3-day free trial
-- **Stripe Integration**: Complete payment processing infrastructure (requires correct secret key)
-- **Modern Pricing Page**: Professional glassmorphism design with 12 key features
-- **Demo Mode**: Elegant fallback when Stripe keys not configured
-- **Database Schema**: Updated users table with subscription tracking fields
-- **Payment Flow**: /pricing → /subscribe/professional → /subscription-success
-
-### ✅ Transport Payment Management System - Fully Operational
-- **VRID Historical Tracking**: Cross-week trip matching implemented
-- **Auto-numbering Transport Orders**: Commands start from 1554 with proper increment
-- **Complete PDF Generation**: All company data populated from database with Romanian diacritics
-- **Driver Persistence**: No more duplicate "new detected" notifications
-- **Database Schema**: All tables properly configured with necessary columns
-- **Company Data Mapping**: Correct mapping for DE Cargo Speed → De Cargo Sped S.R.L.
-- **Company Balance Tracking**: Real-time monitoring of outstanding payments per company
-- **Automatic Balance Creation**: Balances generated during weekly data processing
-- **Payment Recording**: Interactive payment registration with status updates
-
-### ✅ Company Balance Management System - August 1, 2025
-- **Database Table**: company_balances table with complete tracking fields
-- **Modern UI Interface**: Glassmorphism design with real-time updates
-- **Calendar Integration**: Automatic generation of balances from weekly processing data and payment history
-- **Smart Status Logic**: Differences under 1 EUR automatically marked as "paid" to handle rounding issues
-- **Synchronization Button**: "Sincronizează cu Calendarul" button regenerates all balances from existing data
-- **Payment Workflow**: Record payments with automatic balance calculation
-- **Status Tracking**: Visual indicators for pending/partial/paid status with intelligent rounding
-- **Multi-week Support**: Track balances across different processing weeks
-
-### ✅ Commission Exclusion Fix - August 1, 2025
-- **Complete Invoice Calculation**: Total invoiced = Total 7 days + Total 30 days (instead of just 7 days)
-- **Commission Separation**: Commission amounts excluded from outstanding balance calculations
-- **Accurate Financial Tracking**: Company balances now reflect actual amounts owed to companies
-- **Example Fix**: Fast Express 20 iul - 26 iul: 42973.29 EUR invoiced (44010.69 - 1037.40 commission)
-
-### ✅ Multi-Tenant SaaS System - August 1, 2025
-- **Admin Dashboard**: Complete management interface at /admin with subscriber oversight
-- **User Roles**: Admin and subscriber roles with proper database schema
-- **Tenant Isolation**: Tenant ID system for separate databases per subscriber
-- **Analytics Dashboard**: Real-time subscriber statistics, revenue tracking, and status monitoring
-- **Demo Users**: Admin user (admin/admin123) and subscriber user (Fastexpress/Olanda99) created
-- **Evidence System**: Clear visibility into all subscriber activities and subscription statuses
-
-### 🔒 COMPLETE ISOLATION SYSTEM - August 2, 2025
-
-**CRITICAL ACHIEVEMENT**: 100% Data Isolation Implemented
-- **Petrisor (tenant_id = NULL)**: MAIN database access ONLY - zero tenant contamination
-- **All subscribers (tenant_id != NULL)**: SEPARATE PostgreSQL schemas ONLY - zero main data access
-- **Professional Error Handling**: Auto-recovery for missing companies prevents customer support calls
-- **IsolationEnforcer**: Enterprise-grade middleware ensures strict data separation
-- **Zero Fallbacks**: No cross-database access permitted under any circumstances
-
-**Professional Features Implemented**:
-- **Smart Company Matching**: Fuzzy logic with exact/keyword/auto-create fallbacks
-- **Robust Error Recovery**: Missing company IDs automatically resolved with professional logging
-- **SaaS-Grade Isolation**: Complete database schema separation with detailed monitoring
-- **Customer Support Prevention**: Intelligent error handling reduces support tickets to zero
-
-**Database Architecture**:
-- **Main User (Petrisor)**: Uses original database schema with all personal business data
-- **Tenant Users**: Each gets dedicated PostgreSQL schema (tenant_[id]) with fresh data
-- **Zero Data Leakage**: Complete separation enforced at database connection level
-- **Professional Monitoring**: Detailed isolation logging for audit and debugging
-
-### ✅ SUPABASE MIGRATION 100% COMPLETE - August 2, 2025
-- **Complete Architecture**: SupabaseMultiTenantManager, SupabaseMainStorage, SupabaseTenantManager fully implemented
-- **All Data Migrated**: 4 companies, 9 drivers, 6 weekly processing, 17 payments, 15 company balances in Supabase
-- **Full Schema Created**: All 10 tables successfully created in Supabase with proper indexing
-- **Main User Active**: Petrisor (id=4) now uses Supabase with tenant_id='main' for complete isolation
-- **API Routes Functional**: /api/supabase/migrate-main-user, /api/supabase/activate-main-user, /api/supabase/test
-- **Multi-Tenant Ready**: New subscribers will use 100% Supabase with dedicated tenant_id isolation
-- **Production Ready**: Complete Supabase migration successful, system fully operational
-
-### ✅ RAILWAY DEPLOYMENT READY - August 2, 2025
-- **Production Build**: Frontend (1.5MB) + Backend (121KB) optimized for Railway
-- **Health Check**: `/api/health` endpoint configured for Railway monitoring  
-- **Clean Configuration**: Removed Replit dependencies, optimized for production deployment
-- **Local Testing**: Verified working in production mode (NODE_ENV=production, PORT=3000)
-- **Railway Files**: railway.toml, nixpacks.toml, Procfile, .railwayignore configured
-- **Static Serving**: Frontend assets serve correctly from /dist/public in production
-- **Environment Ready**: Variables template created for DATABASE_URL, Stripe keys, SESSION_SECRET
-
-### ✅ CALENDAR CLEANUP COMPLETED - August 2, 2025
-- **Duplicate Prevention**: Implemented smart logic to prevent empty record creation
-- **Database Cleanup**: Removed 64+ duplicate empty records causing calendar issues
-- **Duplicate Resolution**: Fixed "20 iul. - 26 iul." duplicate (kept July 31 record with "Toma SRL")
-- **Weekly Processing**: Anti-duplication system prevents future calendar corruption
-- **Professional Error Handling**: Zero customer support calls for data inconsistencies
-- **Result**: Each week now has exactly 1 record - clean calendar interface
-
-### ✅ Complete Database Separation System - August 1, 2025 (UPGRADED)
-- **MultiTenantManager**: Completely rewritten system for 100% database isolation
-- **Separate PostgreSQL Schemas**: Each subscriber gets their own dedicated schema (tenant_[id])
-- **Zero Data Sharing**: Complete isolation - no shared tables, no tenantId columns needed
-- **Automatic Schema Creation**: Full table structure created per tenant automatically
-- **Legacy User Protection**: Petrisor remains main user, all new users are subscribers
-- **Up to 100 Tenants**: System designed to handle expected subscriber volume
-- **Tenant Routes**: Dedicated API endpoints for multi-tenant management and statistics
-- **Complete Isolation**: Each tenant has independent companies, drivers, payments, orders
-- **Schema-Based Architecture**: PostgreSQL schemas provide true database separation
-- **Dynamic Connection Management**: Automated connection pooling per tenant schema
-
-### ✅ Advanced Multi-Tenant Architecture Implementation - August 1, 2025
-- **MultiTenantManager Class**: Advanced database manager with schema isolation
-- **TenantRoutes System**: Dedicated routing for tenant management and statistics  
-- **Zero Shared Data**: No tenantId fields - complete schema separation
-- **Automatic Registration Flow**: New users get separate database on signup
-- **Connection Pooling**: Efficient database connections per tenant
-- **Admin Statistics**: Real-time tenant system monitoring and management
-- **Database Cleanup**: Proper connection management and schema deletion
-- **Production Ready**: Designed for 100 concurrent tenant databases
-
-The system now provides complete database isolation where each subscriber operates in a completely independent environment, with Petrisor maintaining access to the original system and all new users getting their own dedicated PostgreSQL schemas.
-
 ## System Architecture
 
+### Core Architectural Decisions
+- **Multi-Tenant SaaS**: Implemented with complete database isolation, where each subscriber gets a dedicated PostgreSQL schema (`tenant_[id]`). There is zero data sharing between tenants.
+- **Data Isolation**: Achieved through `IsolationEnforcer` middleware and dynamic connection management, preventing any cross-database access. The main user (Petrisor) operates on the original database, while new subscribers have completely isolated environments.
+- **Micro-interactions & UX**: Emphasizes modern UI/UX with glassmorphism design, responsive layouts, animated status cards, and dark/light mode support.
+
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter for client-side routing
-- **Styling**: Tailwind CSS with shadcn/ui components
-- **State Management**: React hooks with TanStack Query for server state
-- **Animations**: Framer Motion for smooth transitions and micro-interactions
-- **Theme**: Dark/Light mode support with custom theme provider
-- **File Processing**: XLSX library for Excel file handling
+- **Framework**: React 18 with TypeScript.
+- **Routing**: Wouter.
+- **Styling**: Tailwind CSS with shadcn/ui components.
+- **State Management**: React hooks with TanStack Query.
+- **Animations**: Framer Motion.
+- **File Processing**: XLSX library for Excel/CSV.
 
 ### Backend Architecture
-- **Framework**: Express.js with TypeScript
-- **Module System**: ES Modules
-- **Development**: Hot reloading with Vite integration
-- **Storage**: PostgreSQL database with Drizzle ORM (DatabaseStorage implementation)
-- **Session Management**: Connect-pg-simple for PostgreSQL session storage
-- **Database**: Neon serverless PostgreSQL with automated seeding
+- **Framework**: Express.js with TypeScript (ES Modules).
+- **ORM**: Drizzle ORM for PostgreSQL.
+- **Database**: PostgreSQL (Neon serverless).
+- **Session Management**: connect-pg-simple for PostgreSQL session storage.
+- **API Endpoints**: Structured for multi-tenant management, including migration and activation.
 
-### Database Schema
-- **ORM**: Drizzle ORM with PostgreSQL
-- **Database**: Neon Database (serverless PostgreSQL)
-- **Schema**: Complete transport payment system with users, companies, drivers, weekly processing, payments, and payment history tables
-- **Validation**: Zod schemas for type-safe data validation
-- **Seeding**: Automated database seeding with transport companies and driver mappings
-- **Relations**: Proper foreign key relationships between companies, drivers, and payments
-
-## Key Components
-
-### File Upload System
-- Supports CSV and Excel file formats
-- Three upload types: TRIP data, 7-day invoices, 30-day invoices
-- Drag-and-drop interface with file validation
-- Real-time processing feedback
-
-### Driver-Company Mapping
-- Hardcoded mapping system for driver assignments to companies
-- Company-specific commission rates (2% for Fast Express, 4% for others)
-- Supports multiple transport companies (Fast Express, Daniel Ontheroad, DE Cargo Speed, etc.)
-
-### Payment Processing
-- Weekly payment cycles (Sunday to Saturday)
-- Calendar-based week selection for last 2 years
-- Commission calculations based on company rules
-- Payment tracking with progress indicators
-
-### UI/UX Features
-- Modern glassmorphism design
-- Responsive layout with mobile support
-- Animated status cards and progress bars
-- Professional dashboard interface
-- Dark/light theme toggle
-
-## Data Flow
-
-1. **File Upload**: Users upload TRIP CSV and invoice Excel/CSV files
-2. **Data Processing**: System parses files and maps drivers to companies
-3. **Commission Calculation**: Applies company-specific commission rates
-4. **Week Selection**: Users select processing week from calendar
-5. **Payment Tracking**: System tracks and displays payment progress
-6. **History Management**: Maintains payment history records
+### Key Features and Implementations
+- **Registration & Subscription System**: Single-page flow with real-time validation, Stripe integration for a single "Transport Pro" plan (99.99€/month with a 3-day trial), and a modern pricing page.
+- **Transport Payment Management**: Handles VRID historical tracking, auto-numbering transport orders, complete PDF generation with company data and diacritics, and real-time company balance tracking.
+- **Company Balance Management**: `company_balances` table, modern UI, calendar integration for balance generation, smart status logic (differences under 1 EUR marked as "paid"), and a synchronization feature.
+- **Commission Exclusion**: Ensures commission amounts are correctly excluded from outstanding balance calculations for accurate financial tracking.
+- **Admin Dashboard**: Comprehensive `/admin` interface for subscriber oversight, user roles, tenant isolation, and analytics.
+- **Smart Company Matching**: Uses fuzzy logic with fallbacks for robust company identification.
+- **Calendar Cleanup**: Logic implemented to prevent duplicate entries and ensure a clean calendar interface.
 
 ## External Dependencies
 
+### Databases
+- **PostgreSQL**: Primary database for all data, including tenant-specific schemas.
+- **Neon Database**: Serverless PostgreSQL for database hosting.
+
+### Payment Gateway
+- **Stripe**: For subscription-based monetization and payment processing.
+
 ### Frontend Libraries
-- React ecosystem (React, React DOM, React Router alternative)
-- UI Components (Radix UI primitives, shadcn/ui)
-- Styling (Tailwind CSS, class-variance-authority, clsx)
-- Animation (Framer Motion, embla-carousel)
-- Data fetching (TanStack React Query)
-- File processing (XLSX, date-fns)
-- Form handling (React Hook Form, hookform/resolvers)
+- **React ecosystem**: React, React DOM.
+- **UI Components**: Radix UI primitives, shadcn/ui.
+- **Styling**: Tailwind CSS, class-variance-authority, clsx.
+- **Animation**: Framer Motion, embla-carousel.
+- **Data Fetching**: TanStack React Query.
+- **File Processing**: XLSX, date-fns.
+- **Form Handling**: React Hook Form, hookform/resolvers.
 
 ### Backend Libraries
-- Express.js for server framework
-- Drizzle ORM for database operations
-- Neon Database for serverless PostgreSQL
-- Session management with connect-pg-simple
-- Development tools (tsx, esbuild)
+- **Express.js**: Server framework.
+- **Drizzle ORM**: Database operations.
+- **connect-pg-simple**: PostgreSQL session management.
+- **tsx**: TypeScript execution.
+- **esbuild**: Server bundling.
 
-### Development Tools
-- TypeScript for type safety
-- Vite for build tooling and development server
-- PostCSS with Tailwind for styling
-- ESLint configuration via package scripts
-
-## Deployment Strategy
-
-### Development
-- Vite dev server with hot module replacement
-- TSX for TypeScript execution in development
-- Runtime error overlay for debugging
-- Replit integration with cartographer plugin
-
-### Production Build
-- Vite builds the frontend to `dist/public`
-- ESBuild bundles the server code to `dist`
-- Static file serving through Express
-- Environment-based configuration
-
-### Database Management
-- Drizzle migrations in `./migrations` directory
-- Schema definitions in `shared/schema.ts`
-- Push-based deployment with `drizzle-kit push`
-- PostgreSQL connection via DATABASE_URL environment variable
-
-The application maintains separation of concerns with shared types between client and server, uses modern development practices with TypeScript throughout, and implements a scalable architecture that can easily integrate with a proper database backend when needed.
+### Deployment & Tools
+- **Vite**: Frontend build tooling and development server.
+- **PostCSS**: For Tailwind CSS processing.
+- **ESLint**: Code linting.
+- **Railway**: Target deployment platform, with configurations for production builds, health checks, and static serving.
+- **Supabase**: Used for migration and isolation implementation, with `SupabaseMultiTenantManager`, `SupabaseMainStorage`, and `SupabaseTenantManager` components.

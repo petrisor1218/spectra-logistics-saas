@@ -398,9 +398,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`✅ ${isolationType} USER: ${user.username} sees ${companies.length} companies (ISOLATED)`);
       
       res.json(companies);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching companies:", error); 
-      res.status(500).json({ error: error.message || "Failed to fetch companies" });
+      res.status(500).json({ error: error?.message || "Failed to fetch companies" });
     }
   });
 
