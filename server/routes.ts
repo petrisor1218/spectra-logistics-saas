@@ -1282,44 +1282,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = insertDriverSchema.parse(req.body);
+      console.log(`🚛 Creating driver for user: ${user.username} (tenant: ${user.tenantId})`);
       
-      // În noul sistem multi-tenant, nu mai avem tenantId în schema
-      // Fiecare tenant are propria bază de date separată
       let driver;
       
       if (user.tenantId && user.tenantId !== 'main') {
         // Utilizator cu tenant - creează în baza sa separată
-        try {
-          const { multiTenantManager } = await import('./multi-tenant-manager.js');
-          const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-          driver = await tenantStorage.createDriver(validatedData);
-          console.log(`🔒 Driver created in tenant ${user.tenantId}: ${driver.name}`);
-        } catch (error) {
-          console.error(`❌ Error creating driver in tenant database:`, error);
-          throw error;
-        }
+        console.log(`🔒 Creating driver in tenant database: ${user.tenantId}`);
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        driver = await tenantStorage.createDriver(validatedData);
+        console.log(`✅ Driver created successfully in tenant ${user.tenantId}: ${driver.name}`);
       } else {
         // Utilizator legacy - folosește sistemul vechi
+        console.log(`👑 Creating driver in legacy system for user: ${user.username}`);
         driver = await storage.createDriver(validatedData);
-        console.log(`👑 Legacy driver created: ${driver.name}`);
+        console.log(`✅ Legacy driver created: ${driver.name}`);
       }
 
       res.json(driver);
     } catch (error) {
-      console.error("Error creating driver:", error);
-      res.status(500).json({ error: "Failed to create driver" });
+      console.error("❌ Error creating driver:", error);
+      console.error("Error details:", error);
+      res.status(500).json({ 
+        error: "Failed to create driver", 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
-  app.put("/api/drivers/:id", async (req, res) => {
+  app.put("/api/drivers/:id", async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertDriverSchema.partial().parse(req.body);
       
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
       // Get user for tenant isolation
-      const user = await storage.getUser(req.session?.userId);
+      const user = await storage.getUser(req.session.userId);
       if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
+        return res.status(401).json({ error: "User not found" });
       }
 
       let driver;
@@ -1344,14 +1348,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/drivers/:id", async (req, res) => {
+  app.delete("/api/drivers/:id", async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
       // Get user for tenant isolation
-      const user = await storage.getUser(req.session?.userId);
+      const user = await storage.getUser(req.session.userId);
       if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
+        return res.status(401).json({ error: "User not found" });
       }
 
       // Use tenant-specific database for driver deletion
