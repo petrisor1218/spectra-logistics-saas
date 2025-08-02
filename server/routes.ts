@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { registerTenantRoutes } from "./tenant-routes.js";
 import { multiTenantManager } from "./multi-tenant-manager.js";
+import { IsolationEnforcer, isolationMiddleware } from "./isolation-enforcer.js";
 import { 
   companies, 
   drivers, 
@@ -377,45 +378,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company routes with separate tenant databases
+  // Company routes with COMPLETE ISOLATION enforced
   app.get("/api/companies", async (req: any, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
+      const { storage: isolatedStorage, user, isolationType } = await IsolationEnforcer.enforceIsolation(req);
+      IsolationEnforcer.logIsolationCheck(user, 'GET', 'companies');
 
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
-
-      // Pentru utilizatorii existenți fără tenantId, întoarce datele vechi temporar
-      if (!user.tenantId) {
-        console.log(`⚠️ Legacy user ${user.username} - using old system temporarily`);
-        const companies = await storage.getAllCompanies();
-        return res.json(companies);
-      }
-
-      console.log(`🏢 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
+      const companies = await isolatedStorage.getAllCompanies();
+      console.log(`✅ ${isolationType} USER: ${user.username} sees ${companies.length} companies (ISOLATED)`);
       
-      try {
-        // Obține baza de date separată pentru tenant folosind noul multi-tenant manager
-        const { multiTenantManager } = await import('./multi-tenant-manager.js');
-        const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
-        
-        const companiesData = await tenantDb.select().from(companies);
-        console.log(`✅ Separate DB: User ${user.username} sees ${companiesData.length} companies from separate database`);
-        res.json(companiesData);
-      } catch (dbError) {
-        console.error(`❌ Error accessing tenant database for ${user.username}:`, dbError);
-        // Fallback pentru erori de bază de date
-        console.log(`🔄 Fallback: Using old system for ${user.username}`);
-        const companies = await storage.getAllCompanies();
-        res.json(companies);
-      }
+      res.json(companies);
     } catch (error) {
-      console.error("Error fetching companies:", error);
-      res.status(500).json({ error: "Failed to fetch companies" });
+      console.error("Error fetching companies:", error); 
+      res.status(500).json({ error: error.message || "Failed to fetch companies" });
     }
   });
 
@@ -1155,41 +1130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company management routes with tenant isolation
-  app.get("/api/companies", async (req: any, res) => {
-    try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
-
-      let companies: any[];
-
-      // Apply tenant isolation for companies
-      if (user.tenantId) {
-        // New user - get only their tenant companies
-        companies = await storage.getCompaniesByTenant(user.tenantId);
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${companies.length} companies from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
-        companies = await storage.getAllCompanies();
-        console.log(`👑 Admin access: User ${user.username} sees ${companies.length} companies`);
-      } else {
-        // Safety fallback
-        companies = [];
-        console.log(`⚠️ Unknown user ${user.username} - no companies access`);
-      }
-
-      res.json(companies);
-    } catch (error) {
-      console.error("Error fetching companies:", error);
-      res.status(500).json({ error: "Failed to fetch companies" });
-    }
-  });
+  // REMOVED: Duplicate companies route - using single route above with complete isolation
 
   app.post("/api/companies", async (req: any, res) => {
     try {
@@ -1204,24 +1145,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertCompanySchema.parse(req.body);
       
-      // În noul sistem multi-tenant, nu mai avem tenantId în schema
       let company;
       
-      if (user.tenantId && user.tenantId !== 'main') {
-        // Utilizator cu tenant - creează în baza sa separată
+      // CRITICAL ISOLATION: Enforce strict database separation
+      if (!user.tenantId) {
+        // MAIN USER (Petrisor) - MAIN database ONLY
+        console.log(`👑 MAIN USER: Creating company in MAIN database for ${user.username}`);
+        company = await storage.createCompany(validatedData);
+        console.log(`✅ MAIN USER: Company created in MAIN database: ${company.name}`);
+      } else {
+        // TENANT USER - SEPARATE database ONLY
+        console.log(`🔒 TENANT USER: Creating company in SEPARATE database for ${user.username} (tenant: ${user.tenantId})`);
         try {
           const { multiTenantManager } = await import('./multi-tenant-manager.js');
           const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
           company = await tenantStorage.createCompany(validatedData);
-          console.log(`🔒 Company created in tenant ${user.tenantId}: ${company.name}`);
+          console.log(`✅ TENANT USER: Company created in SEPARATE database: ${company.name}`);
         } catch (error) {
-          console.error(`❌ Error creating company in tenant database:`, error);
+          console.error(`❌ CRITICAL: Error creating company in tenant database:`, error);
           throw error;
         }
-      } else {
-        // Utilizator legacy - folosește sistemul vechi
-        company = await storage.createCompany(validatedData);
-        console.log(`👑 Legacy company created: ${company.name}`);
       }
 
       res.json(company);
@@ -1488,17 +1431,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let driver;
       
-      // Use tenant-specific database for driver update
-      if (user.tenantId && user.tenantId !== 'main') {
+      // CRITICAL ISOLATION: Enforce strict database separation
+      if (!user.tenantId) {
+        // MAIN USER (Petrisor) - MAIN database ONLY  
+        console.log(`👑 MAIN USER: Updating driver ${id} in MAIN database for ${user.username}`);
+        driver = await storage.updateDriver(id, validatedData);
+        console.log(`✅ MAIN USER: Driver updated in MAIN database`);
+      } else {
+        // TENANT USER - SEPARATE database ONLY
+        console.log(`🔒 TENANT USER: Updating driver ${id} in SEPARATE database for ${user.username} (tenant: ${user.tenantId})`);
         const { multiTenantManager } = await import('./multi-tenant-manager.js');
         const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-        
-        console.log(`📝 Updating driver ${id} in tenant database ${user.tenantId}`);
         driver = await tenantStorage.updateDriver(id, validatedData);
-        console.log(`✅ Successfully updated driver ${id} in tenant ${user.tenantId}`);
-      } else {
-        // Main user - use regular storage
-        driver = await storage.updateDriver(id, validatedData);
+        console.log(`✅ TENANT USER: Driver updated in SEPARATE database`);
       }
       
       res.json(driver);
@@ -1522,17 +1467,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "User not found" });
       }
 
-      // Use tenant-specific database for driver deletion
-      if (user.tenantId && user.tenantId !== 'main') {
+      // CRITICAL ISOLATION: Enforce strict database separation  
+      if (!user.tenantId) {
+        // MAIN USER (Petrisor) - MAIN database ONLY
+        console.log(`👑 MAIN USER: Deleting driver ${id} from MAIN database for ${user.username}`);
+        await storage.deleteDriver(id);
+        console.log(`✅ MAIN USER: Driver deleted from MAIN database`);
+      } else {
+        // TENANT USER - SEPARATE database ONLY
+        console.log(`🔒 TENANT USER: Deleting driver ${id} from SEPARATE database for ${user.username} (tenant: ${user.tenantId})`);
         const { multiTenantManager } = await import('./multi-tenant-manager.js');
         const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-        
-        console.log(`🗑️ Deleting driver ${id} from tenant database ${user.tenantId}`);
         await tenantStorage.deleteDriver(id);
-        console.log(`✅ Successfully deleted driver ${id} from tenant ${user.tenantId}`);
-      } else {
-        // Main user - use regular storage
-        await storage.deleteDriver(id);
+        console.log(`✅ TENANT USER: Driver deleted from SEPARATE database`);
       }
       
       res.json({ success: true });
