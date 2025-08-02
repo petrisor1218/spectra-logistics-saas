@@ -122,7 +122,7 @@ export function TransportOrderModal({
         },
         body: JSON.stringify({
           orderNumber: orderNumber.trim(),
-          companyName: mainCompany?.name || company, // Use main company name if available
+          companyName: company, // Keep the processing company name for identification
           orderDate: new Date(orderDate).toISOString(),
           weekLabel: selectedWeek,
           vrids: vrids,
