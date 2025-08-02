@@ -41,41 +41,67 @@ class MultiTenantManager {
   async createTenantDatabase(tenantId: string): Promise<string> {
     try {
       const databaseName = `tenant_${tenantId.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
-      
-      console.log(`🔨 Creating separate database: ${databaseName} for tenant: ${tenantId}`);
-
-      // Pentru Neon și majoritatea serviciilor PostgreSQL, nu putem crea baze de date dinamice
-      // Folosim schema separată în loc de baze de date separate
       const schemaName = databaseName;
       
-      // Creează schema separată
-      await this.mainDb.execute(sql`CREATE SCHEMA IF NOT EXISTS ${sql.identifier(schemaName)}`);
+      // Verifică dacă schema deja există
+      const existingSchemas = await this.mainDb.execute(sql`
+        SELECT schema_name 
+        FROM information_schema.schemata 
+        WHERE schema_name = ${schemaName}
+      `);
       
-      // Creează toate tabelele în schema separată
-      await this.createTenantTables(schemaName);
+      if (existingSchemas.length === 0) {
+        console.log(`🔨 Creating separate database: ${databaseName} for tenant: ${tenantId}`);
+        
+        // Creează schema separată
+        await this.mainDb.execute(sql`CREATE SCHEMA IF NOT EXISTS ${sql.identifier(schemaName)}`);
+        
+        // Creează toate tabelele în schema separată
+        await this.createTenantTables(schemaName);
+        
+        // Creează conexiunea cu search_path setat pe schema tenant-ului
+        const tenantConnectionString = this.buildTenantConnectionString(schemaName);
+        const tenantPool = new Pool({ 
+          connectionString: tenantConnectionString,
+          options: `--search_path=${schemaName},public`
+        });
+        
+        const tenantDb = drizzle(tenantPool, { schema });
+        
+        // Salvează conexiunea tenant-ului
+        this.tenantDatabases.set(tenantId, {
+          db: tenantDb,
+          pool: tenantPool,
+          databaseName: schemaName,
+          connectionString: tenantConnectionString
+        });
+        
+        // Inițializează datele default pentru tenant
+        await this.initializeTenantData(tenantDb, tenantId);
+        
+        console.log(`✅ Successfully created separate database schema ${schemaName} for tenant ${tenantId}`);
+      } else {
+        console.log(`✅ Using existing tenant database schema ${schemaName} for tenant ${tenantId}`);
+        
+        // Creează conexiunea pentru schema existentă
+        const tenantConnectionString = this.buildTenantConnectionString(schemaName);
+        const tenantPool = new Pool({ 
+          connectionString: tenantConnectionString,
+          options: `--search_path=${schemaName},public`
+        });
+        
+        const tenantDb = drizzle(tenantPool, { schema });
+        
+        // Salvează conexiunea tenant-ului
+        this.tenantDatabases.set(tenantId, {
+          db: tenantDb,
+          pool: tenantPool,
+          databaseName: schemaName,
+          connectionString: tenantConnectionString
+        });
+      }
       
-      // Creează conexiunea cu search_path setat pe schema tenant-ului
-      const tenantConnectionString = this.buildTenantConnectionString(schemaName);
-      const tenantPool = new Pool({ 
-        connectionString: tenantConnectionString,
-        options: `--search_path=${schemaName},public`
-      });
-      
-      const tenantDb = drizzle(tenantPool, { schema });
-      
-      // Salvează conexiunea tenant-ului
-      this.tenantDatabases.set(tenantId, {
-        db: tenantDb,
-        pool: tenantPool,
-        databaseName: schemaName,
-        connectionString: tenantConnectionString
-      });
-      
-      // Inițializează datele default pentru tenant
-      await this.initializeTenantData(tenantDb, tenantId);
-      
-      console.log(`✅ Successfully created separate database schema ${schemaName} for tenant ${tenantId}`);
-      return tenantConnectionString;
+      return this.buildTenantConnectionString(schemaName);
       
     } catch (error) {
       console.error(`❌ Failed to create tenant database for ${tenantId}:`, error);
