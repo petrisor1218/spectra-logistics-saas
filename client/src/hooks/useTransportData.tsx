@@ -568,7 +568,7 @@ export function useTransportData() {
         setInvoice7Data(data);
       } else if (type === 'invoice30') {
         // Support multiple invoice30 files - combine with existing data
-        setInvoice30Data(prev => {
+        setInvoice30Data((prev: any) => {
           if (prev && prev.length > 0) {
             console.log(`🔄 Combinând cu datele existente: ${prev.length} + ${data.length} înregistrări`);
             return [...prev, ...data];

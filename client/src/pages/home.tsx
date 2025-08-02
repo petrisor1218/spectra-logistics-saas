@@ -73,7 +73,7 @@ export default function Home() {
   } = useTransportData();
 
   const weekOptions = getWeekOptions();
-  const canProcess = tripData && invoice7Data && invoice30Data && processingWeek;
+  const canProcess = tripData && (invoice7Data || invoice30Data) && processingWeek;
 
   // Debug logging
   console.log('Home component rendered', { activeTab });
