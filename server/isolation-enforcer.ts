@@ -39,9 +39,9 @@ export class IsolationEnforcer {
     // CRITICAL RULE: Petrisor (tenant_id = 'main') = SUPABASE MAIN ONLY
     if (!user.tenantId || user.tenantId === 'main') {
       console.log(`👑 ISOLATION ENFORCED: MAIN USER ${user.username} → SUPABASE MAIN database`);
-      // Import Supabase main storage
+      // Import Supabase components
       const { SupabaseMainStorage } = await import('./supabase-main-storage.js');
-      const { default: supabaseMultiTenantManager } = await import('./supabase-multi-tenant-manager.js');
+      const supabaseMultiTenantManager = (await import('./supabase-multi-tenant-manager.js')).default;
       const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.getMainSupabase());
       
       return {

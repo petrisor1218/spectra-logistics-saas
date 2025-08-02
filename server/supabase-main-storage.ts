@@ -369,7 +369,7 @@ export class SupabaseMainStorage {
   }
 
   // ================== Company Balance Methods ==================
-  async getCompanyBalances(): Promise<CompanyBalance[]> {
+  async getAllCompanyBalances(): Promise<CompanyBalance[]> {
     try {
       const { data, error } = await this.supabase
         .from('company_balances')
@@ -383,6 +383,11 @@ export class SupabaseMainStorage {
       console.error(`❌ Error fetching company balances:`, error);
       return [];
     }
+  }
+
+  async getCompanyBalances(): Promise<CompanyBalance[]> {
+    // Alias pentru compatibilitate
+    return this.getAllCompanyBalances();
   }
 
   async createCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance> {
@@ -425,13 +430,13 @@ export class SupabaseMainStorage {
   }
 
   // ================== Transport Order Methods ==================
-  async getTransportOrders(): Promise<TransportOrder[]> {
+  async getAllTransportOrders(): Promise<TransportOrder[]> {
     try {
       const { data, error } = await this.supabase
         .from('transport_orders')
         .select('*')
         .eq('tenant_id', 'main')
-        .order('created_at', { ascending: false });
+        .order('order_date', { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -439,6 +444,45 @@ export class SupabaseMainStorage {
       console.error(`❌ Error fetching transport orders:`, error);
       return [];
     }
+  }
+
+  async getTransportOrdersByWeek(weekLabel: string): Promise<TransportOrder[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('transport_orders')
+        .select('*')
+        .eq('tenant_id', 'main')
+        .eq('week_label', weekLabel)
+        .order('order_date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error(`❌ Error fetching transport orders by week:`, error);
+      return [];
+    }
+  }
+
+  async getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('transport_orders')
+        .select('*')
+        .eq('tenant_id', 'main')
+        .eq('company_name', companyName)
+        .order('order_date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error(`❌ Error fetching transport orders by company:`, error);
+      return [];
+    }
+  }
+
+  async getTransportOrders(): Promise<TransportOrder[]> {
+    // Alias pentru compatibilitate
+    return this.getAllTransportOrders();
   }
 
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
