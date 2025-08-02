@@ -1242,68 +1242,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Driver management routes with company join and tenant isolation
   app.get("/api/drivers", async (req: any, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
+      const { storage: isolatedStorage, user, isolationType } = await IsolationEnforcer.enforceIsolation(req);
+      IsolationEnforcer.logIsolationCheck(user, 'GET', 'drivers');
 
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
-
-      let drivers: any[], companies: any[];
-
-      // Apply tenant isolation for drivers using multi-tenant system
-      if (user.tenantId && user.tenantId !== 'main') {
-        // New user - get only their tenant data from separate database
-        try {
-          const { multiTenantManager } = await import('./multi-tenant-manager.js');
-          const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-          
-          drivers = await tenantStorage.getAllDrivers();
-          companies = await tenantStorage.getAllCompanies();
-          console.log(`👥 Separate DB: User ${user.username} accessing tenant database ${user.tenantId}`);
-          console.log(`✅ Separate DB: User ${user.username} sees ${drivers.length} drivers from separate database`);
-        } catch (error) {
-          console.error(`❌ Error accessing tenant database for ${user.username}:`, error);
-          drivers = [];
-          companies = [];
-        }
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data from main database
-        drivers = await storage.getAllDrivers();
-        companies = await storage.getAllCompanies();
-        console.log(`👑 Admin access: User ${user.username} sees ${drivers.length} drivers`);
-      } else {
-        // Safety fallback
-        drivers = [];
-        companies = [];
-        console.log(`⚠️ Unknown user ${user.username} - no drivers access`);
-      }
+      const drivers = await isolatedStorage.getAllDrivers();
+      const companies = await isolatedStorage.getAllCompanies();
       
+      console.log(`✅ ${isolationType} USER: ${user.username} sees ${drivers.length} drivers (ISOLATED)`);
+
       const result = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
-        const driverWithCompany = {
+        return {
           id: driver.id,
           name: driver.name,
           companyId: driver.companyId,
           nameVariants: driver.nameVariants,
           phone: driver.phone,
           email: driver.email,
-          createdAt: driver.createdAt
+          createdAt: driver.createdAt,
+          company: company || null
         };
-        
-        // Explicitly add company field
-        (driverWithCompany as any).company = company || null;
-        
-        return driverWithCompany;
       });
       
       res.set('Cache-Control', 'no-cache');
       res.json(result);
     } catch (error) {
       console.error("Error fetching drivers:", error);
-      res.status(500).json({ error: "Failed to fetch drivers" });
+      res.status(500).json({ error: error.message || "Failed to fetch drivers" });
     }
   });
 
