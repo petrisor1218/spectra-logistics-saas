@@ -124,6 +124,11 @@ export class DatabaseStorage implements IStorage {
     return this.dbInstance;
   }
 
+  // Obține baza de date principală pentru autentificare (când nu avem tenant setat)
+  private getMainDb() {
+    return db;
+  }
+
   // User methods - folosesc baza de date principală
 
   // Username reservation methods to prevent race conditions
