@@ -540,10 +540,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let processing;
 
       // Apply tenant isolation for weekly processing
-      if (user.tenantId) {
-        // New user - empty data initially
-        processing = weekLabel ? null : [];
-        console.log(`🔒 Tenant isolation: User ${user.username} sees empty weekly processing from tenant ${user.tenantId}`);
+      if (user.tenantId && user.tenantId !== 'main') {
+        // Tenant user - read from tenant database
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        if (weekLabel) {
+          processing = await tenantStorage.getWeeklyProcessingByWeek(weekLabel as string);
+        } else {
+          processing = await tenantStorage.getAllWeeklyProcessing();
+        }
+        console.log(`🔒 Tenant isolation: User ${user.username} sees ${Array.isArray(processing) ? processing.length : (processing ? 1 : 0)} weekly processing from tenant ${user.tenantId}`);
       } else {
         // Legacy users (no tenantId) - see all existing data
         if (weekLabel) {
@@ -1433,9 +1440,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Apply tenant isolation for company balances
       let balances: any[] = [];
-      if (user.tenantId) {
-        // New user - empty data initially
-        balances = [];
+      if (user.tenantId && user.tenantId !== 'main') {
+        // Tenant user - read from tenant database
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        balances = await tenantStorage.getCompanyBalances();
         console.log(`🔒 Tenant isolation: User ${user.username} sees ${balances.length} balances from tenant ${user.tenantId}`);
       } else {
         // Legacy users (no tenantId) - see all existing data
