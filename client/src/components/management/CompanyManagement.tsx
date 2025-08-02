@@ -192,10 +192,19 @@ export function CompanyManagement() {
 
   const fetchCompanies = useCallback(async () => {
     try {
-      const response = await fetch('/api/companies');
+      setLoading(true);
+      const response = await fetch('/api/companies', {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
-        setCompanies(data);
+        // Clear any existing duplicates by filtering unique IDs
+        const uniqueCompanies = data.filter((company: any, index: number, array: any[]) => 
+          array.findIndex(c => c.id === company.id) === index
+        );
+        setCompanies(uniqueCompanies);
       }
     } catch (error) {
       console.error('Error fetching companies:', error);

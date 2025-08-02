@@ -157,12 +157,23 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
   const fetchDrivers = useCallback(async () => {
     try {
       console.log('🔄 Încărcare șoferi din API...');
-      const response = await fetch('/api/drivers');
+      setLoading(true);
+      const response = await fetch('/api/drivers', {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         console.log('👥 Șoferi primiți din API:', data.length, data);
-        setDrivers(data);
-        console.log('✅ Lista șoferilor actualizată în state');
+        
+        // Clear any existing duplicates by filtering unique IDs
+        const uniqueDrivers = data.filter((driver: any, index: number, array: any[]) => 
+          array.findIndex(d => d.id === driver.id) === index
+        );
+        
+        setDrivers(uniqueDrivers);
+        console.log(`✅ Lista șoferilor actualizată în state cu ${uniqueDrivers.length} șoferi unici`);
       } else {
         console.error('❌ Eroare la încărcarea șoferilor - status:', response.status);
       }
@@ -180,10 +191,18 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
 
   const fetchCompanies = useCallback(async () => {
     try {
-      const response = await fetch('/api/companies');
+      const response = await fetch('/api/companies', {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
-        setCompanies(data);
+        // Clear any existing duplicates by filtering unique IDs
+        const uniqueCompanies = data.filter((company: any, index: number, array: any[]) => 
+          array.findIndex(c => c.id === company.id) === index
+        );
+        setCompanies(uniqueCompanies);
       }
     } catch (error) {
       console.error('Error fetching companies:', error);

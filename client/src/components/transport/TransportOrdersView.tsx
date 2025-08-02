@@ -191,12 +191,12 @@ export function TransportOrdersView() {
     doc.setTextColor(100, 116, 139);
     doc.text('Transport & Logistics Solutions', 20, 27);
     
-    // Contact info in modern format (using main company data)
+    // Contact info in modern format (using main company data) - expanded area
     doc.setFillColor(248, 250, 252);
-    doc.rect(80, 12, 115, 20, 'F');
+    doc.rect(80, 12, 115, 28, 'F'); // Increased height from 20 to 28
     
     doc.setTextColor(51, 65, 85);
-    doc.setFontSize(9);
+    doc.setFontSize(8); // Reduced font size from 9 to 8
     doc.setFont('helvetica', 'normal');
     
     // Use main company contact info if available
@@ -206,20 +206,21 @@ export function TransportOrdersView() {
       const address = mainCompany.address || '[Completați adresa]';
       const location = mainCompany.location ? `${mainCompany.location}, ${mainCompany.county || ''}, ${mainCompany.country || 'Romania'}` : '[Completați locația]';
       
-      doc.text(contact, 85, 18);
-      doc.text(cif, 85, 22);
-      doc.text(address, 85, 26);
-      doc.text(location, 85, 30);
+      // Increased line spacing from 4 to 5
+      doc.text(contact.substring(0, 50), 85, 18); // Truncate long text
+      doc.text(cif, 85, 23);
+      doc.text(address.substring(0, 50), 85, 28); // Truncate long text
+      doc.text(location.substring(0, 50), 85, 33); // Truncate long text
     } else {
-      // Fallback to original hardcoded data
+      // Fallback to original hardcoded data with better spacing
       doc.text('Email: azlogistic8@gmail.com', 85, 18);
-      doc.text('Bank: DSK BANK - BG22STSA93000028729251', 85, 22);
-      doc.text('ID: BG206507560 | Adresa: Ruser, Ruse, Bulgaria', 85, 26);
-      doc.text('TVA: 0%', 85, 30);
+      doc.text('Bank: DSK BANK - BG22STSA93000028729251', 85, 23);
+      doc.text('ID: BG206507560 | Adresa: Ruser, Ruse, Bulgaria', 85, 28);
+      doc.text('TVA: 0%', 85, 33);
     }
     
-    // Modern Title Section
-    currentY = 50;
+    // Modern Title Section - moved down to avoid overlap
+    currentY = 55;
     
     // Title background
     doc.setFillColor(37, 99, 235);
