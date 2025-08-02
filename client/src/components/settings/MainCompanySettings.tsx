@@ -44,8 +44,19 @@ export function MainCompanySettings() {
       const response = await fetch('/api/main-company');
       if (response.ok) {
         const data = await response.json();
-        if (data) {
-          setMainCompany(data);
+        if (data && data.name) {
+          setMainCompany({
+            id: data.id,
+            name: data.name,
+            cif: data.cif || "",
+            tradeRegisterNumber: data.tradeRegisterNumber || "",
+            address: data.address || "",
+            location: data.location || "",
+            county: data.county || "",
+            country: data.country || "Romania",
+            contact: data.contact || "",
+            isMainCompany: data.isMainCompany
+          });
         } else {
           // No main company exists, enable editing mode
           setIsEditing(true);
@@ -70,15 +81,27 @@ export function MainCompanySettings() {
     setLoading(true);
     try {
       const method = mainCompany.id ? 'PUT' : 'POST';
+      
+      // Clean the data - remove timestamp fields and any undefined values
+      const cleanData = {
+        name: mainCompany.name,
+        cif: mainCompany.cif || "",
+        tradeRegisterNumber: mainCompany.tradeRegisterNumber || "",
+        address: mainCompany.address || "",
+        location: mainCompany.location || "",
+        county: mainCompany.county || "",
+        country: mainCompany.country || "Romania",
+        contact: mainCompany.contact || "",
+        isMainCompany: true,
+        ...(mainCompany.id && { id: mainCompany.id })
+      };
+
       const response = await fetch('/api/main-company', {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...mainCompany,
-          isMainCompany: true
-        }),
+        body: JSON.stringify(cleanData),
       });
 
       if (response.ok) {
@@ -90,13 +113,15 @@ export function MainCompanySettings() {
           description: mainCompany.id ? "Compania a fost actualizată" : "Compania principală a fost configurată",
         });
       } else {
-        throw new Error('Failed to save company');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error saving main company:', errorData);
+        throw new Error(errorData.details || 'Failed to save company');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving main company:', error);
       toast({
         title: "Eroare",
-        description: "Eroare la salvarea companiei",
+        description: error.message || "Eroare la salvarea companiei",
         variant: "destructive"
       });
     } finally {

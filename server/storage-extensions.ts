@@ -11,42 +11,54 @@ export class CompanyManagementExtensions {
    * Get the main company for the current tenant
    */
   static async getMainCompany(storage: DatabaseStorage): Promise<Company | undefined> {
-    const db = storage.getDb();
-    const results = await db.select().from(companies).where(eq(companies.isMainCompany, true)).limit(1);
-    return results[0];
+    const allCompanies = await storage.getAllCompanies();
+    return allCompanies.find(company => company.isMainCompany);
   }
 
   /**
    * Create or update the main company
    */
-  static async saveMainCompany(storage: DatabaseStorage, companyData: InsertCompany): Promise<Company> {
-    const db = storage.getDb();
-    
-    // First, ensure no other company is marked as main
-    await db.update(companies).set({ isMainCompany: false });
-    
-    // If updating existing company (id should be a number)
+  static async saveMainCompany(storage: DatabaseStorage, companyData: any): Promise<Company> {
+    // Clean the data to remove frontend-only fields
+    const cleanData = {
+      name: companyData.name,
+      commissionRate: companyData.commissionRate || "0.0000",
+      cif: companyData.cif || null,
+      tradeRegisterNumber: companyData.tradeRegisterNumber || null,
+      address: companyData.address || null,
+      location: companyData.location || null,
+      county: companyData.county || null,
+      country: companyData.country || "Romania",
+      contact: companyData.contact || null,
+      isMainCompany: true
+    };
+
+    // If updating existing company
     if (companyData.id && typeof companyData.id === 'number') {
-      const updated = await db.update(companies)
-        .set({ 
-          ...companyData, 
-          isMainCompany: true 
-        })
-        .where(eq(companies.id, companyData.id))
-        .returning();
-      return updated[0];
+      // First, ensure no other company is marked as main
+      const allCompanies = await storage.getAllCompanies();
+      for (const company of allCompanies) {
+        if (company.id !== companyData.id && company.isMainCompany) {
+          await storage.updateCompany(company.id, { ...company, isMainCompany: false });
+        }
+      }
+      
+      // Update the main company
+      const updated = await storage.updateCompany(companyData.id, cleanData);
+      return updated;
     }
     
-    // Creating new main company
-    const created = await db.insert(companies)
-      .values({ 
-        ...companyData, 
-        isMainCompany: true,
-        commissionRate: companyData.commissionRate || "0.0000" // Default commission rate
-      })
-      .returning();
+    // Creating new main company - first ensure no other company is marked as main
+    const allCompanies = await storage.getAllCompanies();
+    for (const company of allCompanies) {
+      if (company.isMainCompany) {
+        await storage.updateCompany(company.id, { ...company, isMainCompany: false });
+      }
+    }
     
-    return created[0];
+    // Create new main company
+    const created = await storage.addCompany(cleanData);
+    return created;
   }
 
   /**

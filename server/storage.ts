@@ -214,10 +214,23 @@ export class DatabaseStorage implements IStorage {
 
   async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
     const dbConn = this.getDb();
+    
+    // Remove any timestamp fields that shouldn't be updated
+    const { createdAt, ...cleanData } = companyData as any;
+    
     const [company] = await dbConn
       .update(companies)
-      .set(companyData)
+      .set(cleanData)
       .where(eq(companies.id, id))
+      .returning();
+    return company;
+  }
+
+  async addCompany(companyData: Partial<InsertCompany>): Promise<Company> {
+    const dbConn = this.getDb();
+    const [company] = await dbConn
+      .insert(companies)
+      .values(companyData)
       .returning();
     return company;
   }
