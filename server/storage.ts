@@ -111,34 +111,26 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private tenantId: string | null = null;
+  private dbInstance: any;
 
-  // Setează tenant-ul pentru această instanță de storage
-  setTenant(tenantId: string) {
-    this.tenantId = tenantId;
+  constructor(dbInstance?: any) {
+    // Dacă primim o instanță de DB (pentru tenant), o folosim
+    // Altfel folosim baza principală (pentru operațiuni de autentificare)
+    this.dbInstance = dbInstance || db;
   }
 
-  // Obține baza de date pentru tenant-ul curent
-  private async getTenantDb() {
-    if (!this.tenantId) {
-      throw new Error('Tenant not set for database storage');
-    }
-    const { multiTenantManager } = await import('./multi-tenant-manager.js');
-    return await multiTenantManager.getTenantDatabase(this.tenantId);
-  }
-
-  // Obține baza de date principală pentru autentificare
-  private getMainDb() {
-    return db;
+  // Obține baza de date pentru această instanță
+  private getDb() {
+    return this.dbInstance;
   }
 
   // User methods - folosesc baza de date principală
 
   // Username reservation methods to prevent race conditions
   async reserveUsername(username: string, email: string): Promise<string> {
-    const mainDb = this.getMainDb();
+    const dbConn = this.getDb();
     // Clean up expired reservations first
-    await mainDb.delete(usernameReservations).where(sql`expires_at < NOW()`);
+    await dbConn.delete(usernameReservations).where(sql`expires_at < NOW()`);
     
     // Check if username or email already exists in main users table
     const [existingUser, existingEmailUser] = await Promise.all([
@@ -159,7 +151,7 @@ export class DatabaseStorage implements IStorage {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
     try {
-      await db.insert(usernameReservations).values({
+      await dbConn.insert(usernameReservations).values({
         username,
         email,
         expiresAt,
@@ -172,10 +164,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async validateReservation(username: string, token: string): Promise<boolean> {
+    const dbConn = this.getDb();
     // Clean up expired reservations
-    await db.delete(usernameReservations).where(sql`expires_at < NOW()`);
+    await dbConn.delete(usernameReservations).where(sql`expires_at < NOW()`);
     
-    const [reservation] = await db
+    const [reservation] = await dbConn
       .select()
       .from(usernameReservations)
       .where(eq(usernameReservations.username, username));
@@ -184,28 +177,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async releaseReservation(username: string): Promise<void> {
-    await db.delete(usernameReservations).where(eq(usernameReservations.username, username));
+    const dbConn = this.getDb();
+    await dbConn.delete(usernameReservations).where(eq(usernameReservations.username, username));
   }
 
   // Company methods with tenant isolation
   async getAllCompanies(tenantId?: string): Promise<Company[]> {
-    // Return all companies for now (no tenant filtering until migration complete)
-    return await db.select().from(companies);
+    const dbConn = this.getDb();
+    return await dbConn.select().from(companies);
   }
 
   async getCompaniesByTenant(tenantId: string): Promise<Company[]> {
-    // Return all companies for now (no tenant filtering until migration complete)
-    return await db.select().from(companies);
+    const dbConn = this.getDb();
+    return await dbConn.select().from(companies);
   }
 
   async getCompanyByName(name: string, tenantId?: string): Promise<Company | undefined> {
-    // Return company by name without tenant filtering for now
-    const [company] = await db.select().from(companies).where(eq(companies.name, name));
+    const dbConn = this.getDb();
+    const [company] = await dbConn.select().from(companies).where(eq(companies.name, name));
     return company || undefined;
   }
 
   async createCompany(insertCompany: InsertCompany): Promise<Company> {
-    const [company] = await db
+    const dbConn = this.getDb();
+    const [company] = await dbConn
       .insert(companies)
       .values(insertCompany)
       .returning();
@@ -213,7 +208,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
-    const [company] = await db
+    const dbConn = this.getDb();
+    const [company] = await dbConn
       .update(companies)
       .set(companyData)
       .where(eq(companies.id, id))
@@ -222,10 +218,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCompany(id: number): Promise<void> {
+    const dbConn = this.getDb();
     // First delete all drivers for this company
-    await db.delete(drivers).where(eq(drivers.companyId, id));
+    await dbConn.delete(drivers).where(eq(drivers.companyId, id));
     // Then delete the company
-    await db.delete(companies).where(eq(companies.id, id));
+    await dbConn.delete(companies).where(eq(companies.id, id));
   }
 
   // Driver methods with tenant isolation
@@ -291,13 +288,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWeeklyProcessingByWeek(weekLabel: string): Promise<WeeklyProcessing | undefined> {
-    const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
+    const dbConn = this.getDb();
+    const [processing] = await dbConn.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
     return processing || undefined;
   }
 
   async getAllWeeklyProcessing(tenantId?: string): Promise<WeeklyProcessing[]> {
-    // Return all weekly processing without tenant filtering for now
-    return await db.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
+    const dbConn = this.getDb();
+    return await dbConn.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
   }
 
   async updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing> {
@@ -589,7 +587,8 @@ export class DatabaseStorage implements IStorage {
   
   // Company balance methods
   async getCompanyBalances(): Promise<CompanyBalance[]> {
-    return await db.select().from(companyBalances).orderBy(desc(companyBalances.lastUpdated));
+    const dbConn = this.getDb();
+    return await dbConn.select().from(companyBalances).orderBy(desc(companyBalances.lastUpdated));
   }
 
   async getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined> {
