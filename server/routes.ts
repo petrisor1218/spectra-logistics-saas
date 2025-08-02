@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { registerTenantRoutes } from "./tenant-routes.js";
+import { multiTenantManager } from "./multi-tenant-manager.js";
 import { 
   companies, 
   drivers, 
@@ -1108,14 +1109,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertCompanySchema.parse(req.body);
       
-      // Add tenant_id for tenant isolation
-      const companyData = {
-        ...validatedData,
-        tenantId: user.tenantId // Associate company with user's tenant
-      };
+      // În noul sistem multi-tenant, nu mai avem tenantId în schema
+      let company;
+      
+      if (user.tenantId) {
+        // Utilizator cu tenant - creează în baza sa separată
+        try {
+          const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
+          company = await tenantDb.storage.createCompany(validatedData);
+          console.log(`🔒 Company created in tenant ${user.tenantId}: ${company.name}`);
+        } catch (error) {
+          console.error(`❌ Error creating company in tenant database:`, error);
+          throw error;
+        }
+      } else {
+        // Utilizator legacy - folosește sistemul vechi
+        company = await storage.createCompany(validatedData);
+        console.log(`👑 Legacy company created: ${company.name}`);
+      }
 
-      const company = await storage.createCompany(companyData);
-      console.log(`🔒 Company created for tenant ${user.tenantId}: ${company.name}`);
       res.json(company);
     } catch (error) {
       console.error("Error creating company:", error);
@@ -1243,14 +1255,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertDriverSchema.parse(req.body);
       
-      // Add tenant_id for tenant isolation
-      const driverData = {
-        ...validatedData,
-        tenantId: user.tenantId // Associate driver with user's tenant
-      };
+      // În noul sistem multi-tenant, nu mai avem tenantId în schema
+      // Fiecare tenant are propria bază de date separată
+      let driver;
+      
+      if (user.tenantId) {
+        // Utilizator cu tenant - creează în baza sa separată
+        try {
+          const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
+          driver = await tenantDb.storage.createDriver(validatedData);
+          console.log(`🔒 Driver created in tenant ${user.tenantId}: ${driver.name}`);
+        } catch (error) {
+          console.error(`❌ Error creating driver in tenant database:`, error);
+          throw error;
+        }
+      } else {
+        // Utilizator legacy - folosește sistemul vechi
+        driver = await storage.createDriver(validatedData);
+        console.log(`👑 Legacy driver created: ${driver.name}`);
+      }
 
-      const driver = await storage.createDriver(driverData);
-      console.log(`🔒 Driver created for tenant ${user.tenantId}: ${driver.name}`);
       res.json(driver);
     } catch (error) {
       console.error("Error creating driver:", error);
