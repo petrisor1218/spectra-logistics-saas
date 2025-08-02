@@ -4,6 +4,9 @@ import { storage } from "./storage";
 import { registerTenantRoutes } from "./tenant-routes.js";
 import { multiTenantManager } from "./multi-tenant-manager.js";
 import { IsolationEnforcer, isolationMiddleware } from "./isolation-enforcer.js";
+import supabaseMultiTenantManager from "./supabase-multi-tenant-manager.js";
+import { supabaseTenantManager } from "./supabase-tenant-manager.js";
+import { registerSupabaseTestRoutes } from "./supabase-test-route.js";
 import { 
   companies, 
   drivers, 
@@ -1360,7 +1363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const companyId = validatedData.companyId;
         if (companyId) {
           try {
-            const companies = await tenantStorage.getCompanies();
+            const companies = await tenantStorage.getAllCompanies();
             const companyExists = companies.find((c: any) => c.id === companyId);
             
             if (!companyExists) {
@@ -1917,6 +1920,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Înregistrează rutele pentru funcționalitatea multi-tenant
   registerTenantRoutes(app);
+  
+  // Register Supabase test routes
+  registerSupabaseTestRoutes(app);
 
   const httpServer = createServer(app);
 
