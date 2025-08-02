@@ -298,7 +298,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWeeklyProcessing(insertProcessing: InsertWeeklyProcessing): Promise<WeeklyProcessing> {
-    const [processing] = await db
+    const dbConn = this.getDb();
+    
+    // PROFESSIONAL LOGIC: Prevent duplicate empty records
+    const existingRecord = await dbConn
+      .select()
+      .from(weeklyProcessing)
+      .where(eq(weeklyProcessing.weekLabel, insertProcessing.weekLabel))
+      .limit(1);
+    
+    // If record exists and new data is empty, don't create duplicate
+    if (existingRecord.length > 0) {
+      const isEmpty = !insertProcessing.processedData || 
+                     insertProcessing.processedData === null ||
+                     JSON.stringify(insertProcessing.processedData) === '{}';
+      
+      if (isEmpty && 
+          (!insertProcessing.tripDataCount || insertProcessing.tripDataCount === 0) &&
+          (!insertProcessing.invoice7Count || insertProcessing.invoice7Count === 0) &&
+          (!insertProcessing.invoice30Count || insertProcessing.invoice30Count === 0)) {
+        
+        console.log(`🛡️ DUPLICATE PREVENTION: Skipping empty record for week ${insertProcessing.weekLabel}`);
+        return existingRecord[0];
+      }
+      
+      // If new data has content, update existing record instead of creating duplicate
+      console.log(`🔄 SMART UPDATE: Updating existing record for week ${insertProcessing.weekLabel}`);
+      const [updated] = await dbConn
+        .update(weeklyProcessing)
+        .set(insertProcessing)
+        .where(eq(weeklyProcessing.weekLabel, insertProcessing.weekLabel))
+        .returning();
+      return updated;
+    }
+    
+    // Create new record only if none exists
+    const [processing] = await dbConn
       .insert(weeklyProcessing)
       .values(insertProcessing)
       .returning();
