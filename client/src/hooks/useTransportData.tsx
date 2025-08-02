@@ -266,7 +266,7 @@ export function useTransportData() {
             console.log(`✅ Potrivire găsită: Stef Trans -> ${company.name} (ID: ${company.id})`);
             break;
           } else if ((normalizedCompanyName.includes('cargo') && normalizedCompanyName.includes('sped')) && 
-                     normalizedSelected.includes('cargo')) {
+                     (normalizedSelected.includes('cargo') || normalizedSelected.includes('de cargo'))) {
             targetCompanyId = company.id;
             console.log(`✅ Potrivire găsită: DE Cargo Speed -> ${company.name} (ID: ${company.id})`);
             break;
@@ -311,6 +311,8 @@ export function useTransportData() {
         } else {
           console.error('❌ Nu am găsit compania în baza de date:', selectedCompany);
           console.log('📋 Companiile disponibile:', companies.map(c => `${c.name} (ID: ${c.id})`));
+        console.log(`🔍 Căutare companie pentru: "${selectedCompany}"`);
+        console.log('🔍 Normalizat:', selectedCompany.toLowerCase().trim());
         }
       }
     } catch (error) {
