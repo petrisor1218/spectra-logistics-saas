@@ -84,7 +84,7 @@ Preferred communication style: Simple, everyday language.
 ### ✅ CALENDAR CLEANUP COMPLETED - August 2, 2025
 - **Duplicate Prevention**: Implemented smart logic to prevent empty record creation
 - **Database Cleanup**: Removed 64+ duplicate empty records causing calendar issues
-- **Duplicate Resolution**: Fixed "20 iul. - 26 iul." duplicate (Toma SRL vs TOMA)
+- **Duplicate Resolution**: Fixed "20 iul. - 26 iul." duplicate (kept July 31 record with "Toma SRL")
 - **Weekly Processing**: Anti-duplication system prevents future calendar corruption
 - **Professional Error Handling**: Zero customer support calls for data inconsistencies
 - **Result**: Each week now has exactly 1 record - clean calendar interface
