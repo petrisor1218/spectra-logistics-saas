@@ -201,10 +201,12 @@ export function CompanyManagement() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log(`🏢 API returned ${data.length} companies:`, data.map(c => `${c.name} (ID: ${c.id})`));
+        console.log(`🏢 API returned ${data.length} companies:`, data.map(c => `${c.name} (ID: ${c.id}) ${c.isMainCompany ? '[MAIN]' : '[TRANSPORT]'}`));
         
-        // Clear any existing duplicates by filtering unique IDs and names
-        const uniqueCompanies = data.reduce((acc: any[], current: any) => {
+        // Filter out main company and remove duplicates
+        const filteredCompanies = data.filter((company: any) => !company.isMainCompany);
+        
+        const uniqueCompanies = filteredCompanies.reduce((acc: any[], current: any) => {
           const existsById = acc.find(item => item.id === current.id);
           const existsByName = acc.find(item => item.name === current.name && item.id !== current.id);
           
@@ -216,7 +218,7 @@ export function CompanyManagement() {
           return acc;
         }, []);
         
-        console.log(`✅ Setting ${uniqueCompanies.length} unique companies in state`);
+        console.log(`✅ Setting ${uniqueCompanies.length} transport companies in state (excluding main company)`);
         setCompanies(uniqueCompanies);
       }
     } catch (error) {
@@ -376,7 +378,7 @@ export function CompanyManagement() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
           <Building className="w-6 h-6" />
-          <span>Gestionare Companii ({companies.length})</span>
+          <span>Companii Transport ({companies.length})</span>
         </h2>
 
         <motion.button
@@ -386,7 +388,7 @@ export function CompanyManagement() {
           whileTap={{ scale: 0.98 }}
         >
           <Plus className="w-4 h-4" />
-          <span>Adaugă Companie</span>
+          <span>Adaugă Companie Transport</span>
         </motion.button>
       </div>
 
