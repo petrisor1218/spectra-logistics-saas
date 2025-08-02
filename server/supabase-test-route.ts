@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import supabaseMultiTenantManager from "./supabase-multi-tenant-manager.js";
 import { supabaseTenantManager } from "./supabase-tenant-manager.js";
+import { migrateMainUserToSupabase } from "./migrate-to-supabase.js";
 
 /**
  * Rute de test pentru sistemul Supabase multi-tenant
@@ -99,6 +100,38 @@ export function registerSupabaseTestRoutes(app: Express) {
       res.status(500).json({
         status: 'error',
         message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Migrare date utilizator principal în Supabase
+  app.post("/api/supabase/migrate-main-user", async (req, res) => {
+    try {
+      console.log('🚀 Starting migration of main user to Supabase...');
+      
+      const result = await migrateMainUserToSupabase();
+      
+      if (result.success) {
+        res.json({
+          status: 'success',
+          message: 'Main user data migrated successfully to Supabase',
+          migrated: result.migrated,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          status: 'error',
+          message: result.error,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Migration failed:', error);
+      res.status(500).json({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       });
     }
   });
