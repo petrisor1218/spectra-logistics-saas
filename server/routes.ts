@@ -1127,11 +1127,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // În noul sistem multi-tenant, nu mai avem tenantId în schema
       let company;
       
-      if (user.tenantId) {
+      if (user.tenantId && user.tenantId !== 'main') {
         // Utilizator cu tenant - creează în baza sa separată
         try {
-          const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
-          company = await tenantDb.createCompany(validatedData);
+          const { multiTenantManager } = await import('./multi-tenant-manager.js');
+          const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+          company = await tenantStorage.createCompany(validatedData);
           console.log(`🔒 Company created in tenant ${user.tenantId}: ${company.name}`);
         } catch (error) {
           console.error(`❌ Error creating company in tenant database:`, error);
@@ -1154,7 +1155,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const validatedData = insertCompanySchema.partial().parse(req.body);
-      const company = await storage.updateCompany(id, validatedData);
+      
+      // Get user for tenant isolation
+      const user = await storage.getUser(req.session?.userId);
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      let company;
+      
+      // Use tenant-specific database for company update
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        console.log(`📝 Updating company ${id} in tenant database ${user.tenantId}`);
+        company = await tenantStorage.updateCompany(id, validatedData);
+        console.log(`✅ Successfully updated company ${id} in tenant ${user.tenantId}`);
+      } else {
+        // Main user - use regular storage
+        company = await storage.updateCompany(id, validatedData);
+      }
+      
       res.json(company);
     } catch (error) {
       console.error("Error updating company:", error);
