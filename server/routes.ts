@@ -434,44 +434,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment routes with tenant isolation
+  // Payment routes with COMPLETE ISOLATION
   app.get("/api/payments", async (req: any, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
+      const { storage: isolatedStorage, user, isolationType } = await IsolationEnforcer.enforceIsolation(req);
+      IsolationEnforcer.logIsolationCheck(user, 'GET', 'payments');
 
       const { weekLabel } = req.query;
       let payments: any[] = [];
 
-      // Apply tenant isolation for payments
-      if (user.tenantId) {
-        // New user - empty data initially
-        payments = [];
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${payments.length} payments from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
-        if (weekLabel) {
-          payments = await storage.getPaymentsByWeek(weekLabel as string);
-        } else {
-          payments = await storage.getAllPayments();
-        }
-        console.log(`👑 Admin access: User ${user.username} sees ${payments.length} payments`);
+      if (weekLabel) {
+        payments = await isolatedStorage.getPaymentsByWeek(weekLabel as string);
       } else {
-        // Safety fallback
-        payments = [];
-        console.log(`⚠️ Unknown user ${user.username} - no payments access`);
+        payments = await isolatedStorage.getAllPayments();
       }
 
+      console.log(`✅ ${isolationType} USER: ${user.username} sees ${payments.length} payments (ISOLATED)`);
       res.json(payments);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching payments:", error);
-      res.status(500).json({ error: "Failed to fetch payments" });
+      res.status(500).json({ error: error?.message || "Failed to fetch payments" });
     }
   });
 
@@ -579,103 +561,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/weekly-processing", async (req: any, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
+      const { storage: isolatedStorage, user, isolationType } = await IsolationEnforcer.enforceIsolation(req);
+      IsolationEnforcer.logIsolationCheck(user, 'GET', 'weekly-processing');
 
       const { weekLabel } = req.query;
       let processing;
 
-      // Apply tenant isolation for weekly processing
-      if (user.tenantId && user.tenantId !== 'main') {
-        // Tenant user - read from tenant database
-        const { multiTenantManager } = await import('./multi-tenant-manager.js');
-        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-        
-        if (weekLabel) {
-          processing = await tenantStorage.getWeeklyProcessingByWeek(weekLabel as string);
-        } else {
-          processing = await tenantStorage.getAllWeeklyProcessing();
-        }
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${Array.isArray(processing) ? processing.length : (processing ? 1 : 0)} weekly processing from tenant ${user.tenantId}`);
+      if (weekLabel) {
+        processing = await isolatedStorage.getWeeklyProcessingByWeek(weekLabel as string);
       } else {
-        // Legacy users (no tenantId) - see all existing data
-        if (weekLabel) {
-          processing = await storage.getWeeklyProcessingByWeek(weekLabel as string);
-        } else {
-          processing = await storage.getAllWeeklyProcessing();
-        }
-        console.log(`👑 Legacy user access: User ${user.username} sees weekly processing data`);
-      } 
-      
-      // Additional fallback check
-      if (!user.tenantId && user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor') {
-        // Safety fallback
-        processing = weekLabel ? null : [];
-        console.log(`⚠️ Unknown user ${user.username} - no weekly processing access`);
+        processing = await isolatedStorage.getAllWeeklyProcessing();
       }
 
+      const count = Array.isArray(processing) ? processing.length : (processing ? 1 : 0);
+      console.log(`✅ ${isolationType} USER: ${user.username} sees ${count} weekly processing (ISOLATED)`);
+      
       res.json(processing);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching weekly processing:", error);
-      res.status(500).json({ error: "Failed to fetch weekly processing data" });
+      res.status(500).json({ error: error?.message || "Failed to fetch weekly processing data" });
     }
   });
 
-  // Transport orders routes with tenant isolation
+  // Transport orders routes with COMPLETE ISOLATION
   app.get("/api/transport-orders", async (req: any, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
+      const { storage: isolatedStorage, user, isolationType } = await IsolationEnforcer.enforceIsolation(req);
+      IsolationEnforcer.logIsolationCheck(user, 'GET', 'transport-orders');
 
       const { weekLabel, companyName } = req.query;
       let orders: any[] = [];
 
-      // Apply tenant isolation for transport orders
-      if (user.tenantId && user.tenantId !== 'main') {
-        // Tenant user - read from tenant database
-        const { multiTenantManager } = await import('./multi-tenant-manager.js');
-        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-        
-        if (weekLabel) {
-          orders = await tenantStorage.getTransportOrdersByWeek(weekLabel as string);
-        } else if (companyName) {
-          orders = await tenantStorage.getTransportOrdersByCompany(companyName as string);
-        } else {
-          orders = await tenantStorage.getAllTransportOrders();
-        }
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${orders.length} transport orders from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data with filters
-        if (weekLabel) {
-          orders = await storage.getTransportOrdersByWeek(weekLabel as string);
-        } else if (companyName) {
-          orders = await storage.getTransportOrdersByCompany(companyName as string);
-        } else {
-          orders = await storage.getAllTransportOrders();
-        }
-        console.log(`👑 Admin access: User ${user.username} sees ${orders.length} transport orders`);
+      if (weekLabel) {
+        orders = await isolatedStorage.getTransportOrdersByWeek(weekLabel as string);
+      } else if (companyName) {
+        orders = await isolatedStorage.getTransportOrdersByCompany(companyName as string);
       } else {
-        // Safety fallback
-        orders = [];
-        console.log(`⚠️ Unknown user ${user.username} - no transport orders access`);
+        orders = await isolatedStorage.getAllTransportOrders();
       }
 
+      console.log(`✅ ${isolationType} USER: ${user.username} sees ${orders.length} transport orders (ISOLATED)`);
       res.json(orders);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching transport orders:", error);
-      res.status(500).json({ error: "Failed to fetch transport orders" });
+      res.status(500).json({ error: error?.message || "Failed to fetch transport orders" });
     }
   });
 
@@ -1502,33 +1431,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company balance endpoints
   app.get("/api/company-balances", async (req: any, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
+      const { storage: isolatedStorage, user, isolationType } = await IsolationEnforcer.enforceIsolation(req);
+      IsolationEnforcer.logIsolationCheck(user, 'GET', 'company-balances');
 
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
-
-      // Apply tenant isolation for company balances
-      let balances: any[] = [];
-      if (user.tenantId && user.tenantId !== 'main') {
-        // Tenant user - read from tenant database
-        const { multiTenantManager } = await import('./multi-tenant-manager.js');
-        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-        balances = await tenantStorage.getCompanyBalances();
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${balances.length} balances from tenant ${user.tenantId}`);
-      } else {
-        // Legacy users (no tenantId) - see all existing data
-        balances = await storage.getCompanyBalances();
-        console.log(`👑 Legacy user access: User ${user.username} sees ${balances.length} balances`);
-      }
-
+      const balances = await isolatedStorage.getAllCompanyBalances();
+      console.log(`✅ ${isolationType} USER: ${user.username} sees ${balances.length} company balances (ISOLATED)`);
+      
       res.json(balances);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching company balances:", error);
-      res.status(500).json({ message: "Failed to fetch company balances" });
+      res.status(500).json({ error: error?.message || "Failed to fetch company balances" });
     }
   });
 
