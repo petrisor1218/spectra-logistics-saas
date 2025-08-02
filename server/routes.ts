@@ -1116,7 +1116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Utilizator cu tenant - creează în baza sa separată
         try {
           const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
-          company = await tenantDb.storage.createCompany(validatedData);
+          company = await tenantDb.createCompany(validatedData);
           console.log(`🔒 Company created in tenant ${user.tenantId}: ${company.name}`);
         } catch (error) {
           console.error(`❌ Error creating company in tenant database:`, error);
@@ -1263,7 +1263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Utilizator cu tenant - creează în baza sa separată
         try {
           const tenantDb = await multiTenantManager.getTenantDatabase(user.tenantId);
-          driver = await tenantDb.storage.createDriver(validatedData);
+          driver = await tenantDb.createDriver(validatedData);
           console.log(`🔒 Driver created in tenant ${user.tenantId}: ${driver.name}`);
         } catch (error) {
           console.error(`❌ Error creating driver in tenant database:`, error);
