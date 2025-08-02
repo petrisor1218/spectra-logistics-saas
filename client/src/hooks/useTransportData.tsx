@@ -178,24 +178,10 @@ export function useTransportData() {
     return {};
   };
 
-  // Build complete normalized dictionary (static + dynamic)
+  // Build complete normalized dictionary (DATABASE ONLY for multi-tenant isolation)
   const getCompleteDriverMap = () => {
-    const DRIVER_COMPANY_MAP: Record<string, string> = {};
-    
-    // Add static mapping first
-    Object.entries(DRIVER_COMPANY_MAP_ORIGINAL).forEach(([driver, company]) => {
-      const variants = generateNameVariants(driver);
-      variants.forEach(variant => {
-        DRIVER_COMPANY_MAP[variant] = company;
-      });
-    });
-    
-    // Add dynamic mapping (will override static if same name exists)
-    Object.entries(dynamicDriverMap).forEach(([variant, company]) => {
-      DRIVER_COMPANY_MAP[variant] = company;
-    });
-    
-    return DRIVER_COMPANY_MAP;
+    // Multi-tenant: Use ONLY database mappings, no static mapping
+    return dynamicDriverMap;
   };
 
   // Auto-suggest company for unmapped drivers
