@@ -392,63 +392,9 @@ class MultiTenantManager {
   async getTenantStorage(tenantId: string) {
     const db = await this.getTenantDatabase(tenantId);
     
-    // Returnează un obiect cu metodele necesare pentru operații pe tenant
-    return {
-      // Company operations
-      async deleteCompany(id: number): Promise<void> {
-        // First delete all drivers for this company
-        await db.delete(schema.drivers).where(eq(schema.drivers.companyId, id));
-        // Then delete the company
-        await db.delete(schema.companies).where(eq(schema.companies.id, id));
-      },
-      
-      async getAllCompanies() {
-        return await db.select().from(schema.companies);
-      },
-      
-      async createCompany(company: any) {
-        const [newCompany] = await db
-          .insert(schema.companies)
-          .values(company)
-          .returning();
-        return newCompany;
-      },
-      
-      async updateCompany(id: number, companyData: any) {
-        const [updatedCompany] = await db
-          .update(schema.companies)
-          .set(companyData)
-          .where(eq(schema.companies.id, id))
-          .returning();
-        return updatedCompany;
-      },
-      
-      // Driver operations
-      async deleteDriver(id: number): Promise<void> {
-        await db.delete(schema.drivers).where(eq(schema.drivers.id, id));
-      },
-      
-      async getAllDrivers() {
-        return await db.select().from(schema.drivers);
-      },
-      
-      async createDriver(driver: any) {
-        const [newDriver] = await db
-          .insert(schema.drivers)
-          .values(driver)
-          .returning();
-        return newDriver;
-      },
-      
-      async updateDriver(id: number, driverData: any) {
-        const [updatedDriver] = await db
-          .update(schema.drivers)
-          .set(driverData)
-          .where(eq(schema.drivers.id, id))
-          .returning();
-        return updatedDriver;
-      }
-    };
+    // Importăm DatabaseStorage și creăm o instanță cu baza de date tenant
+    const { DatabaseStorage } = await import('./storage.js');
+    return new DatabaseStorage(db);
   }
 
   /**
