@@ -215,7 +215,9 @@ export default function Home() {
                     if (loadDriversFromDatabase) {
                       await loadDriversFromDatabase();
                       // Reprocess data after mappings are updated to move amounts from Pending to correct companies
-                      if (tripData.length > 0 && (invoice7Data.length > 0 || invoice30Data.length > 0)) {
+                      if (tripData && tripData.length > 0 && 
+                         ((invoice7Data && invoice7Data.length > 0) || 
+                          (invoice30Data && invoice30Data.length > 0))) {
                         await processData();
                       }
                     }
