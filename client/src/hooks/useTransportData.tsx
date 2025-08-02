@@ -263,12 +263,8 @@ export function useTransportData() {
           const normalizedSelected = selectedCompany.toLowerCase().trim();
           
           // More flexible matching for companies
-          if ((normalizedCompanyName.includes('fast') && normalizedCompanyName.includes('express')) && 
-              normalizedSelected.includes('fast')) {
-            targetCompanyId = company.id;
-            console.log(`✅ Potrivire găsită: Fast Express -> ${company.name} (ID: ${company.id})`);
-            break;
-          } else if ((normalizedCompanyName.includes('stef') && normalizedCompanyName.includes('trans')) && 
+          // Note: Fast Express nu mai există în tenant database după curățare
+          if ((normalizedCompanyName.includes('stef') && normalizedCompanyName.includes('trans')) && 
                      normalizedSelected.includes('stef')) {
             targetCompanyId = company.id;
             console.log(`✅ Potrivire găsită: Stef Trans -> ${company.name} (ID: ${company.id})`);
@@ -366,14 +362,14 @@ export function useTransportData() {
     
     // Try to suggest a company based on similar drivers
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
-    const finalSuggestion = suggestedCompany || 'Fast Express'; // Default suggestion
+    const finalSuggestion = suggestedCompany || 'Stef Trans'; // Default suggestion (Fast Express nu mai există)
     
     console.log(`   Sugestie: ${finalSuggestion}`);
     
     // Add to pending mappings if not already there
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
     if (!isAlreadyPending) {
-      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
+      const allCompanies = ['Stef Trans', 'DE Cargo Speed', 'Toma SRL']; // Fast Express removed from tenant
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
