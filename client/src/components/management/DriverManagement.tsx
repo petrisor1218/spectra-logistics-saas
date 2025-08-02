@@ -294,8 +294,12 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
 
   // Stabilizăm callback-urile pentru a preveni re-render-ul
   const handleFormChange = useCallback((field: string, value: any) => {
+    console.log(`📝 Schimbare în formular: ${field} = ${value}`);
+    if (field === 'companyId') {
+      console.log('🏢 Compania selectată:', value, companies.find(c => c.id === parseInt(value))?.name);
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  }, [companies]);
 
   const handleSaveForm = useCallback(() => {
     handleSave(formData);
