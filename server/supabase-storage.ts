@@ -378,13 +378,13 @@ export class SupabaseStorage {
   }
 
   // ================== Transport Order Methods ==================
-  async getAllTransportOrders(): Promise<TransportOrder[]> {
+  async getTransportOrders(): Promise<TransportOrder[]> {
     try {
       const { data, error } = await this.supabase
         .from(`${this.tablePrefix}transport_orders`)
         .select('*')
         .eq('tenant_id', this.tenantId)
-        .order('orderDate', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -392,45 +392,6 @@ export class SupabaseStorage {
       console.error(`❌ Error fetching transport orders for tenant ${this.tenantId}:`, error);
       return [];
     }
-  }
-
-  async getTransportOrdersByWeek(weekLabel: string): Promise<TransportOrder[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from(`${this.tablePrefix}transport_orders`)
-        .select('*')
-        .eq('tenant_id', this.tenantId)
-        .eq('weekLabel', weekLabel)
-        .order('orderDate', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error(`❌ Error fetching transport orders by week for tenant ${this.tenantId}:`, error);
-      return [];
-    }
-  }
-
-  async getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from(`${this.tablePrefix}transport_orders`)
-        .select('*')
-        .eq('tenant_id', this.tenantId)
-        .eq('companyName', companyName)
-        .order('orderDate', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error(`❌ Error fetching transport orders by company for tenant ${this.tenantId}:`, error);
-      return [];
-    }
-  }
-
-  async getTransportOrders(): Promise<TransportOrder[]> {
-    // Alias pentru compatibilitate
-    return this.getAllTransportOrders();
   }
 
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
@@ -450,21 +411,6 @@ export class SupabaseStorage {
       return data;
     } catch (error) {
       console.error(`❌ Error creating transport order for tenant ${this.tenantId}:`, error);
-      throw error;
-    }
-  }
-
-  async deleteTransportOrder(id: number): Promise<void> {
-    try {
-      const { error } = await this.supabase
-        .from(`${this.tablePrefix}transport_orders`)
-        .delete()
-        .eq('id', id)
-        .eq('tenant_id', this.tenantId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error(`❌ Error deleting transport order ${id} for tenant ${this.tenantId}:`, error);
       throw error;
     }
   }

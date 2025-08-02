@@ -36,25 +36,19 @@ export class IsolationEnforcer {
       throw new Error('User not found');
     }
 
-    // CRITICAL RULE: Petrisor (tenant_id = 'main') = SUPABASE MAIN ONLY
-    if (!user.tenantId || user.tenantId === 'main') {
-      console.log(`👑 ISOLATION ENFORCED: MAIN USER ${user.username} → SUPABASE MAIN database`);
-      // Import Supabase components
-      const { SupabaseMainStorage } = await import('./supabase-main-storage.js');
-      const supabaseMultiTenantManager = (await import('./supabase-multi-tenant-manager.js')).default;
-      const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.getMainSupabase());
-      
+    // CRITICAL RULE: Petrisor (no tenant_id) = MAIN database ONLY
+    if (!user.tenantId) {
+      console.log(`👑 ISOLATION ENFORCED: MAIN USER ${user.username} → MAIN database`);
       return {
-        storage: supabaseMainStorage,
+        storage: storage,
         user: user,
         isolationType: 'MAIN'
       };
     }
 
-    // CRITICAL RULE: All tenants = SEPARATE SUPABASE TENANT DATABASES ONLY
-    console.log(`🔒 ISOLATION ENFORCED: TENANT USER ${user.username} → SEPARATE SUPABASE database ${user.tenantId}`);
-    const { supabaseTenantManager } = await import('./supabase-tenant-manager.js');
-    const tenantStorage = await supabaseTenantManager.getTenantStorage(user.tenantId);
+    // CRITICAL RULE: All tenants = SEPARATE schemas ONLY
+    console.log(`🔒 ISOLATION ENFORCED: TENANT USER ${user.username} → SEPARATE database ${user.tenantId}`);
+    const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
     
     return {
       storage: tenantStorage,
@@ -96,8 +90,8 @@ export class IsolationEnforcer {
    * Validates that no cross-contamination occurs
    */
   static logIsolationCheck(user: any, operation: string, resource: string) {
-    const isolationType = (!user.tenantId || user.tenantId === 'main') ? 'MAIN' : 'TENANT';
-    const database = (!user.tenantId || user.tenantId === 'main') ? 'MAIN_DB' : `TENANT_${user.tenantId}`;
+    const isolationType = !user.tenantId ? 'MAIN' : 'TENANT';
+    const database = !user.tenantId ? 'MAIN_DB' : `TENANT_${user.tenantId}`;
     
     console.log(`🛡️ ISOLATION CHECK: User=${user.username} | Type=${isolationType} | DB=${database} | Op=${operation} | Resource=${resource}`);
   }

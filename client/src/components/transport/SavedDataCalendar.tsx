@@ -79,12 +79,6 @@ export function SavedDataCalendar({
 
   // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
-    // Guard against undefined or null weekLabel
-    if (!weekLabel || typeof weekLabel !== 'string') {
-      console.warn('Invalid weekLabel in SavedDataCalendar:', weekLabel);
-      return new Date(); // Return current date as fallback
-    }
-
     // Extract start date from "DD mmm. - DD mmm." format
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
