@@ -35,6 +35,7 @@ Preferred communication style: Simple, everyday language.
 - **Company Balance Tracking**: Real-time monitoring of outstanding payments per company
 - **Automatic Balance Creation**: Balances generated during weekly data processing
 - **Payment Recording**: Interactive payment registration with status updates
+- **AZ Logistic Added**: New transport company added to system (August 2, 2025)
 
 ### ✅ Company Balance Management System - August 1, 2025
 - **Database Table**: company_balances table with complete tracking fields
