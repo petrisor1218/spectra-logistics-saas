@@ -249,17 +249,30 @@ export function useTransportData() {
         
         // Find company ID by matching selected company name
         for (const company of companies) {
-          if (company.name === 'Fast & Express S.R.L.' && selectedCompany === 'Fast Express') {
+          console.log(`🔍 Verificare companie: "${company.name}" vs "${selectedCompany}"`);
+          
+          // Normalize company names for comparison  
+          const normalizedCompanyName = company.name.toLowerCase().trim();
+          const normalizedSelected = selectedCompany.toLowerCase().trim();
+          
+          if ((normalizedCompanyName.includes('fast') && normalizedCompanyName.includes('express')) && 
+              normalizedSelected.includes('fast')) {
             targetCompanyId = company.id;
+            console.log(`✅ Potrivire găsită: Fast Express -> ${company.name} (ID: ${company.id})`);
             break;
-          } else if (company.name === 'Stef Trans S.R.L.' && selectedCompany === 'Stef Trans') {
+          } else if ((normalizedCompanyName.includes('stef') && normalizedCompanyName.includes('trans')) && 
+                     normalizedSelected.includes('stef')) {
             targetCompanyId = company.id;
+            console.log(`✅ Potrivire găsită: Stef Trans -> ${company.name} (ID: ${company.id})`);
             break;
-          } else if (company.name === 'De Cargo Sped S.R.L.' && selectedCompany === 'DE Cargo Speed') {
+          } else if ((normalizedCompanyName.includes('cargo') && normalizedCompanyName.includes('sped')) && 
+                     normalizedSelected.includes('cargo')) {
             targetCompanyId = company.id;
+            console.log(`✅ Potrivire găsită: DE Cargo Speed -> ${company.name} (ID: ${company.id})`);
             break;
-          } else if (company.name === 'Toma SRL' && selectedCompany === 'Toma SRL') {
+          } else if (normalizedCompanyName.includes('toma') && normalizedSelected.includes('toma')) {
             targetCompanyId = company.id;
+            console.log(`✅ Potrivire găsită: Toma -> ${company.name} (ID: ${company.id})`);
             break;
           }
         }
