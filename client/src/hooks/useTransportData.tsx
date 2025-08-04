@@ -155,8 +155,9 @@ export function useTransportData() {
         const dbDriverMap: Record<string, string> = {};
         
         drivers.forEach((driver: any) => {
-          if (driver.companyId) {
-            const company = companies.find((c: any) => c.id === driver.companyId);
+          // Use correct field name from database: company_id not companyId
+          if (driver.company_id) {
+            const company = companies.find((c: any) => c.id === driver.company_id);
             if (company) {
               // Use actual company name from database (no mapping for multi-tenant)
               const mappedCompanyName = company.name;
@@ -166,6 +167,8 @@ export function useTransportData() {
               variants.forEach(variant => {
                 dbDriverMap[variant] = mappedCompanyName;
               });
+              
+              console.log(`🔗 Mapare adăugată: "${driver.name}" → "${mappedCompanyName}" (${variants.length} variante)`);
             }
           }
         });
@@ -179,7 +182,7 @@ export function useTransportData() {
         setDynamicDriverMap(dbDriverMap);
         console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
         console.log('🏢 Companiile disponibile pentru tenant:', transportCompanies);
-        console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.companyId)?.name || 'FĂRĂ COMPANIE'}`));
+        console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.company_id)?.name || 'FĂRĂ COMPANIE'}`));
         console.log('🔗 Mapare completă (primele 5):', Object.entries(dbDriverMap).slice(0, 5));
         
         // If we have processed data but the mapping changed, reprocess automatically
