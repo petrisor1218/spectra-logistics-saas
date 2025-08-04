@@ -210,7 +210,12 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
   }, []);
 
   useEffect(() => {
-    Promise.all([fetchDrivers(), fetchCompanies()]);
+    // Încarcă mai întâi companiile, apoi șoferii pentru a evita race condition-uri
+    const loadData = async () => {
+      await fetchCompanies();
+      await fetchDrivers();
+    };
+    loadData();
   }, [fetchDrivers, fetchCompanies]);
 
   const generateNameVariants = useCallback((name: string) => {
@@ -457,20 +462,17 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
                         <Building className="w-4 h-4" />
                         <span>{companies.find(c => c.id === driver.company_id)?.name || 'Fără companie'}</span>
                       </div>
-                      {driver.company_id && (() => {
+                      {driver.company_id && companies.length > 0 && (() => {
                         const company = companies.find(c => c.id === driver.company_id);
-                        const rate = company?.commission_rate;
-                        console.log(`🔍 Debug comision pentru ${driver.name}:`, {
-                          company_id: driver.company_id,
-                          company_name: company?.name,
-                          raw_rate: rate,
-                          type_of_rate: typeof rate,
-                          parsed_rate: parseFloat(rate || '0'),
-                          final_percent: ((parseFloat(rate || '0') || 0) * 100).toFixed(2)
-                        });
+                        if (!company) return null;
+                        
+                        const rate = company.commission_rate;
+                        const numericRate = parseFloat(rate || '0');
+                        const percentDisplay = (numericRate * 100).toFixed(2);
+                        
                         return (
                           <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <span>Comision: {((parseFloat(rate || '0') || 0) * 100).toFixed(2)}%</span>
+                            <span>Comision: {percentDisplay}%</span>
                           </div>
                         );
                       })()}
