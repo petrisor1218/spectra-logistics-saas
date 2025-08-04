@@ -222,19 +222,41 @@ export class TenantStorageSimple implements IStorage {
   }
 
   async updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver> {
-    const result = await this.db.execute(
-      sql`
-        UPDATE ${sql.identifier(this.tenantId)}.drivers 
-        SET 
-          name = COALESCE(${driver.name}, name),
-          company_id = COALESCE(${driver.companyId}, company_id),
-          name_variants = COALESCE(${driver.nameVariants}, name_variants),
-          phone = COALESCE(${driver.phone}, phone),
-          email = COALESCE(${driver.email}, email)
-        WHERE id = ${id}
-        RETURNING *
-      `
-    );
+    const setParts = [];
+    const values = [];
+    
+    if (driver.name !== undefined) {
+      setParts.push('name = $' + (values.length + 1));
+      values.push(driver.name);
+    }
+    if (driver.companyId !== undefined) {
+      setParts.push('company_id = $' + (values.length + 1));
+      values.push(driver.companyId);
+    }
+    if (driver.nameVariants !== undefined) {
+      setParts.push('name_variants = $' + (values.length + 1));
+      values.push(driver.nameVariants);
+    }
+    if (driver.phone !== undefined) {
+      setParts.push('phone = $' + (values.length + 1));
+      values.push(driver.phone);
+    }
+    if (driver.email !== undefined) {
+      setParts.push('email = $' + (values.length + 1));
+      values.push(driver.email);
+    }
+    
+    if (setParts.length === 0) {
+      throw new Error('No fields to update');
+    }
+    
+    const query = `UPDATE "${this.tenantId}".drivers SET ${setParts.join(', ')} WHERE id = $${values.length + 1} RETURNING *`;
+    values.push(id);
+    
+    console.log('🔍 UPDATE QUERY:', query);
+    console.log('🔍 UPDATE VALUES:', values);
+    
+    const result = await this.db.execute(sql.raw(query, values));
     const drivers = this.extractRows(result);
     return drivers[0] as Driver;
   }
