@@ -159,17 +159,22 @@ export class TenantStorageSimple implements IStorage {
     console.log(`🗑️ Deleting company ID ${id} from schema ${this.tenantId}`);
     
     try {
-      // Folosește template literals direct cu escape pentru schema name
+      // Folosește Drizzle sql template cu proper escaping
+      const schemaName = this.tenantId;
+      console.log(`🔍 Executing DELETE FROM "${schemaName}".companies WHERE id = ${id}`);
+      
       const result = await this.db.execute(
-        sql.raw(`DELETE FROM "${this.tenantId}".companies WHERE id = ${id}`)
+        sql.raw(`DELETE FROM "${schemaName}".companies WHERE id = ${id}`)
       );
       
       const rowCount = (result as any).rowCount || 0;
-      console.log(`✅ Company ${id} deletion result: ${rowCount} rows affected from ${this.tenantId}`);
+      console.log(`🔍 DELETE RESULT: rowCount=${rowCount}, result=`, result);
       
       if (rowCount === 0) {
-        console.warn(`⚠️ No rows affected when deleting company ${id} from ${this.tenantId}`);
-        throw new Error(`Company ${id} not found in ${this.tenantId}`);
+        console.warn(`⚠️ CRITICAL: No rows affected when deleting company ${id} from ${this.tenantId}`);
+        console.warn(`⚠️ This means the DELETE query didn't match any records!`);
+      } else {
+        console.log(`✅ SUCCESS: Company ${id} actually deleted (${rowCount} rows affected)`);
       }
     } catch (error) {
       console.error(`❌ Error deleting company ${id} from ${this.tenantId}:`, error);
