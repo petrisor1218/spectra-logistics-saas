@@ -90,9 +90,9 @@ export function createTenantDetectionMiddleware(storage: IStorage) {
       // Pentru tenant-ii cu schema separată, obține storage-ul dedicat
       if (user.tenantId && user.tenantId !== 'main') {
         try {
-          const { TenantStorageFixed } = await import('./tenant-storage-fixed.js');
-          req.tenantStorage = new TenantStorageFixed(user.tenantId);
-          console.log(`✅ ISOLATION: TenantStorageFixed loaded for ${user.tenantId} - COMPLETE DATA ISOLATION ACTIVE`);
+          const { TenantStorageSimple } = await import('./tenant-storage-simple.js');
+          req.tenantStorage = new TenantStorageSimple(user.tenantId);
+          console.log(`✅ ISOLATION: TenantStorageSimple loaded for ${user.tenantId} - PERFECT ISOLATION WITH SQL IDENTIFIERS`);
         } catch (error) {
           console.error(`❌ ISOLATION: Failed to load tenant storage for ${user.tenantId}:`, error);
           return res.status(500).json({ 

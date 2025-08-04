@@ -35,9 +35,27 @@ export class TenantStorageFixed implements IStorage {
     console.log(`🔗 TenantStorageFixed initialized for: ${tenantId}`);
   }
 
-  // Helper pentru a executa SQL cu schema explicitară
-  private executeRaw<T = any>(query: string, params: any[] = []): Promise<T[]> {
-    return this.db.execute(sql.raw(query, params)) as Promise<T[]>;
+  // Helper pentru a executa SQL cu schema explicitară și parametri corect bindați
+  private async executeRaw<T = any>(query: string, params: any[] = []): Promise<T[]> {
+    try {
+      // Folosim direct sql template pentru a evita problemele cu parametrii
+      const sqlQuery = sql.raw(query.replace(/\$(\d+)/g, (match, num) => {
+        const paramIndex = parseInt(num) - 1;
+        const value = params[paramIndex];
+        if (value === null || value === undefined) return 'NULL';
+        if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
+        if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+        return String(value);
+      }));
+      
+      const result = await this.db.execute(sqlQuery);
+      return result as T[];
+    } catch (error) {
+      console.error(`❌ SQL Error in ${this.tenantId}:`, error);
+      console.error(`Query: ${query}`);
+      console.error(`Params:`, params);
+      throw error;
+    }
   }
 
   // User methods (nu sunt gestionate de tenant-i)
@@ -89,23 +107,29 @@ export class TenantStorageFixed implements IStorage {
   }
 
   async createCompany(company: InsertCompany): Promise<Company> {
+    // Abordare simplificată - folosim direct valorile în query pentru a evita problemele de parametri
+    const name = company.name.replace(/'/g, "''");
+    const commissionRate = company.commissionRate || '0.0400';
+    const cif = company.cif ? `'${company.cif.replace(/'/g, "''")}'` : 'NULL';
+    const tradeRegisterNumber = company.tradeRegisterNumber ? `'${company.tradeRegisterNumber.replace(/'/g, "''")}'` : 'NULL';
+    const address = company.address ? `'${company.address.replace(/'/g, "''")}'` : 'NULL';
+    const location = company.location ? `'${company.location.replace(/'/g, "''")}'` : 'NULL';
+    const county = company.county ? `'${company.county.replace(/'/g, "''")}'` : 'NULL';
+    const country = company.country ? `'${company.country.replace(/'/g, "''")}'` : "'Romania'";
+    const contact = company.contact ? `'${company.contact.replace(/'/g, "''")}'` : 'NULL';
+    const isMainCompany = company.isMainCompany || false;
+    
     const query = `
-      INSERT INTO "${this.tenantId}".companies (name, commission_rate, cif, trade_register_number, address, location, county, country, contact, is_main_company)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO "${this.tenantId}".companies (name, commission_rate, cif, trade_register_number, address, location, county, country, contact, is_main_company, created_at)
+      VALUES ('${name}', '${commissionRate}', ${cif}, ${tradeRegisterNumber}, ${address}, ${location}, ${county}, ${country}, ${contact}, ${isMainCompany}, CURRENT_TIMESTAMP)
       RETURNING *
     `;
-    const result = await this.executeRaw<Company>(query, [
-      company.name,
-      company.commissionRate || '0.0400',
-      company.cif,
-      company.tradeRegisterNumber,
-      company.address,
-      company.location,
-      company.county,
-      company.country || 'Romania',
-      company.contact,
-      company.isMainCompany || false
-    ]);
+    
+    console.log(`🔍 Creating company in schema ${this.tenantId}:`, company.name);
+    
+    const result = await this.executeRaw<Company>(query, []);
+    
+    console.log(`✅ Company created in ${this.tenantId}:`, result[0]);
     return result[0];
   }
 
@@ -167,16 +191,16 @@ export class TenantStorageFixed implements IStorage {
 
   async createDriver(driver: InsertDriver): Promise<Driver> {
     const query = `
-      INSERT INTO "${this.tenantId}".drivers (name, company_id, name_variants, phone, email)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO "${this.tenantId}".drivers (name, company_id, name_variants, phone, email, created_at)
+      VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
       RETURNING *
     `;
     const result = await this.executeRaw<Driver>(query, [
       driver.name,
-      driver.companyId,
-      driver.nameVariants,
-      driver.phone,
-      driver.email
+      driver.companyId || null,
+      driver.nameVariants || null,
+      driver.phone || null,
+      driver.email || null
     ]);
     return result[0];
   }
