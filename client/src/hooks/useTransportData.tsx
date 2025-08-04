@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
 // Company details from transport orders system
@@ -135,6 +135,11 @@ export function useTransportData() {
   // Load drivers from database and combine with static mapping
   const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
   const [availableCompanies, setAvailableCompanies] = useState<string[]>([]);
+
+  // Load companies and drivers on component mount
+  useEffect(() => {
+    loadDriversFromDatabase();
+  }, []);
   
   const loadDriversFromDatabase = async () => {
     try {
