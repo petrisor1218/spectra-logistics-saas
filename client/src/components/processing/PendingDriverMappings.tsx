@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, UserPlus, X } from "lucide-react";
+import { AlertCircle, UserPlus, X, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface PendingMapping {
@@ -92,12 +92,12 @@ export function PendingDriverMappings({
 
         toast({
           title: "Succes", 
-          description: `Șoferul "${driverName}" a fost adăugat la "${selectedCompany}". Reprocesez datele...`,
+          description: `Șoferul "${driverName}" a fost adăugat la "${selectedCompany}".`,
           variant: "default"
         });
 
-        // Call callback to refresh data and reprocess
-        onMappingComplete();
+        // Don't call onMappingComplete for individual additions to preserve the full list
+        // The data will be reprocessed when all mappings are done or user manually triggers reprocess
       } else {
         throw new Error("Failed to add driver");
       }
@@ -175,15 +175,26 @@ export function PendingDriverMappings({
             <span className="text-sm text-gray-300">
               Asignați șoferii la companiile potrivite:
             </span>
-            <Button
-              onClick={handleConfirmAllWithSuggestions}
-              disabled={isProcessing}
-              className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border-green-500/30"
-              size="sm"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Acceptă Toate Sugestiile
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleConfirmAllWithSuggestions}
+                disabled={isProcessing}
+                className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border-green-500/30"
+                size="sm"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Acceptă Toate Sugestiile
+              </Button>
+              <Button
+                onClick={onMappingComplete}
+                disabled={isProcessing}
+                className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border-blue-500/30"
+                size="sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Finalizează & Reprocesează
+              </Button>
+            </div>
           </div>
 
           <AnimatePresence>
