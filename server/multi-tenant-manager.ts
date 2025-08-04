@@ -419,9 +419,9 @@ class MultiTenantManager {
   async getTenantStorage(tenantId: string) {
     const db = await this.getTenantDatabase(tenantId);
     
-    // Importăm DatabaseStorage și creăm o instanță cu baza de date tenant
-    const { DatabaseStorage } = await import('./storage.js');
-    return new DatabaseStorage(db);
+    // Folosim TenantStorageSimple pentru izolare completă
+    const { TenantStorageSimple } = await import('./tenant-storage-simple.js');
+    return new TenantStorageSimple(db, tenantId);
   }
 
   /**

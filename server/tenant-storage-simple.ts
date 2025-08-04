@@ -159,20 +159,20 @@ export class TenantStorageSimple implements IStorage {
     console.log(`🗑️ Deleting company ID ${id} from schema ${this.tenantId}`);
     
     try {
-      // Folosește Drizzle sql template cu proper escaping
-      const schemaName = this.tenantId;
-      console.log(`🔍 Executing DELETE FROM "${schemaName}".companies WHERE id = ${id}`);
-      
+      // Folosește proper Drizzle SQL template cu RETURNING pentru debugging
       const result = await this.db.execute(
-        sql.raw(`DELETE FROM "${schemaName}".companies WHERE id = ${id}`)
+        sql`DELETE FROM ${sql.identifier(this.tenantId)}.companies WHERE id = ${id} RETURNING id, name`
       );
       
-      const rowCount = (result as any).rowCount || 0;
-      console.log(`🔍 DELETE RESULT: rowCount=${rowCount}, result=`, result);
+      const rows = (result as any).rows || [];
+      const rowCount = rows.length;
+      console.log(`🔍 DELETE RESULT for company ${id}: rows.length=${rowCount}, rows=`, rows);
+      console.log(`🔍 Full result object:`, JSON.stringify(result, null, 2));
       
       if (rowCount === 0) {
-        console.warn(`⚠️ CRITICAL: No rows affected when deleting company ${id} from ${this.tenantId}`);
-        console.warn(`⚠️ This means the DELETE query didn't match any records!`);
+        console.error(`❌ CRITICAL: No rows affected when deleting company ${id} from ${this.tenantId}`);
+        console.error(`❌ This means the DELETE query didn't match any records!`);
+        throw new Error(`Company ${id} not found in ${this.tenantId} - DELETE had no effect`);
       } else {
         console.log(`✅ SUCCESS: Company ${id} actually deleted (${rowCount} rows affected)`);
       }

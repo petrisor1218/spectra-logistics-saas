@@ -1274,11 +1274,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { multiTenantManager } = await import('./multi-tenant-manager.js');
         const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
         
-        console.log(`🗑️ Deleting company ${id} from tenant database ${user.tenantId}`);
+        console.log(`🗑️ ROUTE: Deleting company ${id} from tenant database ${user.tenantId}`);
+        console.log(`🔍 ROUTE: Using tenantStorage.deleteCompany(${id})`);
         
         // Delete from tenant database
         await tenantStorage.deleteCompany(id);
-        console.log(`✅ Successfully deleted company ${id} from tenant ${user.tenantId}`);
+        console.log(`✅ ROUTE: Successfully deleted company ${id} from tenant ${user.tenantId}`);
       } else {
         // Main user - use regular storage
         await storage.deleteCompany(id);
