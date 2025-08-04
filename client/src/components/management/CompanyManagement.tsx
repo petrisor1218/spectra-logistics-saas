@@ -201,7 +201,7 @@ export function CompanyManagement() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log(`🏢 API returned ${data.length} companies:`, data.map(c => `${c.name} (ID: ${c.id}) ${c.isMainCompany ? '[MAIN]' : '[TRANSPORT]'}`));
+        console.log(`🏢 API returned ${data.length} companies:`, data.map((c: any) => `${c.name} (ID: ${c.id}) ${c.isMainCompany ? '[MAIN]' : '[TRANSPORT]'}`));
         
         // Filter out main company and remove duplicates
         const filteredCompanies = data.filter((company: any) => !company.isMainCompany);
@@ -306,9 +306,9 @@ export function CompanyManagement() {
     setEditingId(company.id);
     setFormData({
       name: company.name,
-      commissionRate: company.commission_rate, // Use commission_rate from API
+      commissionRate: (company as any).commission_rate, // Use commission_rate from API
       cif: company.cif || '',
-      tradeRegisterNumber: company.trade_register_number || '', // Use snake_case from API
+      tradeRegisterNumber: (company as any).trade_register_number || '', // Use snake_case from API
       address: company.address || '',
       location: company.location || '',
       county: company.county || '',
@@ -431,7 +431,7 @@ export function CompanyManagement() {
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
                       <div className="flex items-center space-x-2">
                         <CreditCard className="w-4 h-4" />
-                        <span>Comision: {((parseFloat(company.commission_rate || '0') || 0) * 100).toFixed(2)}%</span>
+                        <span>Comision: {((parseFloat((company as any).commission_rate || '0') || 0) * 100).toFixed(2)}%</span>
                       </div>
                       {company.cif && (
                         <div className="flex items-center space-x-2">

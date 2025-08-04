@@ -713,7 +713,7 @@ export class TenantStorageSimple implements IStorage {
 
   async getNextOrderNumber(): Promise<number> {
     const result = await this.db.execute(
-      sql`SELECT current_number FROM ${sql.identifier(this.tenantId)}.order_sequence LIMIT 1`
+      sql`SELECT last_order_number FROM ${sql.identifier(this.tenantId)}.order_sequence LIMIT 1`
     );
     const sequences = this.extractRows(result);
     
@@ -722,11 +722,11 @@ export class TenantStorageSimple implements IStorage {
       return 1554; // Starting number
     }
     
-    const nextNumber = (sequences[0].current_number || 0) + 1;
+    const nextNumber = (sequences[0].last_order_number || 0) + 1;
     
     // Update the sequence
     await this.db.execute(
-      sql`UPDATE ${sql.identifier(this.tenantId)}.order_sequence SET current_number = ${nextNumber}`
+      sql`UPDATE ${sql.identifier(this.tenantId)}.order_sequence SET last_order_number = ${nextNumber}`
     );
     
     return nextNumber;
@@ -735,7 +735,7 @@ export class TenantStorageSimple implements IStorage {
   async initializeOrderSequence(): Promise<void> {
     try {
       await this.db.execute(
-        sql`INSERT INTO ${sql.identifier(this.tenantId)}.order_sequence (current_number) VALUES (1554)`
+        sql`INSERT INTO ${sql.identifier(this.tenantId)}.order_sequence (last_order_number) VALUES (1554)`
       );
     } catch (error) {
       // Sequence might already exist, that's OK
