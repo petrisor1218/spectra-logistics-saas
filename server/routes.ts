@@ -60,20 +60,22 @@ if (stripeSecretKey) {
 // Create default users if they don't exist
 async function createDefaultUser() {
   try {
-    // Create main user (Petrisor) 
+    // Create main user (Petrisor) with ID 4
     const existingPetrisor = await storage.getUserByUsername('petrisor');
     if (!existingPetrisor) {
       const hashedPassword = await bcrypt.hash('test123', 10);
-      await storage.createUser({
+      
+      // Create with specific ID to match migrated data
+      const newUser = await storage.createUser({
         username: 'petrisor',
         email: 'petrisor@fastexpress.ro',
         password: hashedPassword,
         role: 'admin',
         tenantId: 'main'
       });
-      console.log('✅ Main user "petrisor" created successfully');
+      console.log('✅ Main user "petrisor" created successfully with ID:', newUser.id);
     } else {
-      console.log('✅ Main user "petrisor" already exists');
+      console.log('✅ Main user "petrisor" already exists with ID:', existingPetrisor.id);
     }
 
     // Create admin user
@@ -258,7 +260,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Username and password required' });
       }
 
-      const user = await storage.getUserByUsername(username);
+      let user = null;
+      
+      // For now, use main storage for all users (Supabase is empty)
+      user = await storage.getUserByUsername(username);
+      console.log(`🔍 LOGIN: Checking user "${username}" in main storage:`, user ? 'FOUND' : 'NOT_FOUND');
+      
       if (!user) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
@@ -269,6 +276,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       (req.session as any).userId = user.id;
+      console.log(`✅ LOGIN: User ${user.username} (ID: ${user.id}) logged in successfully`);
+      
       res.json({ 
         message: 'Login successful', 
         user: { 
@@ -279,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } 
       });
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ LOGIN: Error occurred:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
@@ -302,13 +311,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/auth/user', (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     console.log('🔍 AUTH CHECK: Session userId:', req.session?.userId);
     if (req.session?.userId) {
-      // Use correct storage based on user
-      const userStorage = USE_SUPABASE_FOR_MAIN && req.session.userId === 4 ? supabaseMainStorage : storage;
-      
-      userStorage.getUser(req.session.userId).then(user => {
+      try {
+        let user = null;
+        
+        // Use main storage for all users (Supabase migration will come later)
+        user = await storage.getUser(req.session.userId);
+        console.log(`🔍 AUTH: Checking user ID ${req.session.userId}:`, user ? `FOUND (${user.username})` : 'NOT_FOUND');
+        
         if (user) {
           console.log(`✅ AUTH: User ${user.username} authenticated successfully`);
           res.json({ 
@@ -316,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             username: user.username,
             email: user.email,
             role: user.role || 'subscriber',
-            tenantId: user.tenantId, // Include tenant info for frontend
+            tenantId: user.tenantId || 'main',
             subscriptionStatus: user.subscriptionStatus || 'inactive',
             trialEndsAt: user.trialEndsAt,
             subscriptionEndsAt: user.subscriptionEndsAt,
@@ -324,13 +336,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             stripeSubscriptionId: user.stripeSubscriptionId
           });
         } else {
-          console.log('❌ AUTH: User not found in database');
+          console.log('❌ AUTH: User not found in any storage');
           res.status(401).json({ error: 'User not found' });
         }
-      }).catch((error) => {
+      } catch (error) {
         console.error('❌ AUTH: Database error:', error);
         res.status(500).json({ error: 'Internal server error' });
-      });
+      }
     } else {
       console.log('❌ AUTH: No session found');
       res.status(401).json({ error: 'Not authenticated' });
@@ -450,7 +462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 🔒 COMPANIES - Complete tenant isolation
   app.get("/api/companies", async (req: TenantRequest, res) => {
     try {
-      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
+      // For now, use main storage for Petrisor, tenant storage for others
+      const tenantStorage = getTenantStorage(req, storage);
       const companies = await tenantStorage.getAllCompanies();
       
       validateNoDataLeakage(req, companies, 'getAllCompanies');

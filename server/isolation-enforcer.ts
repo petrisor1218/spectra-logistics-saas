@@ -52,8 +52,21 @@ export function createTenantDetectionMiddleware(storage: IStorage) {
         });
       }
 
-      // Obține utilizatorul din baza de date
-      const user = await storage.getUser(req.session.userId);
+      // Obține utilizatorul din baza de date (check both storages)
+      let user = await storage.getUser(req.session.userId);
+      
+      // If not found and this might be user 4 (Petrisor), check Supabase
+      if (!user && req.session.userId === 4) {
+        try {
+          const { supabaseMultiTenantManager } = await import('./supabase-multi-tenant-manager.js');
+          const { SupabaseMainStorage } = await import('./supabase-main-storage.js');
+          const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.getMainSupabase());
+          user = await supabaseMainStorage.getUser(req.session.userId);
+        } catch (error) {
+          console.warn('Could not check Supabase for user 4:', error);
+        }
+      }
+      
       if (!user) {
         return res.status(401).json({ 
           error: 'User not found',
