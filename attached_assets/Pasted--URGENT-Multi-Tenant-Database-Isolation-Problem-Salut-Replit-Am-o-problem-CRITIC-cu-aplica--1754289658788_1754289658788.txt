@@ -1,0 +1,82 @@
+# 🚨 URGENT: Multi-Tenant Database Isolation Problem
+
+Salut Replit! Am o problemă CRITICĂ cu aplicația mea SaaS și am nevoie de ajutorul tău pentru a implementa izolarea corectă a bazelor de date per tenant.
+
+## 🔴 PROBLEMA ACTUALĂ:
+Aplicația mea are **MULTI-TENANT ARCHITECTURE** dar **datele se amestecă între utilizatori**:
+
+- **Când creez un user nou**, el vede TOATE datele mele (de la user-ul "petrisor")
+- **Rutele nu filtrează** pe `tenantId` 
+- **Fiecare tenant TREBUIE să aibă** baze de date complet separate
+- **În development** vreau o bază de date neutră (nu datele mele personale)
+
+## 🎯 CE VREAU SĂ FACI:
+
+### 1. **IMPLEMENTEAZĂ TENANT ISOLATION COMPLET**
+```javascript
+// În TOATE rutele API să adaugi filtrare pe tenantId:
+app.get('/api/companies', async (req, res) => {
+  const user = await storage.getUser(req.session.userId);
+  const companies = await storage.getAllCompanies(user.tenantId); // ← FILTRARE OBLIGATORIE
+});
+```
+
+### 2. **VERIFICĂ ȘI REPARĂ TOATE ENDPOINT-URILE**
+Rutele care TREBUIE să aibă tenant isolation:
+- `/api/companies` 
+- `/api/drivers`
+- `/api/payments`
+- `/api/weekly-processing`
+- `/api/transport-orders`
+- `/api/company-balances`
+
+### 3. **CREEAZĂ DEVELOPMENT DATABASE SEPARATE**
+- **Pentru development**: O bază de date goală/neutră pentru testare
+- **Pentru production**: Fiecare user să aibă `tenantId` unic
+- **User "petrisor"**: Să rămână cu datele lui separate
+
+### 4. **IMPLEMENTEAZĂ ROW LEVEL SECURITY**
+```sql
+-- Ejemplo pentru companies table:
+CREATE POLICY tenant_isolation ON companies 
+FOR ALL USING (tenant_id = current_setting('app.current_tenant_id'));
+```
+
+### 5. **ADAUGĂ MIDDLEWARE DE TENANT DETECTION**
+```javascript
+// Middleware care setează tenantId pentru fiecare request
+app.use(async (req, res, next) => {
+  if (req.session?.userId) {
+    const user = await storage.getUser(req.session.userId);
+    req.tenantId = user.tenantId;
+  }
+  next();
+});
+```
+
+## 🔧 SCHEMA DATABASE ACTUALĂ:
+Aplicația folosește **Drizzle ORM** cu **PostgreSQL** pe **Supabase**. 
+
+Tabelele principale sunt:
+- `users` (cu câmpul `tenantId`)
+- `companies` (cu câmpul `tenantId`) 
+- `drivers` (cu câmpul `tenantId`)
+- `payments` (cu câmpul `tenantId`)
+- `weeklyProcessing` (cu câmpul `tenantId`)
+- `transportOrders` (cu câmpul `tenantId`)
+- `companyBalances` (cu câmpul `tenantId`)
+
+## 📋 TESTAREA FINALĂ:
+După implementare, vreau să:
+
+1. **User "petrisor"** → vede doar datele lui
+2. **User nou creat** → vede ZERO date (bază goală)
+3. **Development mode** → bază de date neutră pentru testare
+4. **Fiecare tenant** → complet izolat de alții
+
+## 🎯 OBIECTIVUL:
+**ZERO data leakage între tenants!** Fiecare client plătitor să aibă aplicația complet izolată.
+
+Poți să implementezi asta și să testezi cu 2-3 useri să verific că izolarea funcționează perfect?
+
+Mulțumesc! 🚀

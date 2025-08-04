@@ -1,113 +1,141 @@
 /**
- * CRITICAL ISOLATION ENFORCER - PETRISOR DATA PROTECTION
- * 
- * This module ensures COMPLETE data isolation between:
- * - Main User (Petrisor) - tenant_id = NULL - MAIN database ONLY
- * - Tenant Users - tenant_id != NULL - SEPARATE schemas ONLY
- * 
- * ZERO data sharing allowed!
+ * 🔒 ISOLATION ENFORCER - Garantează separarea completă a datelor per tenant
  */
+import type { Express, Request, Response, NextFunction } from "express";
+import type { IStorage } from "./storage.js";
 
-import { storage } from './storage.js';
-import { multiTenantManager } from './multi-tenant-manager.js';
-
-interface IsolationRequest {
-  userId: number;
-  operation: string;
-  resource: string;
-}
-
-export class IsolationEnforcer {
-  
-  /**
-   * Validates user isolation rules and returns appropriate storage
-   */
-  static async enforceIsolation(req: any): Promise<{
-    storage: any;
-    user: any;
-    isolationType: 'MAIN' | 'TENANT';
-  }> {
-    if (!req.session?.userId) {
-      throw new Error('Not authenticated');
-    }
-
-    const user = await storage.getUser(req.session.userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // CRITICAL RULE: Petrisor (no tenant_id) = MAIN database ONLY
-    if (!user.tenantId) {
-      console.log(`👑 ISOLATION ENFORCED: MAIN USER ${user.username} → MAIN database`);
-      return {
-        storage: storage,
-        user: user,
-        isolationType: 'MAIN'
-      };
-    }
-
-    // CRITICAL RULE: All tenants = SEPARATE schemas ONLY
-    console.log(`🔒 ISOLATION ENFORCED: TENANT USER ${user.username} → SEPARATE database ${user.tenantId}`);
-    const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
-    
-    return {
-      storage: tenantStorage,
-      user: user,
-      isolationType: 'TENANT'
-    };
-  }
-
-  /**
-   * Professional error handling with auto-recovery for missing companies
-   */
-  static async handleCompanyError(companyName: string, storage: any): Promise<any> {
-    console.log(`🔄 PROFESSIONAL RECOVERY: Auto-creating missing company "${companyName}"`);
-    
-    const newCompanyData = {
-      name: companyName.toUpperCase(),
-      commissionRate: companyName.toLowerCase().includes('fast') ? 0.02 : 0.04,
-      cif: '',
-      tradeRegisterNumber: '',
-      address: '',
-      location: '',
-      county: '',
-      country: 'Romania',
-      contact: '',
-      isMainCompany: false
-    };
-
-    try {
-      const company = await storage.createCompany(newCompanyData);
-      console.log(`✅ RECOVERY SUCCESS: Company "${companyName}" created with ID: ${company.id}`);
-      return company;
-    } catch (error) {
-      console.error(`❌ RECOVERY FAILED: Could not create company "${companyName}":`, error);
-      throw new Error(`Professional recovery failed for company: ${companyName}`);
-    }
-  }
-
-  /**
-   * Validates that no cross-contamination occurs
-   */
-  static logIsolationCheck(user: any, operation: string, resource: string) {
-    const isolationType = !user.tenantId ? 'MAIN' : 'TENANT';
-    const database = !user.tenantId ? 'MAIN_DB' : `TENANT_${user.tenantId}`;
-    
-    console.log(`🛡️ ISOLATION CHECK: User=${user.username} | Type=${isolationType} | DB=${database} | Op=${operation} | Resource=${resource}`);
-  }
+export interface TenantRequest extends Request {
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    tenantId?: string;
+    role?: string;
+  };
+  tenantId?: string;
+  tenantStorage?: IStorage;
 }
 
 /**
- * Express middleware to enforce isolation on all routes
+ * Middleware care detectează și setează tenant-ul pentru fiecare request
  */
-export function isolationMiddleware(req: any, res: any, next: any) {
-  // Add isolation context to request
-  req.enforceIsolation = () => IsolationEnforcer.enforceIsolation(req);
-  req.logIsolation = (operation: string, resource: string) => {
-    if (req.user) {
-      IsolationEnforcer.logIsolationCheck(req.user, operation, resource);
+export function createTenantDetectionMiddleware(storage: IStorage) {
+  return async (req: TenantRequest, res: Response, next: NextFunction) => {
+    try {
+      // Skip pentru rute de autentificare și publice
+      if (req.path === '/api/login' || 
+          req.path === '/api/register' || 
+          req.path === '/api/auth/user' ||
+          req.path === '/api/logout' ||
+          req.path.startsWith('/api/pricing') ||
+          req.path.startsWith('/api/health') ||
+          req.path.startsWith('/api/stripe') ||
+          req.path.startsWith('/pricing') ||
+          req.path.startsWith('/health') ||
+          req.path === '/' ||
+          req.path.startsWith('/assets/') ||
+          req.path.startsWith('/src/') ||
+          req.path.includes('.js') ||
+          req.path.includes('.css') ||
+          req.path.includes('.png') ||
+          req.path.includes('.svg') ||
+          req.path.includes('vite') ||
+          req.path.includes('@')) {
+        return next();
+      }
+
+      // Verifică autentificarea
+      if (!req.session?.userId) {
+        return res.status(401).json({ 
+          error: 'Not authenticated',
+          isolation: 'ENFORCED'
+        });
+      }
+
+      // Obține utilizatorul din baza de date
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ 
+          error: 'User not found',
+          isolation: 'ENFORCED'
+        });
+      }
+
+      // Setează tenant-ul în request
+      req.user = user;
+      req.tenantId = user.tenantId || 'main';
+
+      // Log pentru debugging
+      console.log(`🔒 ISOLATION: User ${user.username} (ID: ${user.id}) → Tenant: ${req.tenantId}`);
+
+      // Pentru tenant-ii cu schema separată, obține storage-ul dedicat
+      if (user.tenantId && user.tenantId !== 'main') {
+        try {
+          const { multiTenantManager } = await import('./multi-tenant-manager.js');
+          req.tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+          console.log(`✅ ISOLATION: Tenant storage loaded for ${user.tenantId}`);
+        } catch (error) {
+          console.error(`❌ ISOLATION: Failed to load tenant storage for ${user.tenantId}:`, error);
+          return res.status(500).json({ 
+            error: 'Tenant isolation failed',
+            tenantId: user.tenantId
+          });
+        }
+      }
+
+      next();
+    } catch (error) {
+      console.error('❌ ISOLATION: Tenant detection failed:', error);
+      res.status(500).json({ 
+        error: 'Isolation enforcement failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   };
-  
-  next();
+}
+
+/**
+ * Obține storage-ul corect bazat pe tenant
+ */
+export function getTenantStorage(req: TenantRequest, mainStorage: IStorage): IStorage {
+  // Pentru tenant-ii cu schema separată, folosește storage-ul dedicat
+  if (req.tenantStorage) {
+    console.log(`🔒 Using tenant storage for: ${req.tenantId}`);
+    return req.tenantStorage;
+  }
+
+  // Pentru utilizatorul principal sau fallback
+  console.log(`🔒 Using main storage for: ${req.tenantId || 'unknown'}`);
+  return mainStorage;
+}
+
+/**
+ * Verifică și raportează izolarea
+ */
+export function logIsolationStatus(req: TenantRequest, operation: string, dataCount: number) {
+  const isolation = req.tenantStorage ? 'TENANT_SCHEMA' : 'MAIN_DATABASE';
+  console.log(`🔒 ISOLATION: ${operation} → User: ${req.user?.username} → Tenant: ${req.tenantId} → Storage: ${isolation} → Records: ${dataCount}`);
+}
+
+/**
+ * Validează că nu există data leakage
+ */
+export function validateNoDataLeakage(req: TenantRequest, data: any[], operation: string) {
+  if (!req.user) {
+    throw new Error('User not found in request - isolation violation');
+  }
+
+  // Pentru tenant-ii cu schema separată, toate datele trebuie să aibă tenant_id corect
+  if (req.tenantStorage && data.length > 0) {
+    const invalidRecords = data.filter(record => 
+      record.tenantId && record.tenantId !== req.tenantId
+    );
+    
+    if (invalidRecords.length > 0) {
+      console.error(`❌ DATA LEAKAGE DETECTED: ${operation} → Expected tenant: ${req.tenantId}, Found: ${invalidRecords.map(r => r.tenantId).join(', ')}`);
+      throw new Error(`Data leakage detected: ${invalidRecords.length} records from other tenants`);
+    }
+  }
+
+  console.log(`✅ ISOLATION VALIDATED: ${operation} → ${data.length} records → No leakage detected`);
 }

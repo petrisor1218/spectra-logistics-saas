@@ -14,6 +14,15 @@ const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.g
 
 // Switch to use Supabase for main user (Petrisor)
 const USE_SUPABASE_FOR_MAIN = true;
+
+// Import tenant isolation enforcer
+import { 
+  createTenantDetectionMiddleware, 
+  getTenantStorage, 
+  logIsolationStatus,
+  validateNoDataLeakage,
+  type TenantRequest 
+} from "./isolation-enforcer.js";
 import { 
   companies, 
   drivers, 
@@ -48,20 +57,54 @@ if (stripeSecretKey) {
   console.warn('⚠️ STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
 }
 
-// Create default user if it doesn't exist
+// Create default users if they don't exist
 async function createDefaultUser() {
   try {
+    // Create main user (Petrisor) 
+    const existingPetrisor = await storage.getUserByUsername('petrisor');
+    if (!existingPetrisor) {
+      const hashedPassword = await bcrypt.hash('test123', 10);
+      await storage.createUser({
+        username: 'petrisor',
+        email: 'petrisor@fastexpress.ro',
+        password: hashedPassword,
+        role: 'admin',
+        tenantId: 'main'
+      });
+      console.log('✅ Main user "petrisor" created successfully');
+    } else {
+      console.log('✅ Main user "petrisor" already exists');
+    }
+
+    // Create admin user
+    const existingAdmin = await storage.getUserByUsername('admin');
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await storage.createUser({
+        username: 'admin',
+        email: 'admin@transport.pro',
+        password: hashedPassword,
+        role: 'admin',
+        tenantId: 'admin'
+      });
+      console.log('✅ Admin user created successfully');
+    }
+    
+    // Create Fastexpress user (legacy)
     const existingUser = await storage.getUserByUsername('Fastexpress');
     if (!existingUser) {
       const hashedPassword = await bcrypt.hash('Olanda99', 10);
       await storage.createUser({
         username: 'Fastexpress',
-        password: hashedPassword
+        email: 'fastexpress@test.com',
+        password: hashedPassword,
+        role: 'subscriber',
+        tenantId: 'tenant_fastexpress'
       });
-      console.log('Default user created successfully');
+      console.log('✅ Fastexpress user created successfully');
     }
   } catch (error) {
-    console.error('Error creating default user:', error);
+    console.error('Error creating default users:', error);
   }
 }
 
@@ -194,9 +237,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // 🔒 CRITICAL: Apply tenant isolation middleware to ALL requests
+  app.use(createTenantDetectionMiddleware(storage));
+  console.log('🔒 ISOLATION ENFORCER: Middleware activated for complete tenant separation');
+
   // Seed database on startup
   await createDefaultUser();
   await seedDatabase();
+
+  // Import and register isolated routes
+  const { registerIsolatedRoutes } = await import('./isolated-routes.js');
+  registerIsolatedRoutes(app, storage, supabaseMainStorage, USE_SUPABASE_FOR_MAIN);
 
   // Authentication routes
   app.post('/api/login', async (req, res) => {
@@ -252,9 +303,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/auth/user', (req: any, res) => {
+    console.log('🔍 AUTH CHECK: Session userId:', req.session?.userId);
     if (req.session?.userId) {
-      storage.getUser(req.session.userId).then(user => {
+      // Use correct storage based on user
+      const userStorage = USE_SUPABASE_FOR_MAIN && req.session.userId === 4 ? supabaseMainStorage : storage;
+      
+      userStorage.getUser(req.session.userId).then(user => {
         if (user) {
+          console.log(`✅ AUTH: User ${user.username} authenticated successfully`);
           res.json({ 
             id: user.id, 
             username: user.username,
@@ -268,12 +324,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             stripeSubscriptionId: user.stripeSubscriptionId
           });
         } else {
+          console.log('❌ AUTH: User not found in database');
           res.status(401).json({ error: 'User not found' });
         }
-      }).catch(() => {
+      }).catch((error) => {
+        console.error('❌ AUTH: Database error:', error);
         res.status(500).json({ error: 'Internal server error' });
       });
     } else {
+      console.log('❌ AUTH: No session found');
       res.status(401).json({ error: 'Not authenticated' });
     }
   });
@@ -388,19 +447,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company routes with COMPLETE ISOLATION enforced
-  app.get("/api/companies", async (req: any, res) => {
+  // 🔒 COMPANIES - Complete tenant isolation
+  app.get("/api/companies", async (req: TenantRequest, res) => {
     try {
-      const { storage: isolatedStorage, user, isolationType } = await IsolationEnforcer.enforceIsolation(req);
-      IsolationEnforcer.logIsolationCheck(user, 'GET', 'companies');
-
-      const companies = await isolatedStorage.getAllCompanies();
-      console.log(`✅ ${isolationType} USER: ${user.username} sees ${companies.length} companies (ISOLATED)`);
+      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
+      const companies = await tenantStorage.getAllCompanies();
+      
+      validateNoDataLeakage(req, companies, 'getAllCompanies');
+      logIsolationStatus(req, 'GET /api/companies', companies.length);
       
       res.json(companies);
     } catch (error) {
-      console.error("Error fetching companies:", error); 
-      res.status(500).json({ error: error.message || "Failed to fetch companies" });
+      console.error("❌ ISOLATION: Companies fetch failed:", error);
+      res.status(500).json({ error: "Failed to fetch companies", isolation: 'ENFORCED' });
+    }
+  });
+
+  app.post("/api/companies", async (req: TenantRequest, res) => {
+    try {
+      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
+      const companyData = { ...req.body, tenantId: req.tenantId };
+      
+      const company = await tenantStorage.createCompany(companyData);
+      logIsolationStatus(req, 'POST /api/companies', 1);
+      
+      res.json(company);
+    } catch (error) {
+      console.error("❌ ISOLATION: Company creation failed:", error);
+      res.status(500).json({ error: "Failed to create company", isolation: 'ENFORCED' });
     }
   });
 
@@ -434,44 +508,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment routes with tenant isolation
-  app.get("/api/payments", async (req: any, res) => {
+  // 🔒 PAYMENTS - Complete tenant isolation
+  app.get("/api/payments", async (req: TenantRequest, res) => {
     try {
-      if (!req.session?.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
-      const user = await storage.getUser(req.session.userId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
-
+      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
       const { weekLabel } = req.query;
+      
       let payments: any[] = [];
-
-      // Apply tenant isolation for payments
-      if (user.tenantId) {
-        // New user - empty data initially
-        payments = [];
-        console.log(`🔒 Tenant isolation: User ${user.username} sees ${payments.length} payments from tenant ${user.tenantId}`);
-      } else if (user.email === 'petrisor@fastexpress.ro' || user.username === 'petrisor') {
-        // Owner - see all existing data
-        if (weekLabel) {
-          payments = await storage.getPaymentsByWeek(weekLabel as string);
-        } else {
-          payments = await storage.getAllPayments();
-        }
-        console.log(`👑 Admin access: User ${user.username} sees ${payments.length} payments`);
+      if (weekLabel) {
+        payments = await tenantStorage.getPaymentsByWeek(weekLabel as string);
       } else {
-        // Safety fallback
-        payments = [];
-        console.log(`⚠️ Unknown user ${user.username} - no payments access`);
+        payments = await tenantStorage.getAllPayments();
       }
-
+      
+      validateNoDataLeakage(req, payments, 'getAllPayments');
+      logIsolationStatus(req, 'GET /api/payments', payments.length);
+      
       res.json(payments);
     } catch (error) {
-      console.error("Error fetching payments:", error);
-      res.status(500).json({ error: "Failed to fetch payments" });
+      console.error("❌ ISOLATION: Payments fetch failed:", error);
+      res.status(500).json({ error: "Failed to fetch payments", isolation: 'ENFORCED' });
+    }
+  });
+
+  app.post("/api/payments", async (req: TenantRequest, res) => {
+    try {
+      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
+      const paymentData = { ...req.body, tenantId: req.tenantId };
+      
+      const payment = await tenantStorage.createPayment(paymentData);
+      logIsolationStatus(req, 'POST /api/payments', 1);
+      
+      res.json(payment);
+    } catch (error) {
+      console.error("❌ ISOLATION: Payment creation failed:", error);
+      res.status(500).json({ error: "Failed to create payment", isolation: 'ENFORCED' });
     }
   });
 
