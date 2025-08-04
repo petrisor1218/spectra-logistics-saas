@@ -158,11 +158,21 @@ export class TenantStorageSimple implements IStorage {
   async deleteCompany(id: number): Promise<void> {
     console.log(`🗑️ Deleting company ID ${id} from schema ${this.tenantId}`);
     
-    const result = await this.db.execute(
-      sql`DELETE FROM ${sql.identifier(this.tenantId)}.companies WHERE id = ${id}`
-    );
-    
-    console.log(`✅ Company ${id} deleted from ${this.tenantId}:`, result);
+    try {
+      const result = await this.db.execute(
+        sql`DELETE FROM ${sql.identifier(this.tenantId)}.companies WHERE id = ${id}`
+      );
+      
+      const rowCount = (result as any).rowCount || 0;
+      console.log(`✅ Company ${id} deletion result: ${rowCount} rows affected`);
+      
+      if (rowCount === 0) {
+        console.warn(`⚠️ No rows affected when deleting company ${id} from ${this.tenantId}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error deleting company ${id} from ${this.tenantId}:`, error);
+      throw error;
+    }
   }
 
   // Driver methods cu SQL direct
