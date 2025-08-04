@@ -157,29 +157,21 @@ export class TenantStorageSimple implements IStorage {
   }
 
   async deleteCompany(id: number): Promise<void> {
-    console.log(`🗑️ TENANT DELETE: Deleting company ID ${id} from schema "${this.tenantId}" (type: ${typeof this.tenantId})`);
+    console.log(`🗑️ DIRECT SQL DELETE: Deleting company ID ${id} from tenant schema`);
     
     try {
-      // Folosește proper Drizzle SQL template cu RETURNING pentru debugging
-      const result = await this.db.execute(
-        sql`DELETE FROM ${sql.identifier(this.tenantId)}.companies WHERE id = ${id} RETURNING id, name`
-      );
+      // Folosește query direct fără sql.identifier pentru a evita [object Object]
+      const query = `DELETE FROM "${this.tenantId}".companies WHERE id = $1 RETURNING id, name`;
+      const result = await this.pool.query(query, [id]);
       
-      const rows = (result as any).rows || [];
-      const rowCount = rows.length;
-      console.log(`🔍 DELETE RESULT for company ${id}: rows.length=${rowCount}, rows=`, rows);
-      console.log(`🔍 Full result object:`, JSON.stringify(result, null, 2));
-      
-      if (rowCount === 0) {
-        console.error(`❌ CRITICAL: No rows affected when deleting company ${id} from ${this.tenantId}`);
-        console.error(`❌ This means the DELETE query didn't match any records!`);
-        throw new Error(`Company ${id} not found in ${this.tenantId} - DELETE had no effect`);
-      } else {
-        console.log(`✅ SUCCESS: Company ${id} actually deleted (${rowCount} rows affected)`);
+      if (result.rowCount === 0) {
+        throw new Error(`Company with ID ${id} not found`);
       }
+      
+      console.log(`✅ Successfully deleted company ${id} from ${this.tenantId}:`, result.rows[0]);
     } catch (error) {
       console.error(`❌ Error deleting company ${id} from ${this.tenantId}:`, error);
-      throw error;
+      throw new Error(`Failed to delete company: ${error.message}`);
     }
   }
 
