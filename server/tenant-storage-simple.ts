@@ -159,9 +159,9 @@ export class TenantStorageSimple implements IStorage {
     console.log(`🗑️ Deleting company ID ${id} from schema ${this.tenantId}`);
     
     try {
-      // Folosește string format direct pentru a evita probleme cu sql.identifier  
+      // Folosește template literals direct cu escape pentru schema name
       const result = await this.db.execute(
-        sql.raw(`DELETE FROM ${this.tenantId}.companies WHERE id = $1`, [id])
+        sql.raw(`DELETE FROM "${this.tenantId}".companies WHERE id = ${id}`)
       );
       
       const rowCount = (result as any).rowCount || 0;
