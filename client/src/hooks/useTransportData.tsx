@@ -418,6 +418,11 @@ export function useTransportData() {
     
     // Try to suggest a company based on similar drivers
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
+    
+    // Debug available companies
+    console.log(`🔍 DEBUG: availableCompanies array:`, availableCompanies);
+    console.log(`🔍 DEBUG: availableCompanies.length:`, availableCompanies.length);
+    
     const finalSuggestion = suggestedCompany || (availableCompanies.length > 0 ? availableCompanies[0] : 'Companie Nouă');
     
     console.log(`   Sugestie: ${finalSuggestion}`);
@@ -427,6 +432,7 @@ export function useTransportData() {
     if (!isAlreadyPending) {
       // Use companies from database for this tenant instead of hardcoded list
       const allCompanies = availableCompanies.length > 0 ? availableCompanies : ['Companie Nouă'];
+      console.log(`🔍 DEBUG: allCompanies for alternatives:`, allCompanies);
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
