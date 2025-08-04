@@ -737,8 +737,8 @@ export function useTransportData() {
 
     setLoading(true);
     
-    // Load fresh driver data before processing
-    await loadDriversFromDatabase();
+    // Use current driver data - avoid reloading to prevent infinite loops
+    console.log('📊 Folosind datele curente ale șoferilor pentru procesare');
     
     const results: any = {};
     const unmatchedVrids: string[] = []; // Track unmatched VRIDs for historical search
@@ -867,8 +867,8 @@ export function useTransportData() {
         });
         console.log(`💾 Date salvate pentru săptămâna ${processingWeek} cu ${tripData.length} cursuri în istoric`);
         
-        // Create company balances
-        await createCompanyBalances(processingWeek, results);
+        // Skip automatic balance creation to prevent infinite loops
+        console.log('⏸️ Balanțele companiilor vor fi create manual din secțiunea Company');
       } catch (error) {
         console.log('Eroare la salvarea datelor:', error);
       }

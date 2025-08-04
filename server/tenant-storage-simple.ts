@@ -256,7 +256,7 @@ export class TenantStorageSimple implements IStorage {
     console.log('🔍 UPDATE QUERY:', query);
     console.log('🔍 UPDATE VALUES:', values);
     
-    const result = await this.db.execute(sql.raw(query, values));
+    const result = await this.db.execute(sql.raw(query, ...values));
     const drivers = this.extractRows(result);
     return drivers[0] as Driver;
   }
