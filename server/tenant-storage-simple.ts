@@ -159,15 +159,17 @@ export class TenantStorageSimple implements IStorage {
     console.log(`🗑️ Deleting company ID ${id} from schema ${this.tenantId}`);
     
     try {
+      // Folosește string format direct pentru a evita probleme cu sql.identifier  
       const result = await this.db.execute(
-        sql`DELETE FROM ${sql.identifier(this.tenantId)}.companies WHERE id = ${id}`
+        sql.raw(`DELETE FROM ${this.tenantId}.companies WHERE id = $1`, [id])
       );
       
       const rowCount = (result as any).rowCount || 0;
-      console.log(`✅ Company ${id} deletion result: ${rowCount} rows affected`);
+      console.log(`✅ Company ${id} deletion result: ${rowCount} rows affected from ${this.tenantId}`);
       
       if (rowCount === 0) {
         console.warn(`⚠️ No rows affected when deleting company ${id} from ${this.tenantId}`);
+        throw new Error(`Company ${id} not found in ${this.tenantId}`);
       }
     } catch (error) {
       console.error(`❌ Error deleting company ${id} from ${this.tenantId}:`, error);
