@@ -765,16 +765,19 @@ export function useTransportData() {
           let company = 'Unmatched';
           if (tripRecord && tripRecord['Driver']) {
             const foundCompany = extractAndFindDriver(tripRecord['Driver']);
+            console.log(`🔍 PROCESARE VRID ${vrid}: Driver="${tripRecord['Driver']}" → Companie="${foundCompany}"`);
+            
             if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
+              console.log(`✅ VRID ${vrid} ASIGNAT la ${company}`);
             } else if (foundCompany === 'Pending') {
               console.log(`VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - verificați mapările pendente`);
               company = 'Pending Mapping'; // Special category for pending drivers
             } else {
-              console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
+              console.log(`❌ VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
             }
           } else {
-            console.log(`VRID ${vrid} - Nu s-a găsit în trip data sau nu are driver`);
+            console.log(`❌ VRID ${vrid} - Nu s-a găsit în trip data sau nu are driver`);
             unmatchedVrids.push(vrid); // Track for historical search
           }
 
