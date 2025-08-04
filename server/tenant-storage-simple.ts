@@ -744,14 +744,14 @@ export class TenantStorageSimple implements IStorage {
     
     if (sequences.length === 0) {
       await this.initializeOrderSequence();
-      return 1554; // Starting number
+      return 200; // Starting number
     }
     
     const nextNumber = (sequences[0].last_order_number || 0) + 1;
     
     // Update the sequence
     await this.db.execute(
-      sql`UPDATE ${sql.identifier(this.tenantId)}.order_sequence SET last_order_number = ${nextNumber}`
+      sql`UPDATE ${sql.identifier(this.tenantId)}.order_sequence SET last_order_number = ${nextNumber}, updated_at = CURRENT_TIMESTAMP`
     );
     
     return nextNumber;
