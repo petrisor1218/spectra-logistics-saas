@@ -85,7 +85,8 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.companies WHERE name = ${name} LIMIT 1`
     );
-    return result[0] as Company;
+    const companies = (result as any).rows || [];
+    return companies[0] as Company;
   }
 
   async createCompany(company: InsertCompany): Promise<Company> {
@@ -150,13 +151,18 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    return result[0] as Company;
+    const companies = (result as any).rows || [];
+    return companies[0] as Company;
   }
 
   async deleteCompany(id: number): Promise<void> {
-    await this.db.execute(
+    console.log(`🗑️ Deleting company ID ${id} from schema ${this.tenantId}`);
+    
+    const result = await this.db.execute(
       sql`DELETE FROM ${sql.identifier(this.tenantId)}.companies WHERE id = ${id}`
     );
+    
+    console.log(`✅ Company ${id} deleted from ${this.tenantId}:`, result);
   }
 
   // Driver methods cu SQL direct
@@ -179,7 +185,8 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.drivers WHERE company_id = ${companyId}`
     );
-    return result as Driver[];
+    const drivers = (result as any).rows || [];
+    return drivers;
   }
 
   async createDriver(driver: InsertDriver): Promise<Driver> {
@@ -302,7 +309,9 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.payments ORDER BY id`
     );
-    return result as Payment[];
+    const payments = (result as any).rows || [];
+    console.log(`🔍 TenantStorageSimple.getAllPayments: ${payments.length} records from ${this.tenantId}`);
+    return payments;
   }
 
   async createPayment(payment: InsertPayment): Promise<Payment> {
