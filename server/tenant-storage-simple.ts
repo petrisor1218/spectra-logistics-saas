@@ -137,26 +137,59 @@ export class TenantStorageSimple implements IStorage {
   }
 
   async updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company> {
-    const result = await this.db.execute(
-      sql`
-        UPDATE ${sql.identifier(this.tenantId)}.companies 
-        SET 
-          name = COALESCE(${company.name}, name),
-          commission_rate = COALESCE(${company.commissionRate}, commission_rate),
-          cif = COALESCE(${company.cif}, cif),
-          trade_register_number = COALESCE(${company.tradeRegisterNumber}, trade_register_number),
-          address = COALESCE(${company.address}, address),
-          location = COALESCE(${company.location}, location),
-          county = COALESCE(${company.county}, county),
-          country = COALESCE(${company.country}, country),
-          contact = COALESCE(${company.contact}, contact),
-          is_main_company = COALESCE(${company.isMainCompany}, is_main_company)
-        WHERE id = ${id}
-        RETURNING *
-      `
-    );
-    const companies = this.extractRows(result);
-    return companies[0] as Company;
+    const setParts = [];
+    const values = [];
+    
+    if (company.name !== undefined) {
+      setParts.push('name = $' + (values.length + 1));
+      values.push(company.name);
+    }
+    if (company.commissionRate !== undefined) {
+      setParts.push('commission_rate = $' + (values.length + 1));
+      values.push(company.commissionRate);
+    }
+    if (company.cif !== undefined) {
+      setParts.push('cif = $' + (values.length + 1));
+      values.push(company.cif);
+    }
+    if (company.tradeRegisterNumber !== undefined) {
+      setParts.push('trade_register_number = $' + (values.length + 1));
+      values.push(company.tradeRegisterNumber);
+    }
+    if (company.address !== undefined) {
+      setParts.push('address = $' + (values.length + 1));
+      values.push(company.address);
+    }
+    if (company.location !== undefined) {
+      setParts.push('location = $' + (values.length + 1));
+      values.push(company.location);
+    }
+    if (company.county !== undefined) {
+      setParts.push('county = $' + (values.length + 1));
+      values.push(company.county);
+    }
+    if (company.country !== undefined) {
+      setParts.push('country = $' + (values.length + 1));
+      values.push(company.country);
+    }
+    if (company.contact !== undefined) {
+      setParts.push('contact = $' + (values.length + 1));
+      values.push(company.contact);
+    }
+    if (company.isMainCompany !== undefined) {
+      setParts.push('is_main_company = $' + (values.length + 1));
+      values.push(company.isMainCompany);
+    }
+    
+    if (setParts.length === 0) {
+      throw new Error('No fields to update');
+    }
+    
+    const query = `UPDATE "${this.tenantId}".companies SET ${setParts.join(', ')} WHERE id = $${values.length + 1} RETURNING *`;
+    values.push(id);
+    
+    const result = await this.pool.query(query, values);
+    return result.rows[0] as Company;
   }
 
   async deleteCompany(id: number): Promise<void> {
@@ -256,9 +289,8 @@ export class TenantStorageSimple implements IStorage {
     console.log('🔍 UPDATE QUERY:', query);
     console.log('🔍 UPDATE VALUES:', values);
     
-    const result = await this.db.execute(sql.raw(query, ...values));
-    const drivers = this.extractRows(result);
-    return drivers[0] as Driver;
+    const result = await this.pool.query(query, values);
+    return result.rows[0] as Driver;
   }
 
   async deleteDriver(id: number): Promise<void> {
