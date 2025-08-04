@@ -36,6 +36,10 @@ export class TenantStorageSimple implements IStorage {
     console.log(`🔗 TenantStorageSimple initialized for: ${this.tenantId}`);
   }
 
+  private extractRows(result: any): any[] {
+    return (result as any).rows || [];
+  }
+
   // User methods (nu sunt gestionate de tenant-i)
   async getUser(id: number): Promise<User | undefined> {
     throw new Error('Tenant storage does not manage users');
@@ -72,8 +76,7 @@ export class TenantStorageSimple implements IStorage {
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.companies ORDER BY id`
     );
     
-    // Extractează array-ul de rows din rezultatul SQL
-    const companies = (result as any).rows || [];
+    const companies = this.extractRows(result);
     console.log(`🔍 TenantStorageSimple.getAllCompanies: ${companies.length} records from ${this.tenantId}`);
     return companies;
   }
@@ -86,8 +89,8 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.companies WHERE name = ${name} LIMIT 1`
     );
-    const companies = (result as any).rows || [];
-    return companies[0] as Company;
+    const companies = this.extractRows(result);
+    return companies[0] || undefined;
   }
 
   async createCompany(company: InsertCompany): Promise<Company> {
@@ -116,7 +119,7 @@ export class TenantStorageSimple implements IStorage {
       );
       
       // Extractează compania din rezultatul SQL
-      const companies = (result as any).rows || [];
+      const companies = this.extractRows(result);
       const newCompany = companies[0] as Company;
       
       if (!newCompany) {
@@ -152,7 +155,7 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    const companies = (result as any).rows || [];
+    const companies = this.extractRows(result);
     return companies[0] as Company;
   }
 
@@ -171,7 +174,7 @@ export class TenantStorageSimple implements IStorage {
       console.log(`✅ Successfully deleted company ${id} from ${this.tenantId}:`, result.rows[0]);
     } catch (error) {
       console.error(`❌ Error deleting company ${id} from ${this.tenantId}:`, error);
-      throw new Error(`Failed to delete company: ${error.message}`);
+      throw new Error(`Failed to delete company: ${(error as any).message}`);
     }
   }
 
@@ -181,8 +184,7 @@ export class TenantStorageSimple implements IStorage {
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.drivers ORDER BY id`
     );
     
-    // Extractează array-ul de rows din rezultatul SQL
-    const drivers = (result as any).rows || [];
+    const drivers = this.extractRows(result);
     console.log(`🔍 TenantStorageSimple.getAllDrivers: ${drivers.length} records from ${this.tenantId}`);
     return drivers;
   }
@@ -195,7 +197,7 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.drivers WHERE company_id = ${companyId}`
     );
-    const drivers = (result as any).rows || [];
+    const drivers = this.extractRows(result);
     return drivers;
   }
 
@@ -215,7 +217,8 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    return result[0] as Driver;
+    const drivers = this.extractRows(result);
+    return drivers[0] as Driver;
   }
 
   async updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver> {
@@ -232,7 +235,8 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    return result[0] as Driver;
+    const drivers = this.extractRows(result);
+    return drivers[0] as Driver;
   }
 
   async deleteDriver(id: number): Promise<void> {
@@ -246,7 +250,8 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.weekly_processing WHERE week_label = ${weekLabel} LIMIT 1`
     );
-    return result[0] as WeeklyProcessing;
+    const results = this.extractRows(result);
+    return results[0] || undefined;
   }
 
   async getWeeklyProcessingByWeek(weekLabel: string): Promise<WeeklyProcessing | undefined> {
@@ -258,8 +263,7 @@ export class TenantStorageSimple implements IStorage {
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.weekly_processing ORDER BY processing_date DESC`
     );
     
-    // Extractează array-ul de rows din rezultatul SQL
-    const processing = (result as any).rows || [];
+    const processing = this.extractRows(result);
     console.log(`🔍 TenantStorageSimple.getAllWeeklyProcessing: ${processing.length} records from ${this.tenantId}`);
     return processing;
   }
@@ -283,7 +287,8 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    return result[0] as WeeklyProcessing;
+    const results = this.extractRows(result);
+    return results[0] as WeeklyProcessing;
   }
 
   async updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing> {
@@ -302,7 +307,8 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    return result[0] as WeeklyProcessing;
+    const results = this.extractRows(result);
+    return results[0] as WeeklyProcessing;
   }
 
   // Restul metodelor implementate similar cu SQL direct și sql.identifier()
@@ -312,14 +318,14 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.payments WHERE week_label = ${weekLabel}`
     );
-    return result as Payment[];
+    return this.extractRows(result);
   }
 
   async getAllPayments(): Promise<Payment[]> {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.payments ORDER BY id`
     );
-    const payments = (result as any).rows || [];
+    const payments = this.extractRows(result);
     console.log(`🔍 TenantStorageSimple.getAllPayments: ${payments.length} records from ${this.tenantId}`);
     return payments;
   }
@@ -328,20 +334,19 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`
         INSERT INTO ${sql.identifier(this.tenantId)}.payments 
-        (week_label, company_name, total_7_days, total_30_days, commission, total_invoiced, created_at)
+        (week_label, company_name, amount, description, payment_type)
         VALUES (
           ${payment.weekLabel},
           ${payment.companyName},
-          ${payment.total7Days},
-          ${payment.total30Days},
-          ${payment.commission},
-          ${payment.totalInvoiced},
-          CURRENT_TIMESTAMP
+          ${payment.amount},
+          ${payment.description || null},
+          ${payment.paymentType || 'partial'}
         )
         RETURNING *
       `
     );
-    return result[0] as Payment;
+    const payments = this.extractRows(result);
+    return payments[0] as Payment;
   }
 
   async updatePayment(id: number, payment: Partial<InsertPayment>): Promise<Payment> {
@@ -351,15 +356,15 @@ export class TenantStorageSimple implements IStorage {
         SET 
           week_label = COALESCE(${payment.weekLabel}, week_label),
           company_name = COALESCE(${payment.companyName}, company_name),
-          total_7_days = COALESCE(${payment.total7Days}, total_7_days),
-          total_30_days = COALESCE(${payment.total30Days}, total_30_days),
-          commission = COALESCE(${payment.commission}, commission),
-          total_invoiced = COALESCE(${payment.totalInvoiced}, total_invoiced)
+          amount = COALESCE(${payment.amount}, amount),
+          description = COALESCE(${payment.description}, description),
+          payment_type = COALESCE(${payment.paymentType}, payment_type)
         WHERE id = ${id}
         RETURNING *
       `
     );
-    return result[0] as Payment;
+    const payments = this.extractRows(result);
+    return payments[0] as Payment;
   }
 
   async deletePayment(id: number): Promise<void> {
@@ -369,11 +374,18 @@ export class TenantStorageSimple implements IStorage {
   }
 
   // Payment history methods
-  async getPaymentHistory(): Promise<PaymentHistoryRecord[]> {
-    const result = await this.db.execute(
-      sql`SELECT * FROM ${sql.identifier(this.tenantId)}.payment_history ORDER BY created_at DESC`
-    );
-    return result as PaymentHistoryRecord[];
+  async getPaymentHistory(paymentId?: number): Promise<PaymentHistoryRecord[]> {
+    let result;
+    if (paymentId) {
+      result = await this.db.execute(
+        sql`SELECT * FROM ${sql.identifier(this.tenantId)}.payment_history WHERE payment_id = ${paymentId} ORDER BY created_at DESC`
+      );
+    } else {
+      result = await this.db.execute(
+        sql`SELECT * FROM ${sql.identifier(this.tenantId)}.payment_history ORDER BY created_at DESC`
+      );
+    }
+    return this.extractRows(result);
   }
 
   async createPaymentHistory(history: InsertPaymentHistory): Promise<PaymentHistoryRecord> {
@@ -382,7 +394,7 @@ export class TenantStorageSimple implements IStorage {
         INSERT INTO ${sql.identifier(this.tenantId)}.payment_history 
         (payment_id, action, previous_data, created_at)
         VALUES (
-          ${history.paymentId},
+          ${history.paymentId || null},
           ${history.action},
           ${history.previousData ? JSON.stringify(history.previousData) : null},
           CURRENT_TIMESTAMP
@@ -390,7 +402,8 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    return result[0] as PaymentHistoryRecord;
+    const records = this.extractRows(result);
+    return records[0] as PaymentHistoryRecord;
   }
 
   async deletePaymentHistory(id: number): Promise<void> {
@@ -405,8 +418,7 @@ export class TenantStorageSimple implements IStorage {
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.transport_orders ORDER BY id`
     );
     
-    // Extractează array-ul de rows din rezultatul SQL
-    const orders = (result as any).rows || [];
+    const orders = this.extractRows(result);
     console.log(`🔍 TenantStorageSimple.getAllTransportOrders: ${orders.length} records from ${this.tenantId}`);
     return orders;
   }
@@ -415,19 +427,36 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`
         INSERT INTO ${sql.identifier(this.tenantId)}.transport_orders 
-        (order_number, company_id, week_label, total_amount, status, created_at)
+        (order_number, company_name, order_date, week_label, vrids, total_amount, route, status)
         VALUES (
           ${order.orderNumber},
-          ${order.companyId},
+          ${order.companyName},
+          ${order.orderDate},
           ${order.weekLabel},
+          ${order.vrids ? JSON.stringify(order.vrids) : null},
           ${order.totalAmount},
-          ${order.status || 'pending'},
-          CURRENT_TIMESTAMP
+          ${order.route || 'DE-BE-NL'},
+          ${order.status || 'draft'}
         )
         RETURNING *
       `
     );
-    return result[0] as TransportOrder;
+    const orders = this.extractRows(result);
+    return orders[0] as TransportOrder;
+  }
+
+  async getTransportOrdersByWeek(weekLabel: string): Promise<TransportOrder[]> {
+    const result = await this.db.execute(
+      sql`SELECT * FROM ${sql.identifier(this.tenantId)}.transport_orders WHERE week_label = ${weekLabel}`
+    );
+    return this.extractRows(result);
+  }
+
+  async getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]> {
+    const result = await this.db.execute(
+      sql`SELECT * FROM ${sql.identifier(this.tenantId)}.transport_orders WHERE company_name = ${companyName}`
+    );
+    return this.extractRows(result);
   }
 
   async updateTransportOrder(id: number, order: Partial<InsertTransportOrder>): Promise<TransportOrder> {
@@ -436,7 +465,7 @@ export class TenantStorageSimple implements IStorage {
         UPDATE ${sql.identifier(this.tenantId)}.transport_orders 
         SET 
           order_number = COALESCE(${order.orderNumber}, order_number),
-          company_id = COALESCE(${order.companyId}, company_id),
+          company_name = COALESCE(${order.companyName}, company_name),
           week_label = COALESCE(${order.weekLabel}, week_label),
           total_amount = COALESCE(${order.totalAmount}, total_amount),
           status = COALESCE(${order.status}, status)
@@ -444,7 +473,8 @@ export class TenantStorageSimple implements IStorage {
         RETURNING *
       `
     );
-    return result[0] as TransportOrder;
+    const orders = this.extractRows(result);
+    return orders[0] as TransportOrder;
   }
 
   async deleteTransportOrder(id: number): Promise<void> {
@@ -458,26 +488,27 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.historical_trips WHERE vrid = ${vrid}`
     );
-    return result as HistoricalTrip[];
+    return this.extractRows(result);
   }
 
   async createHistoricalTrip(trip: InsertHistoricalTrip): Promise<HistoricalTrip> {
     const result = await this.db.execute(
       sql`
         INSERT INTO ${sql.identifier(this.tenantId)}.historical_trips 
-        (vrid, trip_date, amount, driver_name, company_name, created_at)
+        (vrid, driver_name, week_label, trip_date, route, raw_trip_data)
         VALUES (
           ${trip.vrid},
-          ${trip.tripDate},
-          ${trip.amount},
-          ${trip.driverName},
-          ${trip.companyName},
-          CURRENT_TIMESTAMP
+          ${trip.driverName || null},
+          ${trip.weekLabel},
+          ${trip.tripDate || null},
+          ${trip.route || null},
+          ${trip.rawTripData ? JSON.stringify(trip.rawTripData) : null}
         )
         RETURNING *
       `
     );
-    return result[0] as HistoricalTrip;
+    const trips = this.extractRows(result);
+    return trips[0] as HistoricalTrip;
   }
 
   // Order sequence methods
@@ -485,30 +516,33 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.order_sequence LIMIT 1`
     );
-    return result[0] as OrderSequence;
+    const sequences = this.extractRows(result);
+    return sequences[0] || undefined;
   }
 
-  async updateOrderSequence(lastOrderNumber: number): Promise<OrderSequence> {
+  async updateOrderSequence(currentNumber: number): Promise<OrderSequence> {
     const result = await this.db.execute(
       sql`
         UPDATE ${sql.identifier(this.tenantId)}.order_sequence 
-        SET last_order_number = ${lastOrderNumber}, updated_at = CURRENT_TIMESTAMP
+        SET current_number = ${currentNumber}, last_updated = CURRENT_TIMESTAMP
         RETURNING *
       `
     );
-    return result[0] as OrderSequence;
+    const sequences = this.extractRows(result);
+    return sequences[0] as OrderSequence;
   }
 
   async createOrderSequence(sequence: InsertOrderSequence): Promise<OrderSequence> {
     const result = await this.db.execute(
       sql`
         INSERT INTO ${sql.identifier(this.tenantId)}.order_sequence 
-        (last_order_number, updated_at)
-        VALUES (${sequence.lastOrderNumber}, CURRENT_TIMESTAMP)
+        (current_number, last_updated)
+        VALUES (${sequence.currentNumber || 1554}, CURRENT_TIMESTAMP)
         RETURNING *
       `
     );
-    return result[0] as OrderSequence;
+    const sequences = this.extractRows(result);
+    return sequences[0] as OrderSequence;
   }
 
   // Company balances methods
@@ -517,8 +551,7 @@ export class TenantStorageSimple implements IStorage {
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.company_balances ORDER BY id`
     );
     
-    // Extractează array-ul de rows din rezultatul SQL
-    const balances = (result as any).rows || [];
+    const balances = this.extractRows(result);
     console.log(`🔍 TenantStorageSimple.getAllCompanyBalances: ${balances.length} records from ${this.tenantId}`);
     return balances;
   }
@@ -527,20 +560,20 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`
         INSERT INTO ${sql.identifier(this.tenantId)}.company_balances 
-        (company_name, week_label, total_invoiced, amount_paid, outstanding_balance, status, created_at)
+        (company_name, week_label, total_invoiced, total_paid, outstanding_balance, payment_status)
         VALUES (
           ${balance.companyName},
           ${balance.weekLabel},
           ${balance.totalInvoiced},
-          ${balance.amountPaid || 0},
+          ${balance.totalPaid || 0},
           ${balance.outstandingBalance},
-          ${balance.status || 'pending'},
-          CURRENT_TIMESTAMP
+          ${balance.paymentStatus || 'pending'}
         )
         RETURNING *
       `
     );
-    return result[0] as CompanyBalance;
+    const balances = this.extractRows(result);
+    return balances[0] as CompanyBalance;
   }
 
   async updateCompanyBalance(id: number, balance: Partial<InsertCompanyBalance>): Promise<CompanyBalance> {
@@ -551,20 +584,109 @@ export class TenantStorageSimple implements IStorage {
           company_name = COALESCE(${balance.companyName}, company_name),
           week_label = COALESCE(${balance.weekLabel}, week_label),
           total_invoiced = COALESCE(${balance.totalInvoiced}, total_invoiced),
-          amount_paid = COALESCE(${balance.amountPaid}, amount_paid),
+          total_paid = COALESCE(${balance.totalPaid}, total_paid),
           outstanding_balance = COALESCE(${balance.outstandingBalance}, outstanding_balance),
-          status = COALESCE(${balance.status}, status)
+          payment_status = COALESCE(${balance.paymentStatus}, payment_status)
         WHERE id = ${id}
         RETURNING *
       `
     );
-    return result[0] as CompanyBalance;
+    const balances = this.extractRows(result);
+    return balances[0] as CompanyBalance;
   }
 
   async deleteCompanyBalance(id: number): Promise<void> {
     await this.db.execute(
       sql`DELETE FROM ${sql.identifier(this.tenantId)}.company_balances WHERE id = ${id}`
     );
+  }
+
+  // Missing interface methods that need to be implemented
+  async createPaymentHistoryRecord(record: InsertPaymentHistory): Promise<PaymentHistoryRecord> {
+    return await this.createPaymentHistory(record);
+  }
+
+  async getHistoricalTripByVrid(vrid: string): Promise<HistoricalTrip | undefined> {
+    const result = await this.db.execute(
+      sql`SELECT * FROM ${sql.identifier(this.tenantId)}.historical_trips WHERE vrid = ${vrid} LIMIT 1`
+    );
+    const trips = this.extractRows(result);
+    return trips[0] || undefined;
+  }
+
+  async getHistoricalTripsByWeek(weekLabel: string): Promise<HistoricalTrip[]> {
+    const result = await this.db.execute(
+      sql`SELECT * FROM ${sql.identifier(this.tenantId)}.historical_trips WHERE week_label = ${weekLabel}`
+    );
+    return this.extractRows(result);
+  }
+
+  async searchHistoricalTripsByVrids(vrids: string[]): Promise<HistoricalTrip[]> {
+    if (vrids.length === 0) return [];
+    
+    const placeholders = vrids.map((_, i) => `$${i + 1}`).join(',');
+    const query = `SELECT * FROM "${this.tenantId}".historical_trips WHERE vrid = ANY(ARRAY[${placeholders}])`;
+    const result = await this.pool.query(query, vrids);
+    return result.rows;
+  }
+
+  async saveWeeklyDataWithHistory(
+    weekLabel: string, 
+    tripData: any[], 
+    invoice7Data: any[], 
+    invoice30Data: any[], 
+    processedData: any
+  ): Promise<WeeklyProcessing> {
+    // Save the weekly processing data
+    const weeklyData: InsertWeeklyProcessing = {
+      weekLabel,
+      tripDataCount: tripData.length,
+      invoice7Count: invoice7Data.length,
+      invoice30Count: invoice30Data.length,
+      processedData,
+      tripData,
+      invoice7Data,
+      invoice30Data
+    };
+    
+    const existingRecord = await this.getWeeklyProcessing(weekLabel);
+    if (existingRecord) {
+      return await this.updateWeeklyProcessing(weekLabel, weeklyData);
+    } else {
+      return await this.createWeeklyProcessing(weeklyData);
+    }
+  }
+
+  async getNextOrderNumber(): Promise<number> {
+    const result = await this.db.execute(
+      sql`SELECT current_number FROM ${sql.identifier(this.tenantId)}.order_sequence LIMIT 1`
+    );
+    const sequences = this.extractRows(result);
+    
+    if (sequences.length === 0) {
+      await this.initializeOrderSequence();
+      return 1554; // Starting number
+    }
+    
+    const nextNumber = (sequences[0].current_number || 0) + 1;
+    
+    // Update the sequence
+    await this.db.execute(
+      sql`UPDATE ${sql.identifier(this.tenantId)}.order_sequence SET current_number = ${nextNumber}`
+    );
+    
+    return nextNumber;
+  }
+
+  async initializeOrderSequence(): Promise<void> {
+    try {
+      await this.db.execute(
+        sql`INSERT INTO ${sql.identifier(this.tenantId)}.order_sequence (current_number) VALUES (1554)`
+      );
+    } catch (error) {
+      // Sequence might already exist, that's OK
+      console.log('Order sequence already initialized or error:', error);
+    }
   }
 
   // Close connection method
