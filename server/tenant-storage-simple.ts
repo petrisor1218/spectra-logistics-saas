@@ -70,8 +70,11 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.companies ORDER BY id`
     );
-    console.log(`🔍 TenantStorageSimple.getAllCompanies: ${result.length} records from ${this.tenantId}`);
-    return result as Company[];
+    
+    // Extractează array-ul de rows din rezultatul SQL
+    const companies = (result as any).rows || [];
+    console.log(`🔍 TenantStorageSimple.getAllCompanies: ${companies.length} records from ${this.tenantId}`);
+    return companies;
   }
 
   async getCompaniesByTenant(tenantId: string): Promise<Company[]> {
@@ -110,7 +113,10 @@ export class TenantStorageSimple implements IStorage {
         `
       );
       
-      const newCompany = result[0] as Company;
+      // Extractează compania din rezultatul SQL
+      const companies = (result as any).rows || [];
+      const newCompany = companies[0] as Company;
+      
       if (!newCompany) {
         console.warn(`⚠️ Company creation returned no result for ${this.tenantId}`);
         console.warn(`SQL result:`, result);
@@ -158,8 +164,11 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.drivers ORDER BY id`
     );
-    console.log(`🔍 TenantStorageSimple.getAllDrivers: ${result.length} records from ${this.tenantId}`);
-    return result as Driver[];
+    
+    // Extractează array-ul de rows din rezultatul SQL
+    const drivers = (result as any).rows || [];
+    console.log(`🔍 TenantStorageSimple.getAllDrivers: ${drivers.length} records from ${this.tenantId}`);
+    return drivers;
   }
 
   async getDriversByTenant(tenantId: string): Promise<Driver[]> {
@@ -231,8 +240,11 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.weekly_processing ORDER BY processing_date DESC`
     );
-    console.log(`🔍 TenantStorageSimple.getAllWeeklyProcessing: ${result.length} records from ${this.tenantId}`);
-    return result as WeeklyProcessing[];
+    
+    // Extractează array-ul de rows din rezultatul SQL
+    const processing = (result as any).rows || [];
+    console.log(`🔍 TenantStorageSimple.getAllWeeklyProcessing: ${processing.length} records from ${this.tenantId}`);
+    return processing;
   }
 
   async createWeeklyProcessing(processing: InsertWeeklyProcessing): Promise<WeeklyProcessing> {
@@ -373,8 +385,11 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.transport_orders ORDER BY id`
     );
-    console.log(`🔍 TenantStorageSimple.getAllTransportOrders: ${result.length} records from ${this.tenantId}`);
-    return result as TransportOrder[];
+    
+    // Extractează array-ul de rows din rezultatul SQL
+    const orders = (result as any).rows || [];
+    console.log(`🔍 TenantStorageSimple.getAllTransportOrders: ${orders.length} records from ${this.tenantId}`);
+    return orders;
   }
 
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
@@ -482,8 +497,11 @@ export class TenantStorageSimple implements IStorage {
     const result = await this.db.execute(
       sql`SELECT * FROM ${sql.identifier(this.tenantId)}.company_balances ORDER BY id`
     );
-    console.log(`🔍 TenantStorageSimple.getAllCompanyBalances: ${result.length} records from ${this.tenantId}`);
-    return result as CompanyBalance[];
+    
+    // Extractează array-ul de rows din rezultatul SQL
+    const balances = (result as any).rows || [];
+    console.log(`🔍 TenantStorageSimple.getAllCompanyBalances: ${balances.length} records from ${this.tenantId}`);
+    return balances;
   }
 
   async createCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance> {
