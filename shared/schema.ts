@@ -122,8 +122,8 @@ export const transportOrders = pgTable("transport_orders", {
 // Auto-increment sequence for order numbers
 export const orderSequence = pgTable("order_sequence", {
   id: serial("id").primaryKey(),
-  currentNumber: integer("current_number").notNull().default(1554), // Start from 1554
-  lastUpdated: timestamp("last_updated").defaultNow()
+  lastOrderNumber: integer("last_order_number").notNull().default(1554), // Start from 1554
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Relations

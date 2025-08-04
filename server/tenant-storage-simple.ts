@@ -574,16 +574,41 @@ export class TenantStorageSimple implements IStorage {
     return sequences[0] || undefined;
   }
 
-  async updateOrderSequence(currentNumber: number): Promise<OrderSequence> {
+  async getOrderSequence(): Promise<any | undefined> {
+    const result = await this.db.execute(
+      sql`SELECT * FROM ${sql.identifier(this.tenantId)}.order_sequence LIMIT 1`
+    );
+    const sequences = this.extractRows(result);
+    const sequence = sequences[0];
+    
+    if (sequence) {
+      // Map database field to UI expected field
+      return {
+        id: sequence.id,
+        currentNumber: sequence.last_order_number,
+        lastUpdated: sequence.updated_at
+      };
+    }
+    return undefined;
+  }
+
+  async updateOrderSequence(currentNumber: number): Promise<any> {
     const result = await this.db.execute(
       sql`
         UPDATE ${sql.identifier(this.tenantId)}.order_sequence 
-        SET current_number = ${currentNumber}, last_updated = CURRENT_TIMESTAMP
+        SET last_order_number = ${currentNumber}, updated_at = CURRENT_TIMESTAMP
         RETURNING *
       `
     );
     const sequences = this.extractRows(result);
-    return sequences[0] as OrderSequence;
+    const sequence = sequences[0];
+    
+    // Map database field to UI expected field
+    return {
+      id: sequence.id,
+      currentNumber: sequence.last_order_number,
+      lastUpdated: sequence.updated_at
+    };
   }
 
   async createOrderSequence(sequence: InsertOrderSequence): Promise<OrderSequence> {

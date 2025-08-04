@@ -754,24 +754,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Order sequence management routes
-  app.get("/api/order-sequence", async (req, res) => {
+  // Order sequence management routes (removed - duplicate route exists below)
+
+  // GET order sequence
+  app.get("/api/order-sequence", async (req: any, res) => {
     try {
-      const sequence = await storage.getOrderSequence();
-      if (!sequence) {
-        // Initialize if not exists
-        await storage.initializeOrderSequence();
-        const newSequence = await storage.getOrderSequence();
-        res.json(newSequence);
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Use tenant-specific database for order sequence
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        const sequence = await tenantStorage.getOrderSequence();
+        if (!sequence) {
+          await tenantStorage.initializeOrderSequence();
+          const newSequence = await tenantStorage.getOrderSequence();
+          res.json(newSequence);
+        } else {
+          res.json(sequence);
+        }
       } else {
+        const sequence = await storage.getOrderSequence();
         res.json(sequence);
       }
     } catch (error) {
-      console.error("Error getting order sequence:", error);
-      res.status(500).json({ error: "Failed to get order sequence" });
+      console.error("Error fetching order sequence:", error);
+      res.status(500).json({ error: "Failed to fetch order sequence" });
     }
   });
 
+  // PUT order sequence
   app.put("/api/order-sequence", async (req: any, res) => {
     try {
       if (!req.session?.userId) {
@@ -791,8 +811,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Current number must be greater than 0' });
       }
 
-      const updatedSequence = await storage.updateOrderSequence(currentNumber);
-      res.json(updatedSequence);
+      // Use tenant-specific database for order sequence
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        const updatedSequence = await tenantStorage.updateOrderSequence(currentNumber);
+        res.json(updatedSequence);
+      } else {
+        const updatedSequence = await storage.updateOrderSequence(currentNumber);
+        res.json(updatedSequence);
+      }
     } catch (error) {
       console.error("Error updating order sequence:", error);
       res.status(500).json({ error: "Failed to update order sequence" });
