@@ -181,6 +181,18 @@ export function useTransportData() {
         console.log('🏢 Companiile disponibile pentru tenant:', transportCompanies);
         console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.companyId)?.name || 'FĂRĂ COMPANIE'}`));
         console.log('🔗 Mapare completă (primele 5):', Object.entries(dbDriverMap).slice(0, 5));
+        
+        // If we have processed data but the mapping changed, reprocess automatically
+        if (Object.keys(processedData).length > 0 && Object.keys(dbDriverMap).length > 0) {
+          console.log('🔄 Maparea s-a schimbat, reprocesez datele automat...');
+          // Trigger reprocessing if data exists
+          setTimeout(() => {
+            if (tripData.length > 0 && (invoice7Data.length > 0 || invoice30Data.length > 0)) {
+              processData();
+            }
+          }, 100);
+        }
+        
         return dbDriverMap;
       }
     } catch (error) {
