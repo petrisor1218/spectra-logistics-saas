@@ -50,11 +50,18 @@ export class TenantStorage implements IStorage {
 
   private async setSchemaPath() {
     try {
-      await this.db.execute(sql`SET search_path TO ${sql.identifier(this.tenantId)}`);
+      // Set search_path for this connection permanently
+      await this.db.execute(sql`SET search_path TO ${sql.identifier(this.tenantId)}, public`);
       console.log(`🔗 Schema path set to: ${this.tenantId}`);
     } catch (error) {
       console.error(`❌ Failed to set schema path to ${this.tenantId}:`, error);
     }
+  }
+
+  private async executeWithSchemaPath<T>(operation: () => Promise<T>): Promise<T> {
+    // Ensure schema path is set before every operation
+    await this.db.execute(sql`SET search_path TO ${sql.identifier(this.tenantId)}`);
+    return await operation();
   }
 
   // User methods (doar pentru validări - tenant-ii nu gestionează utilizatori)
@@ -89,7 +96,9 @@ export class TenantStorage implements IStorage {
 
   // Company methods
   async getAllCompanies(): Promise<Company[]> {
-    return await this.db.select().from(schema.companies);
+    return await this.executeWithSchemaPath(async () => {
+      return await this.db.select().from(schema.companies);
+    });
   }
 
   async getCompaniesByTenant(tenantId: string): Promise<Company[]> {
@@ -117,7 +126,9 @@ export class TenantStorage implements IStorage {
 
   // Driver methods
   async getAllDrivers(): Promise<Driver[]> {
-    return await this.db.select().from(schema.drivers);
+    return await this.executeWithSchemaPath(async () => {
+      return await this.db.select().from(schema.drivers);
+    });
   }
 
   async getDriversByTenant(tenantId: string): Promise<Driver[]> {
@@ -153,7 +164,9 @@ export class TenantStorage implements IStorage {
   }
 
   async getAllWeeklyProcessing(): Promise<WeeklyProcessing[]> {
-    return await this.db.select().from(schema.weeklyProcessing).orderBy(desc(schema.weeklyProcessing.processingDate));
+    return await this.executeWithSchemaPath(async () => {
+      return await this.db.select().from(schema.weeklyProcessing).orderBy(desc(schema.weeklyProcessing.processingDate));
+    });
   }
 
   async createWeeklyProcessing(processing: InsertWeeklyProcessing): Promise<WeeklyProcessing> {
@@ -205,7 +218,9 @@ export class TenantStorage implements IStorage {
 
   // Transport orders methods
   async getAllTransportOrders(): Promise<TransportOrder[]> {
-    return await this.db.select().from(schema.transportOrders);
+    return await this.executeWithSchemaPath(async () => {
+      return await this.db.select().from(schema.transportOrders);
+    });
   }
 
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
@@ -250,7 +265,9 @@ export class TenantStorage implements IStorage {
 
   // Company balances methods
   async getAllCompanyBalances(): Promise<CompanyBalance[]> {
-    return await this.db.select().from(schema.companyBalances);
+    return await this.executeWithSchemaPath(async () => {
+      return await this.db.select().from(schema.companyBalances);
+    });
   }
 
   async createCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance> {

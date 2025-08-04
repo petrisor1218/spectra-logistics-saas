@@ -493,33 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Weekly processing routes
-  app.get("/api/processing/:weekLabel", async (req, res) => {
-    try {
-      const { weekLabel } = req.params;
-      const processing = await storage.getWeeklyProcessing(weekLabel);
-      res.json(processing || null);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch processing data" });
-    }
-  });
-
-  app.post("/api/processing", async (req, res) => {
-    try {
-      const validatedData = insertWeeklyProcessingSchema.parse(req.body);
-      const existing = await storage.getWeeklyProcessing(validatedData.weekLabel);
-      
-      if (existing) {
-        const updated = await storage.updateWeeklyProcessing(validatedData.weekLabel, validatedData);
-        res.json(updated);
-      } else {
-        const created = await storage.createWeeklyProcessing(validatedData);
-        res.json(created);
-      }
-    } catch (error) {
-      res.status(500).json({ error: "Failed to save processing data" });
-    }
-  });
+  // 🚨 REMOVED - These routes moved to isolated-routes.ts for proper tenant isolation
 
   // 🔒 PAYMENTS - Complete tenant isolation
   app.get("/api/payments", async (req: TenantRequest, res) => {
@@ -559,23 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/payments", async (req, res) => {
-    try {
-      const validatedData = insertPaymentSchema.parse(req.body);
-      const payment = await storage.createPayment(validatedData);
-      
-      // Create history record
-      await storage.createPaymentHistoryRecord({
-        paymentId: payment.id,
-        action: "created",
-        previousData: null,
-      });
-      
-      res.json(payment);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create payment" });
-    }
-  });
+  // 🚨 REMOVED - Duplicate route, moved to isolated-routes.ts for proper tenant isolation
 
   app.put("/api/payments/:id", async (req, res) => {
     try {
