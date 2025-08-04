@@ -26,13 +26,14 @@ export class TenantStorageSimple implements IStorage {
   private tenantId: string;
 
   constructor(tenantId: string) {
-    this.tenantId = tenantId;
+    console.log(`🔍 CONSTRUCTOR: TenantStorageSimple called with tenantId:`, tenantId, `(type: ${typeof tenantId})`);
+    this.tenantId = String(tenantId); // Ensure it's always a string
     
     // Conexiune simplă PostgreSQL
     this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
     this.db = drizzle(this.pool, { schema });
     
-    console.log(`🔗 TenantStorageSimple initialized for: ${tenantId}`);
+    console.log(`🔗 TenantStorageSimple initialized for: ${this.tenantId}`);
   }
 
   // User methods (nu sunt gestionate de tenant-i)
@@ -156,7 +157,7 @@ export class TenantStorageSimple implements IStorage {
   }
 
   async deleteCompany(id: number): Promise<void> {
-    console.log(`🗑️ Deleting company ID ${id} from schema ${this.tenantId}`);
+    console.log(`🗑️ TENANT DELETE: Deleting company ID ${id} from schema "${this.tenantId}" (type: ${typeof this.tenantId})`);
     
     try {
       // Folosește proper Drizzle SQL template cu RETURNING pentru debugging

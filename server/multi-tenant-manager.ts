@@ -417,11 +417,11 @@ class MultiTenantManager {
    * Obține un storage izolat pentru tenant specific
    */
   async getTenantStorage(tenantId: string) {
-    const db = await this.getTenantDatabase(tenantId);
+    await this.getTenantDatabase(tenantId); // Ensure tenant database exists
     
     // Folosim TenantStorageSimple pentru izolare completă
     const { TenantStorageSimple } = await import('./tenant-storage-simple.js');
-    return new TenantStorageSimple(db, tenantId);
+    return new TenantStorageSimple(tenantId);
   }
 
   /**
