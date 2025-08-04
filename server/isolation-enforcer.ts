@@ -29,6 +29,8 @@ export function createTenantDetectionMiddleware(storage: IStorage) {
           req.path === '/api/logout' ||
           req.path === '/api/auth/check-username' ||
           req.path === '/api/auth/check-email' ||
+          req.path === '/api/create-subscription' ||
+          req.path === '/api/verify-card' ||
           req.path.startsWith('/api/pricing') ||
           req.path.startsWith('/api/health') ||
           req.path.startsWith('/api/stripe') ||
@@ -43,7 +45,6 @@ export function createTenantDetectionMiddleware(storage: IStorage) {
           req.path.includes('.svg') ||
           req.path.includes('vite') ||
           req.path.includes('@')) {
-        console.log(`🔓 SKIP ISOLATION: ${req.path} - Public route`);
         return next();
       }
 
