@@ -317,7 +317,7 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
     setEditingId(driver.id);
     setFormData({
       name: driver.name,
-      companyId: driver.companyId,
+      companyId: driver.company_id, // Use company_id from API response
       nameVariants: driver.nameVariants || []
     });
     setShowAddForm(false);
@@ -452,9 +452,16 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
                       <User className="w-5 h-5" />
                       <span>{driver.name}</span>
                     </h3>
-                    <div className="flex items-center space-x-2 text-sm text-gray-400">
-                      <Building className="w-4 h-4" />
-                      <span>{driver.company?.name || 'Fără companie'}</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 text-sm text-gray-400">
+                        <Building className="w-4 h-4" />
+                        <span>{companies.find(c => c.id === driver.company_id)?.name || 'Fără companie'}</span>
+                      </div>
+                      {driver.company_id && (
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <span>Comision: {((companies.find(c => c.id === driver.company_id)?.commission_rate || 0) * 100).toFixed(2)}%</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
