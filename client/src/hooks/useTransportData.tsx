@@ -153,17 +153,8 @@ export function useTransportData() {
           if (driver.companyId) {
             const company = companies.find((c: any) => c.id === driver.companyId);
             if (company) {
-              // Map company names to match processing logic
-              let mappedCompanyName = company.name;
-              if (company.name === 'Fast & Express S.R.L.' || company.name === 'FAST EXPRESS SRL') {
-                mappedCompanyName = 'Fast Express';
-              } else if (company.name === 'De Cargo Sped S.R.L.' || company.name === 'DE CARGO SPEED') {
-                mappedCompanyName = 'DE Cargo Speed';
-              } else if (company.name === 'Stef Trans S.R.L.' || company.name === 'STEF TRANS') {
-                mappedCompanyName = 'Stef Trans';
-              } else if (company.name === 'Toma SRL' || company.name === 'TOMA') {
-                mappedCompanyName = 'Toma SRL';
-              }
+              // Use actual company name from database (no mapping for multi-tenant)
+              const mappedCompanyName = company.name;
               
               // Generate variants for each driver name
               const variants = generateNameVariants(driver.name);
@@ -177,19 +168,7 @@ export function useTransportData() {
         // Store available companies for tenant (excluding main company)
         const transportCompanies = companies
           .filter((c: any) => !c.isMainCompany)
-          .map((c: any) => {
-            // Map company names to match processing logic
-            if (c.name === 'Fast & Express S.R.L.' || c.name === 'FAST EXPRESS SRL') {
-              return 'Fast Express';
-            } else if (c.name === 'De Cargo Sped S.R.L.' || c.name === 'DE CARGO SPEED') {
-              return 'DE Cargo Speed';
-            } else if (c.name === 'Stef Trans S.R.L.' || c.name === 'STEF TRANS') {
-              return 'Stef Trans';
-            } else if (c.name === 'Toma SRL' || c.name === 'TOMA') {
-              return 'Toma SRL';
-            }
-            return c.name;
-          });
+          .map((c: any) => c.name); // Use actual company names from database
 
         setAvailableCompanies(transportCompanies);
         setDynamicDriverMap(dbDriverMap);
