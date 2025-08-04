@@ -134,6 +134,7 @@ export function useTransportData() {
 
   // Load drivers from database and combine with static mapping
   const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
+  const [availableCompanies, setAvailableCompanies] = useState<string[]>([]);
   
   const loadDriversFromDatabase = async () => {
     try {
@@ -173,8 +174,27 @@ export function useTransportData() {
           }
         });
         
+        // Store available companies for tenant (excluding main company)
+        const transportCompanies = companies
+          .filter((c: any) => !c.isMainCompany)
+          .map((c: any) => {
+            // Map company names to match processing logic
+            if (c.name === 'Fast & Express S.R.L.' || c.name === 'FAST EXPRESS SRL') {
+              return 'Fast Express';
+            } else if (c.name === 'De Cargo Sped S.R.L.' || c.name === 'DE CARGO SPEED') {
+              return 'DE Cargo Speed';
+            } else if (c.name === 'Stef Trans S.R.L.' || c.name === 'STEF TRANS') {
+              return 'Stef Trans';
+            } else if (c.name === 'Toma SRL' || c.name === 'TOMA') {
+              return 'Toma SRL';
+            }
+            return c.name;
+          });
+
+        setAvailableCompanies(transportCompanies);
         setDynamicDriverMap(dbDriverMap);
         console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
+        console.log('🏢 Companiile disponibile pentru tenant:', transportCompanies);
         console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.companyId)?.name || 'FĂRĂ COMPANIE'}`));
         console.log('🔗 Mapare completă (primele 5):', Object.entries(dbDriverMap).slice(0, 5));
         return dbDriverMap;
@@ -419,14 +439,15 @@ export function useTransportData() {
     
     // Try to suggest a company based on similar drivers
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
-    const finalSuggestion = suggestedCompany || 'Fast Express'; // Default suggestion
+    const finalSuggestion = suggestedCompany || (availableCompanies.length > 0 ? availableCompanies[0] : 'Companie Nouă');
     
     console.log(`   Sugestie: ${finalSuggestion}`);
     
     // Add to pending mappings if not already there
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
     if (!isAlreadyPending) {
-      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL']; // Fast Express restored
+      // Use companies from database for this tenant instead of hardcoded list
+      const allCompanies = availableCompanies.length > 0 ? availableCompanies : ['Companie Nouă'];
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
