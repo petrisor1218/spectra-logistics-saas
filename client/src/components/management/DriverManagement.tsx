@@ -457,11 +457,23 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
                         <Building className="w-4 h-4" />
                         <span>{companies.find(c => c.id === driver.company_id)?.name || 'Fără companie'}</span>
                       </div>
-                      {driver.company_id && (
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <span>Comision: {((companies.find(c => c.id === driver.company_id)?.commission_rate || 0) * 100).toFixed(2)}%</span>
-                        </div>
-                      )}
+                      {driver.company_id && (() => {
+                        const company = companies.find(c => c.id === driver.company_id);
+                        const rate = company?.commission_rate;
+                        console.log(`🔍 Debug comision pentru ${driver.name}:`, {
+                          company_id: driver.company_id,
+                          company_name: company?.name,
+                          raw_rate: rate,
+                          type_of_rate: typeof rate,
+                          parsed_rate: parseFloat(rate || '0'),
+                          final_percent: ((parseFloat(rate || '0') || 0) * 100).toFixed(2)
+                        });
+                        return (
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <span>Comision: {((parseFloat(rate || '0') || 0) * 100).toFixed(2)}%</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
