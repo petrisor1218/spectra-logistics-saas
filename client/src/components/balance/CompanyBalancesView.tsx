@@ -160,7 +160,9 @@ export default function CompanyBalancesView() {
       if (!response.ok) {
         throw new Error('Failed to fetch balances');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('🔍 Fetched balances:', data);
+      return data;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   }) as { data: CompanyBalance[], isLoading: boolean };
@@ -190,12 +192,15 @@ export default function CompanyBalancesView() {
 
   // Group balances by company and sort each company's balances chronologically (most recent first)
   const balancesByCompany = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance) => {
+    console.log('📊 Processing balance:', balance);
     if (!acc[balance.companyName]) {
       acc[balance.companyName] = [];
     }
     acc[balance.companyName].push(balance);
     return acc;
   }, {});
+  
+  console.log('📋 Balances by company:', balancesByCompany);
 
   // Sort balances within each company by date (most recent first)
   Object.keys(balancesByCompany).forEach(companyName => {
@@ -380,7 +385,7 @@ export default function CompanyBalancesView() {
               <CardContent>
                 <div className="space-y-3">
                   {companyBalances.map((balance) => (
-                    <div key={`${balance.companyName}-${balance.weekLabel}`} 
+                    <div key={`${balance.id}-${balance.companyName}-${balance.weekLabel}`} 
                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(balance.status || 'pending')}
