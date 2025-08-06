@@ -167,6 +167,11 @@ export default function CompanyBalancesView() {
 
   // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
+    // Check if weekLabel is valid
+    if (!weekLabel || typeof weekLabel !== 'string') {
+      return new Date(); // Return current date as fallback
+    }
+    
     // Extract start date from "DD mmm. - DD mmm." format
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
@@ -207,7 +212,7 @@ export default function CompanyBalancesView() {
   const totalInvoiced = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalInvoiced || '0'), 0);
   const totalPaid = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
-    sum + parseFloat(balance.totalPaid || '0'), 0);
+    sum + parseFloat(balance.amountPaid || balance.totalPaid || '0'), 0);
 
   const generateBalances = useMutation({
     mutationFn: async () => {
