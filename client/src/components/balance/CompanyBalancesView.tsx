@@ -227,19 +227,39 @@ export default function CompanyBalancesView() {
     return 'Fast Express';
   };
 
-  // Group balances by intelligently mapped company names
-  const balancesByCompany = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance, index: number) => {
+  // Clean and deduplicate balances, then group by intelligently mapped company names
+  const cleanedBalances = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance>, balance: CompanyBalance, index: number) => {
     console.log('📊 Processing balance:', balance);
     
     const displayCompanyName = mapCompanyName(balance, index);
+    const key = `${displayCompanyName}-${balance.weekLabel}`;
     
-    if (!acc[displayCompanyName]) {
-      acc[displayCompanyName] = [];
+    // If this company-week combination already exists, aggregate the values
+    if (acc[key]) {
+      const existing = acc[key];
+      acc[key] = {
+        ...existing,
+        totalInvoiced: (parseFloat(existing.totalInvoiced || '0') + parseFloat(balance.totalInvoiced || '0')).toString(),
+        amountPaid: (parseFloat(existing.amountPaid || '0') + parseFloat(balance.amountPaid || '0')).toString(),
+        outstandingBalance: (parseFloat(existing.outstandingBalance || '0') + parseFloat(balance.outstandingBalance || '0')).toString(),
+      };
+    } else {
+      acc[key] = {
+        ...balance,
+        companyName: displayCompanyName,
+      };
     }
-    acc[displayCompanyName].push({
-      ...balance,
-      companyName: displayCompanyName // Override the display name
-    });
+    return acc;
+  }, {});
+
+  // Group cleaned balances by company
+  const balancesByCompany = Object.values(cleanedBalances).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance) => {
+    const companyName = balance.companyName;
+    
+    if (!acc[companyName]) {
+      acc[companyName] = [];
+    }
+    acc[companyName].push(balance);
     return acc;
   }, {});
   
