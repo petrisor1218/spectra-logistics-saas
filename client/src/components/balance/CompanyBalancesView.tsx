@@ -190,76 +190,31 @@ export default function CompanyBalancesView() {
     return new Date(year, month, day);
   };
 
-  // Fetch companies to get real company names for mapping
-  const { data: companies = [] } = useQuery({
-    queryKey: ['/api/companies'],
-    queryFn: async () => {
-      const response = await fetch('/api/companies');
-      if (!response.ok) throw new Error('Failed to fetch companies');
-      return response.json();
-    },
-  });
-
-  // Create intelligent mapping based on balance amounts and week patterns
-  const mapCompanyName = (balance: CompanyBalance, index: number): string => {
-    if (balance.companyName !== 'Company_null') {
-      return balance.companyName; // Keep existing valid names
-    }
-    
-    // Map based on invoice amounts and patterns from your original data
-    const invoiced = parseFloat(balance.totalInvoiced || '0');
-    const weekLabel = balance.weekLabel;
-    
-    // Large invoices (>35000) typically go to Fast Express (main company)
-    if (invoiced > 35000) {
-      return 'Fast Express';
-    }
-    // Medium invoices (5000-15000) often go to Stef Trans
-    else if (invoiced >= 5000 && invoiced <= 15000) {
-      return 'Stef Trans S.R.L.';
-    }
-    // Smaller invoices distributed to other companies
-    else if (invoiced < 5000) {
-      return index % 2 === 0 ? 'De Cargo Sped S.R.L.' : 'Toma SRL';
-    }
-    
-    // Default fallback
-    return 'Fast Express';
-  };
-
-  // Clean and deduplicate balances, then group by intelligently mapped company names
-  const cleanedBalances = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance>, balance: CompanyBalance, index: number) => {
+  // Simple approach: show all balances under Fast Express as original design, with deduplication by week only
+  const balancesByCompany = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance) => {
     console.log('📊 Processing balance:', balance);
     
-    const displayCompanyName = mapCompanyName(balance, index);
-    const key = `${displayCompanyName}-${balance.weekLabel}`;
+    // Use Fast Express as the main company (as in original design)
+    const displayCompanyName = 'Fast Express';
     
-    // If this company-week combination already exists, aggregate the values
-    if (acc[key]) {
-      const existing = acc[key];
-      acc[key] = {
-        ...existing,
-        totalInvoiced: (parseFloat(existing.totalInvoiced || '0') + parseFloat(balance.totalInvoiced || '0')).toString(),
-        amountPaid: (parseFloat(existing.amountPaid || '0') + parseFloat(balance.amountPaid || '0')).toString(),
-        outstandingBalance: (parseFloat(existing.outstandingBalance || '0') + parseFloat(balance.outstandingBalance || '0')).toString(),
-      };
+    if (!acc[displayCompanyName]) {
+      acc[displayCompanyName] = [];
+    }
+    
+    // Check if this week already exists for this company
+    const existingWeekIndex = acc[displayCompanyName].findIndex(b => b.weekLabel === balance.weekLabel);
+    
+    if (existingWeekIndex >= 0) {
+      // Skip duplicate weeks to avoid showing same week multiple times
+      console.log(`⚠️ Skipping duplicate week: ${balance.weekLabel}`);
     } else {
-      acc[key] = {
+      // Add balance with Fast Express name
+      acc[displayCompanyName].push({
         ...balance,
-        companyName: displayCompanyName,
-      };
+        companyName: displayCompanyName
+      });
     }
-    return acc;
-  }, {});
-
-  // Group cleaned balances by company
-  const balancesByCompany = Object.values(cleanedBalances).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance) => {
-    const companyName = balance.companyName;
     
-    if (!acc[companyName]) {
-      acc[companyName] = [];
-    }
-    acc[companyName].push(balance);
     return acc;
   }, {});
   
