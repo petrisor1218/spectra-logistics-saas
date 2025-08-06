@@ -743,8 +743,11 @@ export class DatabaseStorage implements IStorage {
   // Generate company balances from weekly processing data and payments
   async generateCompanyBalancesFromCalendarData(): Promise<CompanyBalance[]> {
     try {
+      console.log('🔄 Generating company balances from REAL calendar data...');
+      
       // Get all weekly processing data
       const weeklyData = await db.select().from(weeklyProcessing).orderBy(weeklyProcessing.weekLabel);
+      console.log(`📊 Found ${weeklyData.length} weeks of data to process`);
       
       // Get all payments
       const allPayments = await db.select().from(payments);
@@ -752,13 +755,21 @@ export class DatabaseStorage implements IStorage {
       const balancesToCreate: InsertCompanyBalance[] = [];
       
       for (const week of weeklyData) {
-        if (!week.processedData) continue;
+        if (!week.processedData) {
+          console.log(`⏭️ Skipping week ${week.weekLabel} - no processed data`);
+          continue;
+        }
         
         const processedData = week.processedData as any;
+        const companies = Object.keys(processedData);
+        console.log(`🏢 Week ${week.weekLabel} has companies:`, companies);
         
         // Extract company totals from processed data
         Object.keys(processedData).forEach(companyName => {
-          if (companyName === 'Unmatched' || companyName === 'Totals') return;
+          if (companyName === 'Unmatched' || companyName === 'Totals') {
+            console.log(`⏭️ Skipping ${companyName} (not a real company)`);
+            return;
+          }
           
           const companyData = processedData[companyName];
           if (companyData && (companyData.Total_7_days || companyData.Total_30_days)) {
@@ -769,9 +780,7 @@ export class DatabaseStorage implements IStorage {
             // Total invoiced should exclude commission - commission is separate from company payments
             const totalInvoiced = total7Days + total30Days - totalCommission;
             
-
-            
-
+            console.log(`💰 ${companyName} - Week ${week.weekLabel}: 7-day=${total7Days}, 30-day=${total30Days}, commission=${totalCommission}, total=${totalInvoiced}`);
             
             // Calculate total paid for this company and week
             const weekPayments = allPayments.filter(p => 
@@ -798,10 +807,12 @@ export class DatabaseStorage implements IStorage {
               companyName,
               weekLabel: week.weekLabel,
               totalInvoiced: totalInvoiced.toString(),
-              amountPaid: totalPaid.toString(), // Use amountPaid to match schema
+              amountPaid: totalPaid.toString(),
               outstandingBalance: outstandingBalance.toString(),
-              status: paymentStatus // Use status instead of paymentStatus
+              status: paymentStatus
             });
+            
+            console.log(`✅ Created balance entry for ${companyName} - ${week.weekLabel}: €${totalInvoiced}`);
           }
         });
       }
