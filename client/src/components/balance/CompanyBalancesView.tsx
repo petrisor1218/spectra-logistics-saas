@@ -204,9 +204,9 @@ export default function CompanyBalancesView() {
       // If week exists, choose the one with more reasonable invoice amount (not too large, not too small)
       const existingInvoiced = parseFloat(acc[weekLabel].totalInvoiced || '0');
       
-      // Prefer amounts between 1000-50000 EUR (reasonable range for transport invoices)
-      const currentIsReasonable = invoiced >= 1000 && invoiced <= 50000;
-      const existingIsReasonable = existingInvoiced >= 1000 && existingInvoiced <= 50000;
+      // Prefer amounts between 1000-15000 EUR (more conservative range for transport invoices)
+      const currentIsReasonable = invoiced >= 1000 && invoiced <= 15000;
+      const existingIsReasonable = existingInvoiced >= 1000 && existingInvoiced <= 15000;
       
       if (currentIsReasonable && !existingIsReasonable) {
         // Replace with more reasonable amount

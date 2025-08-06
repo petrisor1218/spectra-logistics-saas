@@ -798,9 +798,9 @@ export class DatabaseStorage implements IStorage {
               companyName,
               weekLabel: week.weekLabel,
               totalInvoiced: totalInvoiced.toString(),
-              totalPaid: totalPaid.toString(),
+              amountPaid: totalPaid.toString(), // Use amountPaid to match schema
               outstandingBalance: outstandingBalance.toString(),
-              paymentStatus
+              status: paymentStatus // Use status instead of paymentStatus
             });
           }
         });
