@@ -43,7 +43,17 @@ export class SupabaseMainStorage {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data || undefined;
+      
+      if (data) {
+        // Map Supabase response to Drizzle schema
+        return {
+          ...data,
+          password: data.password_hash, // Map password_hash to password
+          tenantId: data.tenant_id // Map tenant_id to tenantId
+        } as User;
+      }
+      
+      return undefined;
     } catch (error) {
       console.error(`❌ Error fetching user ${id}:`, error);
       return undefined;
@@ -59,7 +69,17 @@ export class SupabaseMainStorage {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      return data || undefined;
+      
+      if (data) {
+        // Map Supabase response to Drizzle schema
+        return {
+          ...data,
+          password: data.password_hash, // Map password_hash to password
+          tenantId: data.tenant_id // Map tenant_id to tenantId
+        } as User;
+      }
+      
+      return undefined;
     } catch (error) {
       console.error(`❌ Error fetching user by username ${username}:`, error);
       return undefined;
@@ -84,14 +104,32 @@ export class SupabaseMainStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     try {
+      // Map Drizzle schema field names to Supabase schema field names
+      const supabaseUser = {
+        username: user.username,
+        password_hash: user.password, // Map password to password_hash
+        email: user.email,
+        role: user.role,
+        tenant_id: user.tenantId, // Map tenantId to tenant_id
+        subscription_status: user.subscriptionStatus,
+        subscription_plan: 'transport_pro',
+        subscription_start_date: new Date().toISOString()
+      };
+
       const { data, error } = await this.supabase
         .from('users')
-        .insert(user)
+        .insert(supabaseUser)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Map Supabase response back to Drizzle schema
+      return {
+        ...data,
+        password: data.password_hash, // Map password_hash back to password
+        tenantId: data.tenant_id // Map tenant_id back to tenantId
+      } as User;
     } catch (error) {
       console.error(`❌ Error creating user:`, error);
       throw error;
@@ -373,12 +411,38 @@ export class SupabaseMainStorage {
     try {
       const { data, error } = await this.supabase
         .from('company_balances')
-        .select('*')
+        .select(`
+          id,
+          company_id,
+          week_label,
+          total_invoiced,
+          total_paid,
+          outstanding_balance,
+          status,
+          tenant_id,
+          created_at,
+          updated_at
+        `)
         .eq('tenant_id', 'main')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Map Supabase response to Drizzle schema
+      const mappedData = (data || []).map(item => ({
+        id: item.id,
+        companyName: `Company_${item.company_id}`, // Temporary mapping since we don't have company_name in Supabase
+        weekLabel: item.week_label,
+        totalInvoiced: parseFloat(item.total_invoiced),
+        amountPaid: parseFloat(item.total_paid), // Map total_paid to amountPaid
+        outstandingBalance: parseFloat(item.outstanding_balance),
+        status: item.status,
+        paymentDate: null,
+        notes: '',
+        createdAt: new Date(item.created_at)
+      }));
+      
+      return mappedData as CompanyBalance[];
     } catch (error) {
       console.error(`❌ Error fetching company balances:`, error);
       return [];
@@ -387,8 +451,13 @@ export class SupabaseMainStorage {
 
   async createCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance> {
     try {
+      // Map Drizzle schema to Supabase schema
       const balanceData = {
-        ...balance,
+        week_label: balance.weekLabel,
+        total_invoiced: balance.totalInvoiced,
+        total_paid: balance.amountPaid, // Map amountPaid to total_paid
+        outstanding_balance: balance.outstandingBalance,
+        status: balance.status,
         tenant_id: 'main'
       };
 
@@ -399,7 +468,20 @@ export class SupabaseMainStorage {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Map response back to Drizzle schema
+      return {
+        id: data.id,
+        companyName: `Company_${data.company_id}`,
+        weekLabel: data.week_label,
+        totalInvoiced: parseFloat(data.total_invoiced),
+        amountPaid: parseFloat(data.total_paid),
+        outstandingBalance: parseFloat(data.outstanding_balance),
+        status: data.status,
+        paymentDate: null,
+        notes: '',
+        createdAt: new Date(data.created_at)
+      } as CompanyBalance;
     } catch (error) {
       console.error(`❌ Error creating company balance:`, error);
       throw error;

@@ -12,8 +12,8 @@ import { registerSupabaseTestRoutes } from "./supabase-test-route.js";
 // Create Supabase storage instance for main user
 const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.getMainSupabase());
 
-// Switch to use Supabase for main user (Petrisor)
-const USE_SUPABASE_FOR_MAIN = true;
+// Switch to use Supabase for ALL users and tenants
+const USE_SUPABASE_FOR_ALL = true;
 
 // Import tenant isolation enforcer
 import { 
@@ -61,12 +61,12 @@ if (stripeSecretKey) {
 async function createDefaultUser() {
   try {
     // Create main user (Petrisor) with ID 4
-    const existingPetrisor = await storage.getUserByUsername('petrisor');
+    const existingPetrisor = await supabaseMainStorage.getUserByUsername('petrisor');
     if (!existingPetrisor) {
       const hashedPassword = await bcrypt.hash('test123', 10);
       
       // Create with specific ID to match migrated data
-      const newUser = await storage.createUser({
+      const newUser = await supabaseMainStorage.createUser({
         username: 'petrisor',
         email: 'petrisor@fastexpress.ro',
         password: hashedPassword,
@@ -79,10 +79,10 @@ async function createDefaultUser() {
     }
 
     // Create admin user
-    const existingAdmin = await storage.getUserByUsername('admin');
+    const existingAdmin = await supabaseMainStorage.getUserByUsername('admin');
     if (!existingAdmin) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
-      await storage.createUser({
+      await supabaseMainStorage.createUser({
         username: 'admin',
         email: 'admin@transport.pro',
         password: hashedPassword,
@@ -93,10 +93,10 @@ async function createDefaultUser() {
     }
     
     // Create Fastexpress user (legacy)
-    const existingUser = await storage.getUserByUsername('Fastexpress');
+    const existingUser = await supabaseMainStorage.getUserByUsername('Fastexpress');
     if (!existingUser) {
       const hashedPassword = await bcrypt.hash('Olanda99', 10);
-      await storage.createUser({
+      await supabaseMainStorage.createUser({
         username: 'Fastexpress',
         email: 'fastexpress@test.com',
         password: hashedPassword,
@@ -114,7 +114,7 @@ async function createDefaultUser() {
 async function seedDatabase() {
   try {
     // Check if companies already exist
-    const existingCompanies = await storage.getAllCompanies();
+    const existingCompanies = await supabaseMainStorage.getAllCompanies();
     if (existingCompanies.length > 0) {
       return; // Already seeded
     }
@@ -162,7 +162,7 @@ async function seedDatabase() {
 
     const createdCompanies = [];
     for (const company of companies) {
-      const created = await storage.createCompany(company);
+      const created = await supabaseMainStorage.createCompany(company);
       createdCompanies.push(created);
     }
 
@@ -196,7 +196,7 @@ async function seedDatabase() {
         const primaryName = mapping.drivers[0];
         const nameVariants = mapping.drivers;
         
-        await storage.createDriver({
+        await supabaseMainStorage.createDriver({
           name: primaryName,
           companyId: company.id,
           nameVariants: nameVariants,
@@ -240,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // 🔒 CRITICAL: Apply tenant isolation middleware to ALL requests
-  app.use(createTenantDetectionMiddleware(storage));
+  app.use(createTenantDetectionMiddleware(supabaseMainStorage));
   console.log('🔒 ISOLATION ENFORCER: Middleware activated for complete tenant separation');
 
   // Seed database on startup
@@ -249,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Import and register isolated routes
   const { registerIsolatedRoutes } = await import('./isolated-routes.js');
-  registerIsolatedRoutes(app, storage, supabaseMainStorage, USE_SUPABASE_FOR_MAIN);
+  registerIsolatedRoutes(app, storage, supabaseMainStorage, USE_SUPABASE_FOR_ALL);
 
   // Authentication routes
   app.post('/api/login', async (req, res) => {
@@ -262,8 +262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let user = null;
       
-      // For now, use main storage for all users (Supabase is empty)
-      user = await storage.getUserByUsername(username);
+      // Use Supabase storage for all users now
+      user = await supabaseMainStorage.getUserByUsername(username);
       console.log(`🔍 LOGIN: Checking user "${username}" in main storage:`, user ? 'FOUND' : 'NOT_FOUND');
       
       if (!user) {
