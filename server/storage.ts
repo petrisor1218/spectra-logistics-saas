@@ -827,21 +827,34 @@ export class DatabaseStorage implements IStorage {
       await db.delete(companyBalances);
       
       if (balancesToCreate.length > 0) {
-        // Map to database column names for compatibility
-        const dbCompatibleBalances = balancesToCreate.map(balance => ({
-          company_name: balance.companyName,
-          week_label: balance.weekLabel,
-          total_invoiced: balance.totalInvoiced,
-          amount_paid: balance.amountPaid,
-          outstanding_balance: balance.outstandingBalance,
-          status: balance.status,
-          payment_date: null,
-          notes: ""
-        }));
+        console.log(`🔄 About to create ${balancesToCreate.length} balance entries`);
+        console.log('📝 First few entries:', balancesToCreate.slice(0, 3));
+        
+        // Filter out any entries that still have invalid data
+        const validBalances = balancesToCreate.filter(balance => 
+          balance.companyName && 
+          balance.companyName.trim() !== '' && 
+          balance.weekLabel && 
+          balance.weekLabel.trim() !== ''
+        );
+        
+        console.log(`✅ Valid entries after filtering: ${validBalances.length}`);
+        
+        if (validBalances.length === 0) {
+          console.log('❌ No valid balance entries to insert');
+          return [];
+        }
         
         const createdBalances = await db
           .insert(companyBalances)
-          .values(dbCompatibleBalances)
+          .values(validBalances.map(balance => ({
+            companyName: balance.companyName.trim(),
+            weekLabel: balance.weekLabel.trim(),
+            totalInvoiced: balance.totalInvoiced,
+            amountPaid: balance.amountPaid,
+            outstandingBalance: balance.outstandingBalance,
+            status: balance.status
+          })))
           .returning();
         
         console.log(`✅ Generated ${createdBalances.length} company balances from calendar data`);
