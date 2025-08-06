@@ -656,16 +656,19 @@ export class DatabaseStorage implements IStorage {
   // Company balance methods
   // Company balance methods 
   async getAllCompanyBalances(): Promise<CompanyBalance[]> {
-    return this.getCompanyBalances();
+    const dbConn = this.getDb();
+    const results = await dbConn.select().from(companyBalances).orderBy(desc(companyBalances.createdAt));
+    console.log(`💾 getAllCompanyBalances: Found ${results.length} records in tenant schema`);
+    return results;
   }
 
   async getCompanyBalances(): Promise<CompanyBalance[]> {
-    const dbConn = this.getDb();
-    return await dbConn.select().from(companyBalances).orderBy(desc(companyBalances.createdAt));
+    return this.getAllCompanyBalances();
   }
 
   async getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined> {
-    const [balance] = await db
+    const dbConn = this.getDb();
+    const [balance] = await dbConn
       .select()
       .from(companyBalances)
       .where(
