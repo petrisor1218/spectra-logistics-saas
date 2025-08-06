@@ -271,8 +271,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`🔍 LOGIN: User found - ID: ${user.id}, has password: ${!!user.password}`);
+      console.log(`🔐 LOGIN: Comparing password for user ${user.username}`);
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log(`🔐 LOGIN: Password validation result:`, isValidPassword);
       if (!isValidPassword) {
+        console.log(`❌ LOGIN: Invalid password for user ${user.username}`);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
@@ -318,9 +321,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let user = null;
         
-        // Use main storage for all users (Supabase migration will come later)
-        user = await storage.getUser(req.session.userId);
-        console.log(`🔍 AUTH: Checking user ID ${req.session.userId}:`, user ? `FOUND (${user.username})` : 'NOT_FOUND');
+        // Use Supabase storage for all users now (prioritize Supabase)
+        user = await supabaseMainStorage.getUser(req.session.userId);
+        console.log(`🔍 AUTH: Checking user ID ${req.session.userId} in Supabase:`, user ? `FOUND (${user.username})` : 'NOT_FOUND');
         
         if (user) {
           console.log(`✅ AUTH: User ${user.username} authenticated successfully`);
