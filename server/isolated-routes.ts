@@ -98,8 +98,9 @@ export function registerIsolatedRoutes(app: Express, storage: IStorage, supabase
   // 🔒 COMPANY BALANCES - Complete tenant isolation
   app.get("/api/company-balances", async (req: TenantRequest, res) => {
     try {
-      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
-      const balances = await tenantStorage.getAllCompanyBalances();
+      // For Petrisor (ID: 1), use Supabase directly - other users use legacy storage
+      const tenantStorage = req.user?.id === 1 ? supabaseMainStorage : getTenantStorage(req, storage);
+      const balances = await tenantStorage.getCompanyBalances();
       
       validateNoDataLeakage(req, balances, 'getAllCompanyBalances');
       logIsolationStatus(req, 'GET /api/company-balances', balances.length);
