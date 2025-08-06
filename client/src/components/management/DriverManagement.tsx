@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Save, X, User, Building, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { IsolatedInput } from '@/components/ui/isolated-input';
 
 interface Driver {
   id: number;
@@ -24,14 +23,54 @@ interface DriverManagementProps {
   loadDriversFromDatabase?: () => Promise<any>;
 }
 
-// Mutăm DriverForm în afara componentei principale pentru a preveni re-crearea
-const DriverForm = memo(({ data, companies, onChange, onSave, onCancel }: {
-  data: Partial<Driver>;
-  companies: Company[];
-  onChange: (field: string, value: any) => void;
-  onSave: () => void;
-  onCancel: () => void;
-}) => {
+export function DriverManagement({ loadDriversFromDatabase }: DriverManagementProps) {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [formData, setFormData] = useState<Partial<Driver>>({
+    name: '',
+    companyId: null,
+    nameVariants: []
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    Promise.all([fetchDrivers(), fetchCompanies()]);
+  }, []);
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await fetch('/api/drivers');
+      if (response.ok) {
+        const data = await response.json();
+        setDrivers(data);
+      }
+    } catch (error) {
+      console.error('Error fetching drivers:', error);
+      toast({
+        title: "Eroare",
+        description: "Nu s-au putut încărca șoferii",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch('/api/companies');
+      if (response.ok) {
+        const data = await response.json();
+        setCompanies(data);
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
+
   const generateNameVariants = (name: string) => {
     const cleaned = name.trim().replace(/\s+/g, ' ');
     const variants = [cleaned.toLowerCase()];
@@ -55,7 +94,87 @@ const DriverForm = memo(({ data, companies, onChange, onSave, onCancel }: {
     return Array.from(new Set(variants));
   };
 
-  return (
+  const handleSave = async (driverData: Partial<Driver>) => {
+    try {
+      const variants = driverData.name ? generateNameVariants(driverData.name) : [];
+      const dataToSave = {
+        ...driverData,
+        nameVariants: variants
+      };
+
+      const method = editingId ? 'PUT' : 'POST';
+      const url = editingId ? `/api/drivers/${editingId}` : '/api/drivers';
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSave)
+      });
+
+      if (response.ok) {
+        await fetchDrivers();
+        setEditingId(null);
+        setShowAddForm(false);
+        setFormData({
+          name: '',
+          companyId: null,
+          nameVariants: []
+        });
+        toast({
+          title: "Succes",
+          description: editingId ? "Șoferul a fost actualizat" : "Șoferul a fost adăugat",
+        });
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      console.error('Error saving driver:', error);
+      toast({
+        title: "Eroare",
+        description: "Nu s-a putut salva șoferul",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Sigur doriți să ștergeți acest șofer?')) return;
+    
+    try {
+      const response = await fetch(`/api/drivers/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        await fetchDrivers();
+        toast({
+          title: "Succes",
+          description: "Șoferul a fost șters",
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting driver:', error);
+      toast({
+        title: "Eroare",
+        description: "Nu s-a putut șterge șoferul",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const startEdit = (driver: Driver) => {
+    setEditingId(driver.id);
+    setFormData({
+      name: driver.name,
+      companyId: driver.companyId,
+      nameVariants: driver.nameVariants || []
+    });
+    setShowAddForm(false);
+  };
+
+  const DriverForm = ({ data, onChange, onSave, onCancel }: {
+    data: Partial<Driver>;
+    onChange: (field: string, value: any) => void;
+    onSave: () => void;
+    onCancel: () => void;
+  }) => (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -67,9 +186,10 @@ const DriverForm = memo(({ data, companies, onChange, onSave, onCancel }: {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Nume Șofer *
           </label>
-          <IsolatedInput
+          <input
+            type="text"
             value={data.name || ''}
-            onChange={(value) => onChange('name', value)}
+            onChange={(e) => onChange('name', e.target.value)}
             className="w-full px-3 py-2 bg-white/10 text-white placeholder-gray-400 rounded-lg border border-white/20 focus:border-blue-400 focus:outline-none"
             placeholder="Introduceti numele complet al soferului"
           />
@@ -136,240 +256,6 @@ const DriverForm = memo(({ data, companies, onChange, onSave, onCancel }: {
       </div>
     </motion.div>
   );
-});
-
-// Adăugăm displayName pentru debugging
-DriverForm.displayName = 'DriverForm';
-
-export function DriverManagement({ loadDriversFromDatabase }: DriverManagementProps) {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState<Partial<Driver>>({
-    name: '',
-    companyId: null,
-    nameVariants: []
-  });
-  const { toast } = useToast();
-
-  const fetchDrivers = useCallback(async () => {
-    try {
-      console.log('🔄 Încărcare șoferi din API...');
-      setLoading(true);
-      const response = await fetch('/api/drivers', {
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('👥 Șoferi primiți din API:', data.length, data);
-        
-        // Clear any existing duplicates by filtering unique IDs
-        const uniqueDrivers = data.filter((driver: any, index: number, array: any[]) => 
-          array.findIndex(d => d.id === driver.id) === index
-        );
-        
-        setDrivers(uniqueDrivers);
-        console.log(`✅ Lista șoferilor actualizată în state cu ${uniqueDrivers.length} șoferi unici`);
-      } else {
-        console.error('❌ Eroare la încărcarea șoferilor - status:', response.status);
-      }
-    } catch (error) {
-      console.error('Error fetching drivers:', error);
-      toast({
-        title: "Eroare",
-        description: "Nu s-au putut încărca șoferii",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  const fetchCompanies = useCallback(async () => {
-    try {
-      const response = await fetch('/api/companies', {
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        // Clear any existing duplicates by filtering unique IDs
-        const uniqueCompanies = data.filter((company: any, index: number, array: any[]) => 
-          array.findIndex(c => c.id === company.id) === index
-        );
-        setCompanies(uniqueCompanies);
-      }
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Încarcă mai întâi companiile, apoi șoferii pentru a evita race condition-uri
-    const loadData = async () => {
-      await fetchCompanies();
-      await fetchDrivers();
-    };
-    loadData();
-  }, [fetchDrivers, fetchCompanies]);
-
-  const generateNameVariants = useCallback((name: string) => {
-    const cleaned = name.trim().replace(/\s+/g, ' ');
-    const variants = [cleaned.toLowerCase()];
-    
-    const parts = cleaned.split(' ');
-    if (parts.length > 1) {
-      const reversed = [...parts].reverse();
-      variants.push(reversed.join(' ').toLowerCase());
-      
-      if (parts.length >= 3) {
-        const [first, ...rest] = parts;
-        const restReversed = [...rest].reverse();
-        variants.push(`${first.toLowerCase()} ${restReversed.join(' ').toLowerCase()}`);
-        
-        const last = parts[parts.length - 1];
-        const beforeLast = parts.slice(0, -1).reverse();
-        variants.push(`${last.toLowerCase()} ${beforeLast.join(' ').toLowerCase()}`);
-      }
-    }
-    
-    return Array.from(new Set(variants));
-  }, []);
-
-  const handleSave = useCallback(async (driverData: Partial<Driver>) => {
-    try {
-      console.log('🔄 Salvare șofer - date:', driverData);
-      console.log('🏢 Companiile disponibile în handleSave:', companies.length, companies.map(c => `${c.name} (ID: ${c.id})`));
-      
-      const variants = driverData.name ? generateNameVariants(driverData.name) : [];
-      const dataToSave = {
-        ...driverData,
-        nameVariants: variants
-      };
-
-      const method = editingId ? 'PUT' : 'POST';
-      const url = editingId ? `/api/drivers/${editingId}` : '/api/drivers';
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSave)
-      });
-
-      if (response.ok) {
-        console.log('✅ Șofer salvat cu succes, resetez formularul...');
-        
-        // Force refresh drivers list
-        console.log('🔄 Forțez reîncărcarea listei de șoferi...');
-        await fetchDrivers();
-        
-        setEditingId(null);
-        setShowAddForm(false);
-        setFormData({
-          name: '',
-          companyId: null,
-          nameVariants: []
-        });
-        
-        console.log('🔄 Stare resetată pentru următorul șofer');
-        console.log('👥 Numărul de șoferi în state după salvare:', drivers.length);
-        
-        toast({
-          title: "Succes",
-          description: editingId ? "Șoferul a fost actualizat" : "Șoferul a fost adăugat",
-        });
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch (error) {
-      console.error('Error saving driver:', error);
-      toast({
-        title: "Eroare",
-        description: "Nu s-a putut salva șoferul",
-        variant: "destructive"
-      });
-    }
-  }, [editingId, fetchDrivers, generateNameVariants, toast, companies]);
-
-  const handleDelete = useCallback(async (id: number) => {
-    if (!confirm('Sigur doriți să ștergeți acest șofer?')) return;
-    
-    try {
-      const response = await fetch(`/api/drivers/${id}`, { method: 'DELETE' });
-      if (response.ok) {
-        await fetchDrivers();
-        toast({
-          title: "Succes",
-          description: "Șoferul a fost șters",
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting driver:', error);
-      toast({
-        title: "Eroare",
-        description: "Nu s-a putut șterge șoferul",
-        variant: "destructive"
-      });
-    }
-  }, [fetchDrivers, toast]);
-
-  const startEdit = useCallback((driver: Driver) => {
-    setEditingId(driver.id);
-    setFormData({
-      name: driver.name,
-      companyId: driver.company_id, // Use company_id from API response
-      nameVariants: driver.nameVariants || []
-    });
-    setShowAddForm(false);
-  }, []);
-
-  // Stabilizăm callback-urile pentru a preveni re-render-ul
-  const handleFormChange = useCallback((field: string, value: any) => {
-    console.log(`📝 Schimbare în formular: ${field} = ${value}`);
-    if (field === 'companyId') {
-      console.log('🏢 Compania selectată:', value, companies.find(c => c.id === parseInt(value))?.name);
-    }
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, [companies]);
-
-  const handleSaveForm = useCallback(() => {
-    handleSave(formData);
-  }, [formData, handleSave]);
-
-  const handleCancelAdd = useCallback(() => {
-    setShowAddForm(false);
-    setFormData({
-      name: '',
-      companyId: null,
-      nameVariants: []
-    });
-  }, []);
-
-  const handleCancelEdit = useCallback(() => {
-    setEditingId(null);
-    setFormData({
-      name: '',
-      companyId: null,
-      nameVariants: []
-    });
-  }, []);
-
-  const handleStartAdd = useCallback(() => {
-    console.log('🆕 Începe adăugarea unui șofer nou');
-    console.log('🏢 Companiile disponibile la start:', companies.length, companies.map(c => `${c.name} (ID: ${c.id})`));
-    setShowAddForm(true);
-    setEditingId(null);
-    setFormData({
-      name: '',
-      companyId: null,
-      nameVariants: []
-    });
-  }, [companies]);
 
   if (loading) {
     return (
@@ -408,7 +294,7 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
           )}
           
           <motion.button
-            onClick={handleStartAdd}
+            onClick={() => setShowAddForm(true)}
             className="glass-button bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 px-4 py-2 rounded-lg flex items-center space-x-2"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -419,15 +305,20 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {showAddForm && (
           <DriverForm
-            key="add-form"
             data={formData}
-            companies={companies}
-            onChange={handleFormChange}
-            onSave={handleSaveForm}
-            onCancel={handleCancelAdd}
+            onChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+            onSave={() => handleSave(formData)}
+            onCancel={() => {
+              setShowAddForm(false);
+              setFormData({
+                name: '',
+                companyId: null,
+                nameVariants: []
+              });
+            }}
           />
         )}
       </AnimatePresence>
@@ -442,12 +333,13 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
           >
             {editingId === driver.id ? (
               <DriverForm
-                key={`edit-form-${driver.id}`}
                 data={formData}
-                companies={companies}
-                onChange={handleFormChange}
-                onSave={handleSaveForm}
-                onCancel={handleCancelEdit}
+                onChange={(field, value) => setFormData(prev => ({ ...prev, [field]: value }))}
+                onSave={() => handleSave(formData)}
+                onCancel={() => {
+                  setEditingId(null);
+                  setFormData({});
+                }}
               />
             ) : (
               <div>
@@ -457,25 +349,9 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
                       <User className="w-5 h-5" />
                       <span>{driver.name}</span>
                     </h3>
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2 text-sm text-gray-400">
-                        <Building className="w-4 h-4" />
-                        <span>{companies.find(c => c.id === driver.company_id)?.name || 'Fără companie'}</span>
-                      </div>
-                      {driver.company_id && companies.length > 0 && (() => {
-                        const company = companies.find(c => c.id === driver.company_id);
-                        if (!company) return null;
-                        
-                        const rate = company.commission_rate;
-                        const numericRate = parseFloat(rate || '0');
-                        const percentDisplay = (numericRate * 100).toFixed(2);
-                        
-                        return (
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <span>Comision: {percentDisplay}%</span>
-                          </div>
-                        );
-                      })()}
+                    <div className="flex items-center space-x-2 text-sm text-gray-400">
+                      <Building className="w-4 h-4" />
+                      <span>{driver.company?.name || 'Fără companie'}</span>
                     </div>
                   </div>
 
@@ -502,13 +378,17 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
                   </div>
                 </div>
 
-                {/* Variante nume pentru preview */}
                 {driver.nameVariants && driver.nameVariants.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium text-gray-300 mb-2">Variante nume:</h4>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">
+                      Variante nume pentru mapare automată:
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {driver.nameVariants.map((variant, index) => (
-                        <div key={index} className="bg-white/5 rounded px-2 py-1 text-gray-400 font-mono">
+                        <div
+                          key={index}
+                          className="bg-white/5 rounded px-2 py-1 text-xs text-gray-400 font-mono"
+                        >
                           {variant}
                         </div>
                       ))}
@@ -522,10 +402,10 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
       </div>
 
       {drivers.length === 0 && (
-        <div className="text-center py-8">
-          <User className="w-12 h-12 text-gray-400 mx-auto mb-4 opacity-50" />
-          <p className="text-gray-400">Nu sunt șoferi înregistrați</p>
-          <p className="text-gray-500 text-sm mt-2">Adăugați primul șofer pentru a începe</p>
+        <div className="text-center py-12">
+          <User className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">Nu sunt șoferi înregistrați</p>
+          <p className="text-gray-500 text-sm">Adăugați primul șofer pentru a începe</p>
         </div>
       )}
     </div>

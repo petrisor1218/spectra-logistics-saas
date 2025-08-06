@@ -7,7 +7,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "./hooks/useAuth";
 import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
-import SimpleRegister from "@/pages/simple-register";
 import NotFound from "@/pages/not-found";
 import Pricing from "@/pages/pricing";
 import Subscribe from "@/pages/subscribe";
@@ -31,13 +30,13 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/admin" component={AdminDashboard} />
         <Route path="/pricing" component={Pricing} />
-        <Route path="/register" component={SimpleRegister} />
         <Route path="/subscribe/:planId" component={Subscribe} />
         <Route path="/subscription-success" component={SubscriptionSuccess} />
         <Route path="/login" component={LoginPage} />
-        <Route path="/" component={Pricing} />
-        <Route component={Pricing} />
+        <Route path="/" component={Home} />
+        <Route path="*" component={Home} />
       </Switch>
     );
   }
@@ -47,11 +46,10 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/pricing" component={Pricing} />
-      <Route path="/register" component={SimpleRegister} />
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
       <Route path="/login" component={Home} />
-      <Route component={NotFound} />
+      <Route path="*" component={NotFound} />
     </Switch>
   );
 }

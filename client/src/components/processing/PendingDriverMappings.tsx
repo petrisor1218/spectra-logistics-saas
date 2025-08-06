@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, UserPlus, X, RefreshCw } from "lucide-react";
+import { AlertCircle, UserPlus, X } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface PendingMapping {
@@ -30,21 +30,6 @@ export function PendingDriverMappings({
 
   // Initialize selected companies with suggestions when pendingMappings changes
   useEffect(() => {
-    // Remove duplicates by driver name to prevent React key errors
-    const uniqueMappings = pendingMappings.reduce((acc, mapping) => {
-      if (!acc.find(m => m.driverName === mapping.driverName)) {
-        acc.push(mapping);
-      }
-      return acc;
-    }, [] as typeof pendingMappings);
-    
-    // Update parent if duplicates were found
-    if (uniqueMappings.length !== pendingMappings.length) {
-      console.log(`🔧 Eliminat ${pendingMappings.length - uniqueMappings.length} duplicate din pending mappings`);
-      setPendingMappings(uniqueMappings);
-      return; // Exit early, useEffect will run again with clean data
-    }
-    
     const initialSelections: Record<string, string> = {};
     pendingMappings.forEach(mapping => {
       if (!selectedCompanies[mapping.driverName]) {
@@ -92,12 +77,12 @@ export function PendingDriverMappings({
 
         toast({
           title: "Succes", 
-          description: `Șoferul "${driverName}" a fost adăugat la "${selectedCompany}".`,
+          description: `Șoferul "${driverName}" a fost adăugat la "${selectedCompany}". Reprocesez datele...`,
           variant: "default"
         });
 
-        // Don't call onMappingComplete for individual additions to preserve the full list
-        // The data will be reprocessed when all mappings are done or user manually triggers reprocess
+        // Call callback to refresh data and reprocess
+        onMappingComplete();
       } else {
         throw new Error("Failed to add driver");
       }
@@ -175,26 +160,15 @@ export function PendingDriverMappings({
             <span className="text-sm text-gray-300">
               Asignați șoferii la companiile potrivite:
             </span>
-            <div className="flex space-x-2">
-              <Button
-                onClick={handleConfirmAllWithSuggestions}
-                disabled={isProcessing}
-                className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border-green-500/30"
-                size="sm"
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Acceptă Toate Sugestiile
-              </Button>
-              <Button
-                onClick={onMappingComplete}
-                disabled={isProcessing}
-                className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border-blue-500/30"
-                size="sm"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Finalizează & Reprocesează
-              </Button>
-            </div>
+            <Button
+              onClick={handleConfirmAllWithSuggestions}
+              disabled={isProcessing}
+              className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border-green-500/30"
+              size="sm"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Acceptă Toate Sugestiile
+            </Button>
           </div>
 
           <AnimatePresence>
@@ -202,12 +176,11 @@ export function PendingDriverMappings({
               const allOptions = [mapping.suggestedCompany, ...mapping.alternatives];
               const selectedCompany = selectedCompanies[mapping.driverName] || mapping.suggestedCompany;
               
-              // Create unique key to avoid React duplicate key warnings
-              const uniqueKey = `${mapping.driverName}-${index}-${mapping.suggestedCompany}`;
+              // selectedCompany is now properly initialized via useEffect
               
               return (
                 <motion.div
-                  key={uniqueKey}
+                  key={mapping.driverName}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
@@ -230,8 +203,8 @@ export function PendingDriverMappings({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="glass-dropdown">
-                            {allOptions.map((company, companyIndex) => (
-                              <SelectItem key={`${company}-${companyIndex}-${mapping.driverName}`} value={company}>
+                            {allOptions.map((company) => (
+                              <SelectItem key={company} value={company}>
                                 <span className="flex items-center">
                                   {company}
                                   {company === mapping.suggestedCompany && (

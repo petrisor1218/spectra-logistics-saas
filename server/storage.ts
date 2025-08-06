@@ -8,7 +8,6 @@ import {
   historicalTrips,
   orderSequence,
   companyBalances,
-  usernameReservations,
   type User, 
   type InsertUser,
   type Company,
@@ -29,9 +28,7 @@ import {
   type OrderSequence,
   type InsertOrderSequence,
   type CompanyBalance,
-  type InsertCompanyBalance,
-  type UsernameReservation,
-  type InsertUsernameReservation
+  type InsertCompanyBalance
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -40,17 +37,10 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  // Username reservation methods (to prevent race conditions)
-  reserveUsername(username: string, email: string): Promise<string>; // Returns reservation token
-  validateReservation(username: string, token: string): Promise<boolean>;
-  releaseReservation(username: string): Promise<void>;
   
   // Company methods
   getAllCompanies(): Promise<Company[]>;
-  getCompaniesByTenant(tenantId: string): Promise<Company[]>;
   getCompanyByName(name: string): Promise<Company | undefined>;
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
@@ -58,7 +48,6 @@ export interface IStorage {
   
   // Driver methods
   getAllDrivers(): Promise<Driver[]>;
-  getDriversByTenant(tenantId: string): Promise<Driver[]>;
   getDriversByCompany(companyId: number): Promise<Driver[]>;
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver>;
@@ -108,113 +97,40 @@ export interface IStorage {
   // Order numbering methods
   getNextOrderNumber(): Promise<number>;
   initializeOrderSequence(): Promise<void>;
-  
-  // Company balance methods
-  getCompanyBalances(): Promise<CompanyBalance[]>;
-  getAllCompanyBalances(): Promise<CompanyBalance[]>;
-  getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined>;
-  createCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance>;
-  createOrUpdateCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance>;
-  updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance>;
-  generateCompanyBalancesFromCalendarData(): Promise<CompanyBalance[]>;
 }
 
 export class DatabaseStorage implements IStorage {
-  private dbInstance: any;
-
-  constructor(dbInstance?: any) {
-    // Dacă primim o instanță de DB (pentru tenant), o folosim
-    // Altfel folosim baza principală (pentru operațiuni de autentificare)
-    this.dbInstance = dbInstance || db;
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
-  // Obține baza de date pentru această instanță
-  private getDb() {
-    return this.dbInstance;
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
-  // Obține baza de date principală pentru autentificare (când nu avem tenant setat)
-  private getMainDb() {
-    return db;
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
   }
 
-  // User methods - folosesc baza de date principală
-
-  // Username reservation methods to prevent race conditions
-  async reserveUsername(username: string, email: string): Promise<string> {
-    const dbConn = this.getDb();
-    // Clean up expired reservations first
-    await dbConn.delete(usernameReservations).where(sql`expires_at < NOW()`);
-    
-    // Check if username or email already exists in main users table
-    const [existingUser, existingEmailUser] = await Promise.all([
-      this.getUserByUsername(username),
-      this.getUserByEmail(email)
-    ]);
-
-    if (existingUser) {
-      throw new Error('Username already exists');
-    }
-
-    if (existingEmailUser) {
-      throw new Error('Email already exists');
-    }
-    
-    // Generate a simple token (timestamp-based)
-    const token = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-
-    try {
-      await dbConn.insert(usernameReservations).values({
-        username,
-        email,
-        expiresAt,
-      });
-      return token;
-    } catch (error) {
-      // If username is already reserved, throw error
-      throw new Error('Username already reserved');
-    }
+  // Company methods
+  async getAllCompanies(): Promise<Company[]> {
+    return await db.select().from(companies);
   }
 
-  async validateReservation(username: string, token: string): Promise<boolean> {
-    const dbConn = this.getDb();
-    // Clean up expired reservations
-    await dbConn.delete(usernameReservations).where(sql`expires_at < NOW()`);
-    
-    const [reservation] = await dbConn
-      .select()
-      .from(usernameReservations)
-      .where(eq(usernameReservations.username, username));
-
-    return !!reservation && new Date() < new Date(reservation.expiresAt);
-  }
-
-  async releaseReservation(username: string): Promise<void> {
-    const dbConn = this.getDb();
-    await dbConn.delete(usernameReservations).where(eq(usernameReservations.username, username));
-  }
-
-  // Company methods with tenant isolation
-  async getAllCompanies(tenantId?: string): Promise<Company[]> {
-    const dbConn = this.getDb();
-    return await dbConn.select().from(companies);
-  }
-
-  async getCompaniesByTenant(tenantId: string): Promise<Company[]> {
-    const dbConn = this.getDb();
-    return await dbConn.select().from(companies);
-  }
-
-  async getCompanyByName(name: string, tenantId?: string): Promise<Company | undefined> {
-    const dbConn = this.getDb();
-    const [company] = await dbConn.select().from(companies).where(eq(companies.name, name));
+  async getCompanyByName(name: string): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.name, name));
     return company || undefined;
   }
 
   async createCompany(insertCompany: InsertCompany): Promise<Company> {
-    const dbConn = this.getDb();
-    const [company] = await dbConn
+    const [company] = await db
       .insert(companies)
       .values(insertCompany)
       .returning();
@@ -222,43 +138,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company> {
-    const dbConn = this.getDb();
-    
-    // Remove any timestamp fields that shouldn't be updated
-    const { createdAt, ...cleanData } = companyData as any;
-    
-    const [company] = await dbConn
+    const [company] = await db
       .update(companies)
-      .set(cleanData)
+      .set(companyData)
       .where(eq(companies.id, id))
       .returning();
     return company;
   }
 
-  async addCompany(companyData: Partial<InsertCompany>): Promise<Company> {
-    const dbConn = this.getDb();
-    const [company] = await dbConn
-      .insert(companies)
-      .values(companyData)
-      .returning();
-    return company;
-  }
-
   async deleteCompany(id: number): Promise<void> {
-    const dbConn = this.getDb();
     // First delete all drivers for this company
-    await dbConn.delete(drivers).where(eq(drivers.companyId, id));
+    await db.delete(drivers).where(eq(drivers.companyId, id));
     // Then delete the company
-    await dbConn.delete(companies).where(eq(companies.id, id));
+    await db.delete(companies).where(eq(companies.id, id));
   }
 
-  // Driver methods with tenant isolation
+  // Driver methods
   async getAllDrivers(): Promise<Driver[]> {
-    return await db.select().from(drivers);
-  }
-
-  async getDriversByTenant(tenantId: string): Promise<Driver[]> {
-    // Return all drivers for now (no tenant filtering until migration complete)
     return await db.select().from(drivers);
   }
 
@@ -299,50 +195,14 @@ export class DatabaseStorage implements IStorage {
     await db.delete(drivers).where(eq(drivers.id, id));
   }
 
-  // Weekly processing methods with tenant isolation
-  async getWeeklyProcessing(weekLabel: string, tenantId?: string): Promise<WeeklyProcessing | undefined> {
-    // Return weekly processing without tenant filtering for now
+  // Weekly processing methods
+  async getWeeklyProcessing(weekLabel: string): Promise<WeeklyProcessing | undefined> {
     const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
     return processing || undefined;
   }
 
   async createWeeklyProcessing(insertProcessing: InsertWeeklyProcessing): Promise<WeeklyProcessing> {
-    const dbConn = this.getDb();
-    
-    // PROFESSIONAL LOGIC: Prevent duplicate empty records
-    const existingRecord = await dbConn
-      .select()
-      .from(weeklyProcessing)
-      .where(eq(weeklyProcessing.weekLabel, insertProcessing.weekLabel))
-      .limit(1);
-    
-    // If record exists and new data is empty, don't create duplicate
-    if (existingRecord.length > 0) {
-      const isEmpty = !insertProcessing.processedData || 
-                     insertProcessing.processedData === null ||
-                     JSON.stringify(insertProcessing.processedData) === '{}';
-      
-      if (isEmpty && 
-          (!insertProcessing.tripDataCount || insertProcessing.tripDataCount === 0) &&
-          (!insertProcessing.invoice7Count || insertProcessing.invoice7Count === 0) &&
-          (!insertProcessing.invoice30Count || insertProcessing.invoice30Count === 0)) {
-        
-        console.log(`🛡️ DUPLICATE PREVENTION: Skipping empty record for week ${insertProcessing.weekLabel}`);
-        return existingRecord[0];
-      }
-      
-      // If new data has content, update existing record instead of creating duplicate
-      console.log(`🔄 SMART UPDATE: Updating existing record for week ${insertProcessing.weekLabel}`);
-      const [updated] = await dbConn
-        .update(weeklyProcessing)
-        .set(insertProcessing)
-        .where(eq(weeklyProcessing.weekLabel, insertProcessing.weekLabel))
-        .returning();
-      return updated;
-    }
-    
-    // Create new record only if none exists
-    const [processing] = await dbConn
+    const [processing] = await db
       .insert(weeklyProcessing)
       .values(insertProcessing)
       .returning();
@@ -350,14 +210,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWeeklyProcessingByWeek(weekLabel: string): Promise<WeeklyProcessing | undefined> {
-    const dbConn = this.getDb();
-    const [processing] = await dbConn.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
+    const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
     return processing || undefined;
   }
 
-  async getAllWeeklyProcessing(tenantId?: string): Promise<WeeklyProcessing[]> {
-    const dbConn = this.getDb();
-    return await dbConn.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
+  async getAllWeeklyProcessing(): Promise<WeeklyProcessing[]> {
+    return await db.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
   }
 
   async updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing> {
@@ -417,9 +275,8 @@ export class DatabaseStorage implements IStorage {
 
   // Transport orders methods
   async createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder> {
-    const dbConn = this.getDb();
     // Create the order
-    const [transportOrder] = await dbConn
+    const [transportOrder] = await db
       .insert(transportOrders)
       .values(order)
       .returning();
@@ -431,23 +288,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTransportOrders(): Promise<TransportOrder[]> {
-    const dbConn = this.getDb();
-    return await dbConn.select().from(transportOrders).orderBy(desc(transportOrders.createdAt));
+    return await db.select().from(transportOrders).orderBy(desc(transportOrders.createdAt));
   }
 
   async getTransportOrdersByWeek(weekLabel: string): Promise<TransportOrder[]> {
-    const dbConn = this.getDb();
-    return await dbConn.select().from(transportOrders).where(eq(transportOrders.weekLabel, weekLabel));
+    return await db.select().from(transportOrders).where(eq(transportOrders.weekLabel, weekLabel));
   }
 
   async getTransportOrdersByCompany(companyName: string): Promise<TransportOrder[]> {
-    const dbConn = this.getDb();
-    return await dbConn.select().from(transportOrders).where(eq(transportOrders.companyName, companyName));
+    return await db.select().from(transportOrders).where(eq(transportOrders.companyName, companyName));
   }
 
   async updateTransportOrder(id: number, updates: Partial<InsertTransportOrder>): Promise<TransportOrder> {
-    const dbConn = this.getDb();
-    const [transportOrder] = await dbConn
+    const [transportOrder] = await db
       .update(transportOrders)
       .set(updates)
       .where(eq(transportOrders.id, id))
@@ -456,8 +309,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTransportOrder(id: number): Promise<void> {
-    const dbConn = this.getDb();
-    await dbConn.delete(transportOrders).where(eq(transportOrders.id, id));
+    await db.delete(transportOrders).where(eq(transportOrders.id, id));
   }
 
   // Historical trips methods
@@ -588,55 +440,22 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getOrderSequence(): Promise<OrderSequence | undefined> {
-    const [sequence] = await db.select().from(orderSequence).limit(1);
-    return sequence || undefined;
-  }
-
-  async updateOrderSequence(currentNumber: number): Promise<OrderSequence> {
-    const [sequence] = await db
-      .update(orderSequence)
-      .set({ 
-        currentNumber,
-        lastUpdated: new Date()
-      })
-      .where(eq(orderSequence.id, 1))
-      .returning();
-    return sequence;
-  }
-
-  // User authentication methods - folosesc baza de date principală
+  // User authentication methods
   async getUser(id: number): Promise<User | undefined> {
-    const mainDb = this.getMainDb();
-    const [user] = await mainDb.select().from(users).where(eq(users.id, id));
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const mainDb = this.getMainDb();
-    const [user] = await mainDb.select().from(users).where(eq(users.username, username));
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const mainDb = this.getMainDb();
-    const [user] = await mainDb.select().from(users).where(eq(users.email, email));
-    return user || undefined;
-  }
-
-  async deleteUser(id: number): Promise<void> {
-    const mainDb = this.getMainDb();
-    await mainDb.delete(users).where(eq(users.id, id));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const mainDb = this.getMainDb();
-    const [user] = await mainDb
+    const [user] = await db
       .insert(users)
       .values(insertUser)
       .returning();
-    
-    console.log(`📊 Created user ${user.username} with tenant ID: ${user.tenantId}`);
     return user;
   }
 
@@ -654,29 +473,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Company balance methods
-  // Company balance methods 
-  async getAllCompanyBalances(): Promise<CompanyBalance[]> {
-    const dbConn = this.getDb();
-    const results = await dbConn.select().from(companyBalances).orderBy(desc(companyBalances.createdAt));
-    console.log(`💾 getAllCompanyBalances: Found ${results.length} records in tenant schema`);
-    return results;
-  }
-
   async getCompanyBalances(): Promise<CompanyBalance[]> {
-    return this.getAllCompanyBalances();
+    return await db.select().from(companyBalances).orderBy(desc(companyBalances.lastUpdated));
   }
 
   async getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined> {
-    const dbConn = this.getDb();
-    const [balance] = await dbConn
+    const [balance] = await db
       .select()
       .from(companyBalances)
-      .where(
-        and(
-          eq(companyBalances.companyName, companyName),
-          eq(companyBalances.weekLabel, weekLabel)
-        )
-      );
+      .where(eq(companyBalances.companyName, companyName))
+      .where(eq(companyBalances.weekLabel, weekLabel));
     return balance || undefined;
   }
 
@@ -712,7 +518,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
-    const newTotalPaid = parseFloat(existing.totalPaid || '0') + paidAmount;
+    const newTotalPaid = parseFloat(existing.totalPaid) + paidAmount;
     const totalInvoiced = parseFloat(existing.totalInvoiced);
     let newOutstandingBalance = totalInvoiced - newTotalPaid;
     
@@ -746,11 +552,8 @@ export class DatabaseStorage implements IStorage {
   // Generate company balances from weekly processing data and payments
   async generateCompanyBalancesFromCalendarData(): Promise<CompanyBalance[]> {
     try {
-      console.log('🔄 Generating company balances from REAL calendar data...');
-      
       // Get all weekly processing data
       const weeklyData = await db.select().from(weeklyProcessing).orderBy(weeklyProcessing.weekLabel);
-      console.log(`📊 Found ${weeklyData.length} weeks of data to process`);
       
       // Get all payments
       const allPayments = await db.select().from(payments);
@@ -758,22 +561,13 @@ export class DatabaseStorage implements IStorage {
       const balancesToCreate: InsertCompanyBalance[] = [];
       
       for (const week of weeklyData) {
-        if (!week.processedData) {
-          console.log(`⏭️ Skipping week ${week.weekLabel} - no processed data`);
-          continue;
-        }
+        if (!week.processedData) continue;
         
         const processedData = week.processedData as any;
-        const companies = Object.keys(processedData);
-        console.log(`🏢 Week ${week.weekLabel} has companies:`, companies);
         
         // Extract company totals from processed data
         Object.keys(processedData).forEach(companyName => {
-          // Skip invalid company names
-          if (!companyName || companyName.trim() === '' || companyName === 'Unmatched' || companyName === 'Totals') {
-            console.log(`⏭️ Skipping invalid company: "${companyName}"`);
-            return;
-          }
+          if (companyName === 'Unmatched' || companyName === 'Totals') return;
           
           const companyData = processedData[companyName];
           if (companyData && (companyData.Total_7_days || companyData.Total_30_days)) {
@@ -784,7 +578,9 @@ export class DatabaseStorage implements IStorage {
             // Total invoiced should exclude commission - commission is separate from company payments
             const totalInvoiced = total7Days + total30Days - totalCommission;
             
-            console.log(`💰 ${companyName} - Week ${week.weekLabel}: 7-day=${total7Days}, 30-day=${total30Days}, commission=${totalCommission}, total=${totalInvoiced}`);
+
+            
+
             
             // Calculate total paid for this company and week
             const weekPayments = allPayments.filter(p => 
@@ -807,21 +603,14 @@ export class DatabaseStorage implements IStorage {
               paymentStatus = 'partial';
             }
             
-            // Final validation before adding to creation list
-            if (companyName && companyName.trim() !== '' && week.weekLabel && week.weekLabel.trim() !== '') {
-              balancesToCreate.push({
-                companyName: companyName.trim(),
-                weekLabel: week.weekLabel.trim(),
-                totalInvoiced: totalInvoiced.toString(),
-                amountPaid: totalPaid.toString(),
-                outstandingBalance: outstandingBalance.toString(),
-                status: paymentStatus
-              });
-            } else {
-              console.log(`❌ Skipping invalid balance entry: company="${companyName}", week="${week.weekLabel}"`);
-            }
-            
-            console.log(`✅ Created balance entry for ${companyName} - ${week.weekLabel}: €${totalInvoiced}`);
+            balancesToCreate.push({
+              companyName,
+              weekLabel: week.weekLabel,
+              totalInvoiced: totalInvoiced.toString(),
+              totalPaid: totalPaid.toString(),
+              outstandingBalance: outstandingBalance.toString(),
+              paymentStatus
+            });
           }
         });
       }
@@ -830,34 +619,9 @@ export class DatabaseStorage implements IStorage {
       await db.delete(companyBalances);
       
       if (balancesToCreate.length > 0) {
-        console.log(`🔄 About to create ${balancesToCreate.length} balance entries`);
-        console.log('📝 First few entries:', balancesToCreate.slice(0, 3));
-        
-        // Filter out any entries that still have invalid data
-        const validBalances = balancesToCreate.filter(balance => 
-          balance.companyName && 
-          balance.companyName.trim() !== '' && 
-          balance.weekLabel && 
-          balance.weekLabel.trim() !== ''
-        );
-        
-        console.log(`✅ Valid entries after filtering: ${validBalances.length}`);
-        
-        if (validBalances.length === 0) {
-          console.log('❌ No valid balance entries to insert');
-          return [];
-        }
-        
         const createdBalances = await db
           .insert(companyBalances)
-          .values(validBalances.map(balance => ({
-            companyName: balance.companyName.trim(),
-            weekLabel: balance.weekLabel.trim(),
-            totalInvoiced: balance.totalInvoiced,
-            amountPaid: balance.amountPaid,
-            outstandingBalance: balance.outstandingBalance,
-            status: balance.status
-          })))
+          .values(balancesToCreate)
           .returning();
         
         console.log(`✅ Generated ${createdBalances.length} company balances from calendar data`);

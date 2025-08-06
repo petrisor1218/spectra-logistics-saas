@@ -5,13 +5,6 @@ import { getQueryFn } from '@/lib/queryClient';
 interface User {
   id: number;
   username: string;
-  role?: string;
-  email?: string;
-  subscriptionStatus?: string;
-  trialEndsAt?: string;
-  subscriptionEndsAt?: string;
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
 }
 
 export function useAuth() {
@@ -41,14 +34,12 @@ export function useAuth() {
     onSuccess: () => {
       // Clear all queries and redirect to login
       queryClient.clear();
-      queryClient.invalidateQueries({ queryKey: ['/api', 'auth', 'user'] });
       setLocation('/login');
     },
     onError: (error) => {
       console.error('Logout error:', error);
       // Even if logout fails on server, clear client state
       queryClient.clear();
-      queryClient.invalidateQueries({ queryKey: ['/api', 'auth', 'user'] });
       setLocation('/login');
     },
   });

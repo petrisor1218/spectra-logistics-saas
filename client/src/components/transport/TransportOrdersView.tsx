@@ -129,21 +129,9 @@ export function TransportOrdersView() {
     };
   };
 
-  const generatePDF = async (order: TransportOrder) => {
+  const generatePDF = (order: TransportOrder) => {
     const doc = new jsPDF();
     const companyDetails = getCompanyDetails(order.companyName);
-    
-    // Load main company for header
-    let mainCompany: any = null;
-    try {
-      const response = await fetch('/api/main-company');
-      if (response.ok) {
-        mainCompany = await response.json();
-      }
-    } catch (error) {
-      console.error('Error loading main company for PDF:', error);
-    }
-    
     let currentY = 0;
     const docPageHeight = 297; // A4 height in mm
     const pageMargin = 15; // Bottom margin
@@ -156,7 +144,7 @@ export function TransportOrdersView() {
         doc.setTextColor(37, 99, 235);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Transportator: ${mainCompany?.name || order.companyName}`, 15, 15);
+        doc.text(`Transportator: ${order.companyName}`, 15, 15);
         currentY = 25;
         return true;
       }
@@ -180,47 +168,30 @@ export function TransportOrdersView() {
     doc.setLineWidth(2);
     doc.roundedRect(15, 12, 60, 20, 3, 3, 'FD');
     
-    // Company Name with modern styling (using main company)
+    // Company Name with modern styling
     doc.setTextColor(37, 99, 235);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    const companyName = mainCompany?.name || 'A Z LOGISTIC EOOD';
-    doc.text(companyName, 20, 22);
+    doc.text('A Z LOGISTIC EOOD', 20, 22);
     
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text('Transport & Logistics Solutions', 20, 27);
     
-    // Contact info in modern format (using main company data) - expanded area
+    // Contact info in modern format
     doc.setFillColor(248, 250, 252);
-    doc.rect(80, 12, 115, 28, 'F'); // Increased height from 20 to 28
+    doc.rect(80, 12, 115, 20, 'F');
     
     doc.setTextColor(51, 65, 85);
-    doc.setFontSize(8); // Reduced font size from 9 to 8
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
+    doc.text('Email: azlogistic8@gmail.com', 85, 18);
+    doc.text('Bank: DSK BANK - BG22STSA93000028729251', 85, 22);
+    doc.text('ID: BG206507560 | Adresa: Ruser, Ruse, Bulgaria', 85, 26);
+    doc.text('TVA: 0%', 85, 30);
     
-    // Use main company contact info if available
-    if (mainCompany) {
-      const contact = mainCompany.contact || 'Info: Completați datele în Compania Mea';
-      const cif = mainCompany.cif ? `CIF: ${mainCompany.cif}` : 'CIF: [Necompletat]';
-      const address = mainCompany.address || '[Completați adresa]';
-      const location = mainCompany.location ? `${mainCompany.location}, ${mainCompany.county || ''}, ${mainCompany.country || 'Romania'}` : '[Completați locația]';
-      
-      // Increased line spacing from 4 to 5
-      doc.text(contact.substring(0, 50), 85, 18); // Truncate long text
-      doc.text(cif, 85, 23);
-      doc.text(address.substring(0, 50), 85, 28); // Truncate long text
-      doc.text(location.substring(0, 50), 85, 33); // Truncate long text
-    } else {
-      // Fallback to original hardcoded data with better spacing
-      doc.text('Email: azlogistic8@gmail.com', 85, 18);
-      doc.text('Bank: DSK BANK - BG22STSA93000028729251', 85, 23);
-      doc.text('ID: BG206507560 | Adresa: Ruser, Ruse, Bulgaria', 85, 28);
-      doc.text('TVA: 0%', 85, 33);
-    }
-    
-    // Modern Title Section - moved down to avoid overlap
-    currentY = 55;
+    // Modern Title Section
+    currentY = 50;
     
     // Title background
     doc.setFillColor(37, 99, 235);

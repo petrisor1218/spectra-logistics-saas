@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, RefreshCw, Building2 } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3 } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -16,14 +16,10 @@ import WeeklyReportsView from "@/components/transport/WeeklyReportsView";
 import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
-import { SubscriptionNotification } from "@/components/ui/subscription-notification";
-import { MainCompanySettings } from "@/components/settings/MainCompanySettings";
 import { useTransportData } from "@/hooks/useTransportData";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
-  const { user } = useAuth();
   
   const {
     // State
@@ -43,7 +39,6 @@ export default function Home() {
     tripFileRef,
     invoice7FileRef,
     invoice30FileRef,
-    uploadedFileNames,
     
     // Actions
     setActiveTab,
@@ -75,7 +70,7 @@ export default function Home() {
   } = useTransportData();
 
   const weekOptions = getWeekOptions();
-  const canProcess = tripData && (invoice7Data || invoice30Data) && processingWeek;
+  const canProcess = tripData && invoice7Data && invoice30Data && processingWeek;
 
   // Debug logging
   console.log('Home component rendered', { activeTab });
@@ -87,7 +82,6 @@ export default function Home() {
     { id: 'balances', label: 'Bilanțuri Companii', icon: BarChart3 },
     { id: 'reports', label: 'Rapoarte Săptămânale', icon: BarChart3 },
     { id: 'orders', label: 'Comenzi Transport', icon: Truck },
-    { id: 'company', label: 'Compania Mea', icon: Building2 },
     { id: 'management', label: 'Gestionare', icon: Settings },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'history', label: 'Istoric Săptămânal', icon: History }
@@ -98,7 +92,6 @@ export default function Home() {
       background: 'linear-gradient(135deg, hsl(240, 21%, 9%) 0%, hsl(240, 19%, 13%) 50%, hsl(240, 17%, 16%) 100%)'
     }}>
       <NavigationHeader />
-      <SubscriptionNotification user={user || null} />
       
       <main className="pt-24 pb-8">
         <div className="container mx-auto px-6">
@@ -200,7 +193,6 @@ export default function Home() {
                   invoice7FileRef={invoice7FileRef}
                   invoice30FileRef={invoice30FileRef}
                   handleFileUpload={handleFileUpload}
-                  uploadedFileNames={uploadedFileNames}
                 />
               </div>
             )}
@@ -219,9 +211,7 @@ export default function Home() {
                     if (loadDriversFromDatabase) {
                       await loadDriversFromDatabase();
                       // Reprocess data after mappings are updated to move amounts from Pending to correct companies
-                      if (tripData && tripData.length > 0 && 
-                         ((invoice7Data && invoice7Data.length > 0) || 
-                          (invoice30Data && invoice30Data.length > 0))) {
+                      if (tripData.length > 0 && (invoice7Data.length > 0 || invoice30Data.length > 0)) {
                         await processData();
                       }
                     }
@@ -259,21 +249,6 @@ export default function Home() {
                             </p>
                           </div>
                         )}
-                        
-                        <motion.button
-                          onClick={async () => {
-                            // Force reprocess data with fresh driver mappings
-                            await loadDriversFromDatabase();
-                            await processData();
-                          }}
-                          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-4 py-3 rounded-xl text-white font-medium flex items-center space-x-2 transition-all duration-300 shadow-lg hover:shadow-blue-500/25"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          disabled={loading}
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          <span>Reprocesează</span>
-                        </motion.button>
                         
                         <motion.button
                           onClick={saveProcessedData}
@@ -381,9 +356,8 @@ export default function Home() {
                         if (weekLabel) {
                           loadWeeklyProcessingByWeek(weekLabel);
                         } else {
-                          // Clear data when no week is selected
-                          // These functions are not exposed by the hook, so we'll just reload
-                          loadAllWeeklyProcessing();
+                          setProcessedData({});
+                          setSelectedWeek('');
                         }
                       }}
                       className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -435,17 +409,6 @@ export default function Home() {
             {/* Transport Orders Tab */}
             {activeTab === 'orders' && (
               <TransportOrdersView />
-            )}
-
-            {/* Main Company Tab */}
-            {activeTab === 'company' && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <MainCompanySettings />
-              </motion.div>
             )}
 
             {/* Management Tab */}

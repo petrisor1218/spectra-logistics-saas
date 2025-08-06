@@ -58,8 +58,7 @@ export default function AdminDashboard() {
     email: '',
     companyName: '',
     subscriptionStatus: '',
-    role: '',
-    password: ''
+    role: ''
   });
   const { toast } = useToast();
 
@@ -92,8 +91,7 @@ export default function AdminDashboard() {
         email: user.email,
         companyName: user.companyName || '',
         subscriptionStatus: user.subscriptionStatus,
-        role: user.role,
-        password: '' // Don't prefill password for security
+        role: user.role
       });
       setIsEditDialogOpen(true);
     }
@@ -102,24 +100,19 @@ export default function AdminDashboard() {
   const handleSaveEdit = async () => {
     if (selectedUser) {
       try {
-        // Only include password if it's not empty
-        const updateData = { ...editForm };
-        if (!updateData.password.trim()) {
-          delete updateData.password;
-        }
-        
         const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updateData)
+          body: JSON.stringify(editForm)
         });
         
         if (response.ok) {
           toast({
             title: "Utilizator actualizat",
-            description: editForm.password ? "Utilizatorul și parola au fost actualizate" : "Utilizatorul a fost actualizat",
+            description: "Modificările au fost salvate cu succes",
           });
           setIsEditDialogOpen(false);
+          // Refresh data
           window.location.reload();
         } else {
           throw new Error('Failed to update user');
@@ -134,29 +127,41 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = (userId: number) => {
+    if (confirm('Ești sigur că vrei să ștergi acest utilizator?')) {
+      fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
+        .then(response => {
+          if (response.ok) {
+            toast({
+              title: "Utilizator șters",
+              description: "Utilizatorul a fost șters cu succes",
+              variant: "destructive",
+            });
+            window.location.reload();
+          }
+        })
+        .catch(() => {
+          toast({
+            title: "Eroare",
+            description: "Nu s-a putut șterge utilizatorul",
+            variant: "destructive",
+          });
+        });
+    }
+  };
+
   const handleAddSubscriber = () => {
     setEditForm({
       username: '',
       email: '',
       companyName: '',
       subscriptionStatus: 'active',
-      role: 'subscriber',
-      password: ''
+      role: 'subscriber'
     });
     setIsAddDialogOpen(true);
   };
 
   const handleSaveNewUser = async () => {
-    // Check if required fields are filled
-    if (!editForm.username.trim() || !editForm.email.trim() || !editForm.password.trim()) {
-      toast({
-        title: "Câmpuri incomplete",
-        description: "Te rog completează toate câmpurile obligatorii (nume, email, parolă)",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
@@ -165,21 +170,19 @@ export default function AdminDashboard() {
       });
       
       if (response.ok) {
-        const data = await response.json();
         toast({
           title: "Utilizator adăugat",
-          description: `Noul utilizator "${editForm.username}" a fost creat cu succes`,
+          description: "Noul utilizator a fost creat cu succes",
         });
         setIsAddDialogOpen(false);
         window.location.reload();
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create user');
+        throw new Error('Failed to create user');
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Eroare",
-        description: error.message || "Nu s-a putut crea utilizatorul",
+        description: "Nu s-a putut crea utilizatorul",
         variant: "destructive",
       });
     }
@@ -191,36 +194,6 @@ export default function AdminDashboard() {
       description: `Conectez la baza de date pentru utilizatorul ID: ${userId}`,
     });
     console.log('Database access for user:', userId);
-  };
-
-  const handleDeleteUser = async (userId: number, username: string) => {
-    if (!confirm(`Ești sigur că vrei să ștergi utilizatorul "${username}"? Această acțiune nu poate fi anulată.`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Utilizator șters",
-          description: `Utilizatorul "${username}" a fost șters cu succes`,
-        });
-        // Refresh the data
-        window.location.reload();
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete user');
-      }
-    } catch (error: any) {
-      toast({
-        title: "Eroare",
-        description: error.message || "Nu s-a putut șterge utilizatorul",
-        variant: "destructive",
-      });
-    }
   };
 
   const filteredSubscribers = subscribers.filter((user: User) => {
@@ -472,18 +445,6 @@ export default function AdminDashboard() {
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                {/* Only show delete button for non-main users */}
-                                {user.email !== 'petrisor@fastexpress.ro' && user.username !== 'petrisor' && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                                    onClick={() => handleDeleteUser(user.id, user.username)}
-                                    title="Șterge utilizator"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                )}
                               </div>
                             </td>
                           </tr>
@@ -626,17 +587,6 @@ export default function AdminDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="password">Parolă nouă (opțional)</Label>
-              <Input
-                id="password"
-                type="password"
-                value={editForm.password}
-                onChange={(e) => setEditForm({...editForm, password: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-                placeholder="Lasă gol pentru a păstra parola existentă"
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
@@ -712,18 +662,6 @@ export default function AdminDashboard() {
                   <SelectItem value="inactive">Inactiv</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label htmlFor="new-password">Parolă</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={editForm.password}
-                onChange={(e) => setEditForm({...editForm, password: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-                placeholder="Introduceți parola pentru noul utilizator"
-                required
-              />
             </div>
           </div>
           <DialogFooter>

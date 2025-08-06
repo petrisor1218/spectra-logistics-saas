@@ -51,19 +51,6 @@ const plans: PricingPlan[] = [
 export default function Pricing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
-      {/* Top Navigation */}
-      <div className="absolute top-4 right-4 z-10">
-        <Button 
-          variant="outline" 
-          className="border-white/30 text-white hover:bg-white/10"
-          asChild
-        >
-          <Link href="/login">
-            Login
-          </Link>
-        </Button>
-      </div>
-      
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <motion.div
@@ -227,7 +214,7 @@ export default function Pricing() {
                   className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-3 text-lg"
                   asChild
                 >
-                  <Link href="/register">
+                  <Link href="/subscribe/professional">
                     Începe perioada de probă
                   </Link>
                 </Button>
@@ -237,8 +224,8 @@ export default function Pricing() {
                   className="border-white/30 text-white hover:bg-white/10 px-8 py-3 text-lg"
                   asChild
                 >
-                  <Link href="/login">
-                    Am deja cont - Login
+                  <Link href="/contact">
+                    Vorbește cu un expert
                   </Link>
                 </Button>
               </div>

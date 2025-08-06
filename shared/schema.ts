@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -35,7 +35,7 @@ export const companies = pgTable("companies", {
   county: varchar("county", { length: 100 }),
   country: varchar("country", { length: 100 }).default("Romania"),
   contact: text("contact"),
-  isMainCompany: boolean("is_main_company").default(false),
+  tenantId: varchar("tenant_id", { length: 100 }), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -91,11 +91,10 @@ export const companyBalances = pgTable("company_balances", {
   companyName: varchar("company_name", { length: 100 }).notNull(),
   weekLabel: varchar("week_label", { length: 100 }).notNull(),
   totalInvoiced: decimal("total_invoiced", { precision: 10, scale: 2 }).notNull(), // Total amount invoiced
-  amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).default("0"), // Amount paid so far
+  totalPaid: decimal("total_paid", { precision: 10, scale: 2 }).default("0"), // Amount paid so far
   outstandingBalance: decimal("outstanding_balance", { precision: 10, scale: 2 }).notNull(), // Amount still owed
-  status: varchar("status", { length: 50 }).default("pending"), // 'pending', 'partial', 'paid'
-  paymentDate: timestamp("payment_date"),
-  notes: text("notes"),
+  paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // 'pending', 'partial', 'paid'
+  lastUpdated: timestamp("last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -123,8 +122,8 @@ export const transportOrders = pgTable("transport_orders", {
 // Auto-increment sequence for order numbers
 export const orderSequence = pgTable("order_sequence", {
   id: serial("id").primaryKey(),
-  lastOrderNumber: integer("last_order_number").notNull().default(1554), // Start from 1554
-  updatedAt: timestamp("updated_at").defaultNow()
+  currentNumber: integer("current_number").notNull().default(1554), // Start from 1554
+  lastUpdated: timestamp("last_updated").defaultNow()
 });
 
 // Relations
@@ -204,18 +203,6 @@ export const insertOrderSequenceSchema = createInsertSchema(orderSequence).omit(
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
-
-// Temporary username reservations to prevent race conditions during registration
-export const usernameReservations = pgTable("username_reservations", {
-  id: serial("id").primaryKey(),
-  username: varchar("username", { length: 50 }).notNull().unique(),
-  email: varchar("email", { length: 255 }).notNull(),
-  reservedAt: timestamp("reserved_at").defaultNow(),
-  expiresAt: timestamp("expires_at").notNull(),
-});
-
-export type UsernameReservation = typeof usernameReservations.$inferSelect;
-export type InsertUsernameReservation = typeof usernameReservations.$inferInsert;
 
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;

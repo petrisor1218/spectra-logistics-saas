@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 
 // Company details from transport orders system
@@ -97,13 +97,6 @@ export function useTransportData() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   
-  // Track uploaded file names for display
-  const [uploadedFileNames, setUploadedFileNames] = useState<{
-    trip?: string;
-    invoice7?: string;
-    invoice30?: string[];
-  }>({});
-  
   const tripFileRef = useRef<HTMLInputElement>(null);
   const invoice7FileRef = useRef<HTMLInputElement>(null);
   const invoice30FileRef = useRef<HTMLInputElement>(null);
@@ -134,12 +127,6 @@ export function useTransportData() {
 
   // Load drivers from database and combine with static mapping
   const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
-  const [availableCompanies, setAvailableCompanies] = useState<string[]>([]);
-
-  // Load companies and drivers on component mount
-  useEffect(() => {
-    loadDriversFromDatabase();
-  }, []);
   
   const loadDriversFromDatabase = async () => {
     try {
@@ -155,47 +142,34 @@ export function useTransportData() {
         const dbDriverMap: Record<string, string> = {};
         
         drivers.forEach((driver: any) => {
-          // Use correct field name from database: company_id not companyId
-          if (driver.company_id) {
-            const company = companies.find((c: any) => c.id === driver.company_id);
+          if (driver.companyId) {
+            const company = companies.find((c: any) => c.id === driver.companyId);
             if (company) {
-              // Use actual company name from database (no mapping for multi-tenant)
-              const mappedCompanyName = company.name;
+              // Map company names to match processing logic
+              let mappedCompanyName = company.name;
+              if (company.name === 'Fast & Express S.R.L.') {
+                mappedCompanyName = 'Fast Express';
+              } else if (company.name === 'De Cargo Sped S.R.L.') {
+                mappedCompanyName = 'DE Cargo Speed';
+              } else if (company.name === 'Stef Trans S.R.L.') {
+                mappedCompanyName = 'Stef Trans';
+              } else if (company.name === 'Toma SRL') {
+                mappedCompanyName = 'Toma SRL';
+              }
               
               // Generate variants for each driver name
               const variants = generateNameVariants(driver.name);
               variants.forEach(variant => {
                 dbDriverMap[variant] = mappedCompanyName;
               });
-              
-              console.log(`🔗 Mapare adăugată: "${driver.name}" → "${mappedCompanyName}" (${variants.length} variante)`);
             }
           }
         });
         
-        // Store available companies for tenant (excluding main company)
-        const transportCompanies = companies
-          .filter((c: any) => !c.isMainCompany)
-          .map((c: any) => c.name); // Use actual company names from database
-
-        setAvailableCompanies(transportCompanies);
         setDynamicDriverMap(dbDriverMap);
         console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
-        console.log('🏢 Companiile disponibile pentru tenant:', transportCompanies);
-        console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.company_id)?.name || 'FĂRĂ COMPANIE'}`));
+        console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.companyId)?.name || 'FĂRĂ COMPANIE'}`));
         console.log('🔗 Mapare completă (primele 5):', Object.entries(dbDriverMap).slice(0, 5));
-        
-        // If we have processed data but the mapping changed, reprocess automatically
-        if (Object.keys(processedData).length > 0 && Object.keys(dbDriverMap).length > 0) {
-          console.log('🔄 Maparea s-a schimbat, reprocesez datele automat...');
-          // Trigger reprocessing if data exists
-          setTimeout(() => {
-            if (tripData.length > 0 && (invoice7Data.length > 0 || invoice30Data.length > 0)) {
-              processData();
-            }
-          }, 100);
-        }
-        
         return dbDriverMap;
       }
     } catch (error) {
@@ -204,10 +178,24 @@ export function useTransportData() {
     return {};
   };
 
-  // Build complete normalized dictionary (DATABASE ONLY for multi-tenant isolation)
+  // Build complete normalized dictionary (static + dynamic)
   const getCompleteDriverMap = () => {
-    // Multi-tenant: Use ONLY database mappings, no static mapping
-    return dynamicDriverMap;
+    const DRIVER_COMPANY_MAP: Record<string, string> = {};
+    
+    // Add static mapping first
+    Object.entries(DRIVER_COMPANY_MAP_ORIGINAL).forEach(([driver, company]) => {
+      const variants = generateNameVariants(driver);
+      variants.forEach(variant => {
+        DRIVER_COMPANY_MAP[variant] = company;
+      });
+    });
+    
+    // Add dynamic mapping (will override static if same name exists)
+    Object.entries(dynamicDriverMap).forEach(([variant, company]) => {
+      DRIVER_COMPANY_MAP[variant] = company;
+    });
+    
+    return DRIVER_COMPANY_MAP;
   };
 
   // Auto-suggest company for unmapped drivers
@@ -246,16 +234,10 @@ export function useTransportData() {
   // Add driver to database after user confirmation
   const addDriverToDatabase = async (driverName: string, selectedCompany: string) => {
     try {
-      console.log(`🚛 Tentativa de adăugare șofer: "${driverName}" la compania: "${selectedCompany}"`);
-      
       // Check if driver already exists first
       const existingDriversResponse = await fetch('/api/drivers');
-      console.log('📋 Verificare șoferi existenți - status:', existingDriversResponse.status);
-      
       if (existingDriversResponse.ok) {
         const existingDrivers = await existingDriversResponse.json();
-        console.log(`📊 Găsiți ${existingDrivers.length} șoferi existenți în baza de date`);
-        
         const existingDriver = existingDrivers.find((d: any) => 
           d.name.toLowerCase().trim() === driverName.toLowerCase().trim()
         );
@@ -273,103 +255,24 @@ export function useTransportData() {
         const companies = await companiesResponse.json();
         let targetCompanyId = null;
         
-        // PROFESSIONAL LOGIC: Robust company matching with auto-recovery
-        const transportCompanies = companies.filter((c: any) => !c.isMainCompany);
-        console.log('🚚 Companiile de transport disponibile:', transportCompanies.map((c: any) => `${c.name} (ID: ${c.id})`));
-        
-        // Smart company matching with fuzzy logic
-        const findCompanyByName = (searchName: string) => {
-          const normalized = searchName.toLowerCase().trim();
-          
-          // Exact name matching first (highest priority)
-          let match = transportCompanies.find((c: any) => 
-            c.name.toLowerCase().trim() === normalized ||
-            c.name.toLowerCase().replace(/\s+/g, '') === normalized.replace(/\s+/g, '')
-          );
-          if (match) return match;
-          
-          // Keyword matching (medium priority)
-          if (normalized.includes('fast')) {
-            match = transportCompanies.find((c: any) => 
-              c.name.toLowerCase().includes('fast') && c.name.toLowerCase().includes('express')
-            );
-            if (match) return match;
+        // Find company ID by matching selected company name
+        for (const company of companies) {
+          if (company.name === 'Fast & Express S.R.L.' && selectedCompany === 'Fast Express') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'Stef Trans S.R.L.' && selectedCompany === 'Stef Trans') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'De Cargo Sped S.R.L.' && selectedCompany === 'DE Cargo Speed') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'Toma SRL' && selectedCompany === 'Toma SRL') {
+            targetCompanyId = company.id;
+            break;
           }
-          
-          if (normalized.includes('stef')) {
-            match = transportCompanies.find((c: any) => 
-              c.name.toLowerCase().includes('stef') && c.name.toLowerCase().includes('trans')
-            );
-            if (match) return match;
-          }
-          
-          if (normalized.includes('cargo') || normalized.includes('speed')) {
-            match = transportCompanies.find((c: any) => 
-              c.name.toLowerCase().includes('cargo') || c.name.toLowerCase().includes('speed')
-            );
-            if (match) return match;
-          }
-          
-          if (normalized.includes('toma')) {
-            match = transportCompanies.find((c: any) => 
-              c.name.toLowerCase().includes('toma')
-            );
-            if (match) return match;
-          }
-          
-          // Fallback: create company if missing (lowest priority - auto-recovery)
-          return null;
-        };
-        
-        let targetCompany = findCompanyByName(selectedCompany);
-        
-        // AUTO-RECOVERY: If company doesn't exist, create it automatically
-        if (!targetCompany) {
-          console.log(`🔄 RECUPERARE AUTOMATĂ: Compania "${selectedCompany}" nu există. O creez automat...`);
-          
-          const newCompanyData = {
-            name: selectedCompany.toUpperCase(),
-            commissionRate: selectedCompany.toLowerCase().includes('fast') ? 0.02 : 0.04,
-            cif: '',
-            tradeRegisterNumber: '',
-            address: '',
-            location: '',
-            county: '',
-            country: 'Romania',
-            contact: '',
-            isMainCompany: false
-          };
-          
-          try {
-            const createResponse = await fetch('/api/companies', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(newCompanyData)
-            });
-            
-            if (createResponse.ok) {
-              const newCompany = await createResponse.json();
-              console.log(`✅ RECUPERARE REUȘITĂ: Compania "${selectedCompany}" creată cu ID: ${newCompany.id}`);
-              targetCompany = newCompany;
-              targetCompanyId = newCompany.id;
-            } else {
-              console.error('❌ RECUPERARE EȘUATĂ: Nu am putut crea compania automaticly');
-            }
-          } catch (error) {
-            console.error('❌ EROARE RECUPERARE:', error);
-          }
-        } else {
-          targetCompanyId = targetCompany.id;
-          console.log(`✅ Companie găsită: ${targetCompany.name} (ID: ${targetCompany.id})`);
         }
         
         if (targetCompanyId) {
-          console.log(`🎯 Compania găsită! ID: ${targetCompanyId} pentru "${selectedCompany}"`);
-          console.log('📤 Trimit cererea POST către /api/drivers cu:', {
-            name: driverName,
-            companyId: targetCompanyId
-          });
-          
           const response = await fetch('/api/drivers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -379,24 +282,11 @@ export function useTransportData() {
             })
           });
           
-          console.log('📥 Răspuns POST /api/drivers - status:', response.status);
-          
           if (response.ok) {
-            const newDriver = await response.json();
-            console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`, newDriver);
+            console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`);
             await loadDriversFromDatabase();
             return selectedCompany;
-          } else {
-            const errorText = await response.text();
-            console.error('❌ Eroare la adăugarea șoferului:', {
-              status: response.status,
-              statusText: response.statusText,
-              error: errorText
-            });
           }
-        } else {
-          console.error('❌ RECUPERARE COMPLETĂ EȘUATĂ pentru:', selectedCompany);
-          console.log('📋 Companiile disponibile:', companies.map((c: any) => `${c.name} (ID: ${c.id})`));
         }
       }
     } catch (error) {
@@ -438,21 +328,14 @@ export function useTransportData() {
     
     // Try to suggest a company based on similar drivers
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
-    
-    // Debug available companies
-    console.log(`🔍 DEBUG: availableCompanies array:`, availableCompanies);
-    console.log(`🔍 DEBUG: availableCompanies.length:`, availableCompanies.length);
-    
-    const finalSuggestion = suggestedCompany || (availableCompanies.length > 0 ? availableCompanies[0] : 'Companie Nouă');
+    const finalSuggestion = suggestedCompany || 'Fast Express'; // Default suggestion
     
     console.log(`   Sugestie: ${finalSuggestion}`);
     
     // Add to pending mappings if not already there
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
     if (!isAlreadyPending) {
-      // Use companies from database for this tenant instead of hardcoded list
-      const allCompanies = availableCompanies.length > 0 ? availableCompanies : ['Companie Nouă'];
-      console.log(`🔍 DEBUG: allCompanies for alternatives:`, allCompanies);
+      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
@@ -590,43 +473,10 @@ export function useTransportData() {
     return date >= twoYearsAgo && date <= now;
   };
 
-  // Extended Excel processing with multi-sheet support
+  // File processing - DO NOT MODIFY!
   const parseExcel = (arrayBuffer: ArrayBuffer) => {
     try {
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-      console.log('📊 Excel fișier detectat cu taburile:', workbook.SheetNames);
-      
-      // Check if this is a Payment Details format
-      if (workbook.SheetNames.includes('Payment Details')) {
-        console.log('🔍 Detectat format Payment Details - folosesc tabul specific');
-        const worksheet = workbook.Sheets['Payment Details'];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
-        if (jsonData.length < 2) return [];
-        
-        // For Payment Details format: VRID on column E (index 4), Amount on column AF (index 31)
-        const processedData: any[] = [];
-        
-        for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i] as any[];
-          const vrid = row[4]; // Column E (0-indexed = 4)
-          const amount = row[31]; // Column AF (0-indexed = 31)
-          
-          if (vrid && amount && !isNaN(parseFloat(amount))) {
-            processedData.push({
-              'Tour ID': vrid,
-              'Load ID': vrid, // Backup field
-              'Gross Pay Amt (Excl. Tax)': parseFloat(amount)
-            });
-          }
-        }
-        
-        console.log(`✅ Procesat Payment Details: ${processedData.length} înregistrări găsite`);
-        console.log('📋 Primele 3 înregistrări:', processedData.slice(0, 3));
-        return processedData;
-      }
-      
-      // Standard format processing (existing logic)
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -636,16 +486,13 @@ export function useTransportData() {
       const headers = jsonData[0] as string[];
       const rows = jsonData.slice(1);
       
-      const result = rows.map(row => {
+      return rows.map(row => {
         const obj: any = {};
         headers.forEach((header, index) => {
           obj[header] = (row as any[])[index] || '';
         });
         return obj;
       }).filter(row => Object.values(row).some(val => val !== '' && val !== null && val !== undefined));
-      
-      console.log(`✅ Procesat format standard: ${result.length} înregistrări găsite`);
-      return result;
       
     } catch (error) {
       console.error('Eroare la parsarea Excel:', error);
@@ -695,23 +542,10 @@ export function useTransportData() {
       
       if (type === 'trip') {
         setTripData(data);
-        setUploadedFileNames(prev => ({ ...prev, trip: file.name }));
       } else if (type === 'invoice7') {
         setInvoice7Data(data);
-        setUploadedFileNames(prev => ({ ...prev, invoice7: file.name }));
       } else if (type === 'invoice30') {
-        // Support multiple invoice30 files - combine with existing data
-        setInvoice30Data((prev: any) => {
-          if (prev && prev.length > 0) {
-            console.log(`🔄 Combinând cu datele existente: ${prev.length} + ${data.length} înregistrări`);
-            return [...prev, ...data];
-          }
-          return data;
-        });
-        setUploadedFileNames(prev => ({ 
-          ...prev, 
-          invoice30: prev.invoice30 ? [...prev.invoice30, file.name] : [file.name]
-        }));
+        setInvoice30Data(data);
       }
       
     } catch (error: any) {
@@ -724,9 +558,8 @@ export function useTransportData() {
 
   // Data processing with dynamic driver loading
   const processData = async () => {
-    // Allow processing with trip + at least one invoice type
-    if (!tripData || (!invoice7Data && !invoice30Data)) {
-      alert('Vă rugăm să încărcați fișierul TRIP și cel puțin o factură (7 zile sau 30 zile).');
+    if (!tripData || !invoice7Data || !invoice30Data) {
+      alert('Vă rugăm să încărcați toate fișierele necesare.');
       return;
     }
 
@@ -737,8 +570,8 @@ export function useTransportData() {
 
     setLoading(true);
     
-    // Use current driver data - avoid reloading to prevent infinite loops
-    console.log('📊 Folosind datele curente ale șoferilor pentru procesare');
+    // Load fresh driver data before processing
+    await loadDriversFromDatabase();
     
     const results: any = {};
     const unmatchedVrids: string[] = []; // Track unmatched VRIDs for historical search
@@ -765,19 +598,16 @@ export function useTransportData() {
           let company = 'Unmatched';
           if (tripRecord && tripRecord['Driver']) {
             const foundCompany = extractAndFindDriver(tripRecord['Driver']);
-            console.log(`🔍 PROCESARE VRID ${vrid}: Driver="${tripRecord['Driver']}" → Companie="${foundCompany}"`);
-            
             if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
-              console.log(`✅ VRID ${vrid} ASIGNAT la ${company}`);
             } else if (foundCompany === 'Pending') {
               console.log(`VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - verificați mapările pendente`);
               company = 'Pending Mapping'; // Special category for pending drivers
             } else {
-              console.log(`❌ VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
+              console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
             }
           } else {
-            console.log(`❌ VRID ${vrid} - Nu s-a găsit în trip data sau nu are driver`);
+            console.log(`VRID ${vrid} - Nu s-a găsit în trip data sau nu are driver`);
             unmatchedVrids.push(vrid); // Track for historical search
           }
 
@@ -814,13 +644,8 @@ export function useTransportData() {
         });
       };
 
-      // Process available invoice types
-      if (invoice7Data) {
-        processInvoice(invoice7Data, '7_days');
-      }
-      if (invoice30Data) {
-        processInvoice(invoice30Data, '30_days');
-      }
+      processInvoice(invoice7Data, '7_days');
+      processInvoice(invoice30Data, '30_days');
 
       setProcessedData(results);
       setSelectedWeek(processingWeek);
@@ -858,17 +683,16 @@ export function useTransportData() {
             weekLabel: processingWeek,
             processedData: results,
             tripData: tripData, // Save raw TRIP data
-            invoice7Data: invoice7Data || [], // Save raw invoice data (empty if not provided)
-            invoice30Data: invoice30Data || [], // Save raw invoice data (empty if not provided)
+            invoice7Data: invoice7Data, // Save raw invoice data
+            invoice30Data: invoice30Data, // Save raw invoice data
             tripDataCount: tripData.length,
-            invoice7Count: invoice7Data?.length || 0,
-            invoice30Count: invoice30Data?.length || 0
+            invoice7Count: invoice7Data.length,
+            invoice30Count: invoice30Data.length
           })
         });
         console.log(`💾 Date salvate pentru săptămâna ${processingWeek} cu ${tripData.length} cursuri în istoric`);
         
-        // Create company balances automatically after saving data
-        console.log('💰 Creez automat bilanțurile companiilor...');
+        // Create company balances
         await createCompanyBalances(processingWeek, results);
       } catch (error) {
         console.log('Eroare la salvarea datelor:', error);
@@ -1162,8 +986,6 @@ export function useTransportData() {
         return;
       }
 
-      console.log('🔍 Processed data keys:', Object.keys(processedData));
-
       // Extract company totals from processed data
       const companyTotals: Record<string, { totalInvoiced: number, drivers: string[] }> = {};
 
@@ -1172,66 +994,46 @@ export function useTransportData() {
         if (companyName === 'Unmatched' || companyName === 'Totals') return;
         
         const companyData = processedData[companyName];
-        console.log(`📊 Company ${companyName} data:`, companyData);
-        
-        if (companyData && typeof companyData === 'object') {
-          // Try multiple ways to extract total - look for Total_7_days + Total_30_days or other patterns
-          let totalInvoiced = 0;
+        if (companyData && companyData.Totals) {
+          const totalInvoiced = parseFloat(companyData.Totals.Total_without_commission) || 0;
+          const drivers = Object.keys(companyData).filter(key => key !== 'Totals');
           
-          if (companyData.Total_7_days !== undefined || companyData.Total_30_days !== undefined) {
-            totalInvoiced = (companyData.Total_7_days || 0) + (companyData.Total_30_days || 0);
-          } else if (companyData.Totals && companyData.Totals.Total_without_commission) {
-            totalInvoiced = parseFloat(companyData.Totals.Total_without_commission) || 0;
-          } else if (companyData.total) {
-            totalInvoiced = parseFloat(companyData.total) || 0;
-          }
-          
-          const drivers = Object.keys(companyData).filter(key => key !== 'Totals' && key !== 'Total_7_days' && key !== 'Total_30_days' && key !== 'Total_comision');
-          
-          if (totalInvoiced > 0) {
-            companyTotals[companyName] = {
-              totalInvoiced,
-              drivers
-            };
-            console.log(`💰 ${companyName}: ${totalInvoiced} EUR (${drivers.length} șoferi)`);
-          }
+          companyTotals[companyName] = {
+            totalInvoiced,
+            drivers
+          };
         }
       });
 
       // Create balance entries for each company
       for (const [companyName, data] of Object.entries(companyTotals)) {
-        try {
-          const response = await fetch('/api/company-balances', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              companyName,
-              weekLabel,
-              totalInvoiced: data.totalInvoiced.toString(),
-              totalPaid: '0',
-              outstandingBalance: data.totalInvoiced.toString(),
-              paymentStatus: 'pending'
-            }),
-          });
-          
-          if (response.ok) {
-            console.log(`✅ Bilanț creat pentru ${companyName}: ${data.totalInvoiced} EUR`);
-          } else {
-            const error = await response.text();
-            console.error(`❌ Eroare la crearea bilanțului pentru ${companyName}:`, error);
+        if (data.totalInvoiced > 0) {
+          try {
+            await fetch('/api/company-balances', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                companyName,
+                weekLabel,
+                totalInvoiced: data.totalInvoiced.toString(),
+                totalPaid: '0',
+                outstandingBalance: data.totalInvoiced.toString(),
+                paymentStatus: 'pending'
+              }),
+            });
+            
+            console.log(`💰 Bilanț creat pentru ${companyName}: ${data.totalInvoiced} EUR`);
+          } catch (error) {
+            console.error(`Eroare la crearea bilanțului pentru ${companyName}:`, error);
           }
-        } catch (error) {
-          console.error(`❌ Eroare la crearea bilanțului pentru ${companyName}:`, error);
         }
       }
     } catch (error) {
-      console.error('❌ Eroare la crearea bilanțurilor:', error);
+      console.error('Eroare la crearea bilanțurilor:', error);
     }
   };
-
-
 
   return {
     // State
@@ -1251,7 +1053,6 @@ export function useTransportData() {
     tripFileRef,
     invoice7FileRef,
     invoice30FileRef,
-    uploadedFileNames,
     
     // Actions
     setActiveTab,

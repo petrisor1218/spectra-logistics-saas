@@ -21,9 +21,8 @@ export function TransportOrderModal({
   const [orderDate, setOrderDate] = useState('');
   const [route, setRoute] = useState('DE-BE-NL');
   const [loading, setLoading] = useState(false);
-  const [mainCompany, setMainCompany] = useState<any>(null);
 
-  // Load auto-generated order number, suggested date, and main company when modal opens
+  // Load auto-generated order number and suggested date when modal opens
   useEffect(() => {
     if (isOpen) {
       // Load next order number
@@ -31,12 +30,6 @@ export function TransportOrderModal({
         .then(res => res.json())
         .then(data => setOrderNumber(data.orderNumber.toString()))
         .catch(err => console.error('Error loading order number:', err));
-      
-      // Load main company
-      fetch('/api/main-company')
-        .then(res => res.json())
-        .then(data => setMainCompany(data))
-        .catch(err => console.error('Error loading main company:', err));
       
       // Calculate suggested date from week label
       if (selectedWeek) {
@@ -122,7 +115,7 @@ export function TransportOrderModal({
         },
         body: JSON.stringify({
           orderNumber: orderNumber.trim(),
-          companyName: company, // Keep the processing company name for identification
+          companyName: company,
           orderDate: new Date(orderDate).toISOString(),
           weekLabel: selectedWeek,
           vrids: vrids,
@@ -161,7 +154,7 @@ export function TransportOrderModal({
               <h2 className="text-2xl font-bold text-white">
                 Comandă de Transport
               </h2>
-              <p className="text-gray-400">{mainCompany?.name || company}</p>
+              <p className="text-gray-400">{company}</p>
             </div>
           </div>
           

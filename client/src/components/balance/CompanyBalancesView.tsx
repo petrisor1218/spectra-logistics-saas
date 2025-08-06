@@ -154,35 +154,19 @@ export default function CompanyBalancesView() {
   const { toast } = useToast();
 
   const { data: balances = [], isLoading } = useQuery({
-    queryKey: ['/api/company-balances', Date.now()], // Force fresh data
+    queryKey: ['/api/company-balances'],
     queryFn: async () => {
-      const response = await fetch(`/api/company-balances?t=${Date.now()}`, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
+      const response = await fetch('/api/company-balances');
       if (!response.ok) {
         throw new Error('Failed to fetch balances');
       }
-      const data = await response.json();
-      console.log('🔍 Fetched balances:', data);
-      return data;
+      return response.json();
     },
-    staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache results
     refetchInterval: 30000, // Refresh every 30 seconds
   }) as { data: CompanyBalance[], isLoading: boolean };
 
   // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
-    // Check if weekLabel is valid
-    if (!weekLabel || typeof weekLabel !== 'string') {
-      return new Date(); // Return current date as fallback
-    }
-    
     // Extract start date from "DD mmm. - DD mmm." format
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
@@ -199,33 +183,14 @@ export default function CompanyBalancesView() {
     return new Date(year, month, day);
   };
 
-  // Use real company names from the existing balances instead of forcing everything to Fast Express
+  // Group balances by company and sort each company's balances chronologically (most recent first)
   const balancesByCompany = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance) => {
-    console.log('📊 Processing balance:', balance);
-    
-    // Try to extract real company name from existing data or use a smart mapping
-    let companyName = balance.companyName;
-    
-    // Skip any balance entries with corrupted company names
-    if (companyName === 'Company_null' || !companyName || companyName.includes('null')) {
-      console.log(`⏭️ Skipping corrupted balance entry with company: "${companyName}"`);
-      return acc; // Skip this balance entirely
+    if (!acc[balance.companyName]) {
+      acc[balance.companyName] = [];
     }
-    
-    if (!acc[companyName]) {
-      acc[companyName] = [];
-    }
-    
-    // Add balance with corrected company name
-    acc[companyName].push({
-      ...balance,
-      companyName
-    });
-    
+    acc[balance.companyName].push(balance);
     return acc;
   }, {});
-  
-  console.log('📋 Balances by company:', balancesByCompany);
 
   // Sort balances within each company by date (most recent first)
   Object.keys(balancesByCompany).forEach(companyName => {
@@ -242,7 +207,7 @@ export default function CompanyBalancesView() {
   const totalInvoiced = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalInvoiced || '0'), 0);
   const totalPaid = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
-    sum + parseFloat(balance.amountPaid || '0'), 0);
+    sum + parseFloat(balance.totalPaid || '0'), 0);
 
   const generateBalances = useMutation({
     mutationFn: async () => {
@@ -410,15 +375,15 @@ export default function CompanyBalancesView() {
               <CardContent>
                 <div className="space-y-3">
                   {companyBalances.map((balance) => (
-                    <div key={`${balance.id}-${balance.companyName}-${balance.weekLabel}`} 
+                    <div key={`${balance.companyName}-${balance.weekLabel}`} 
                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        {getStatusIcon(balance.status || 'pending')}
+                        {getStatusIcon(balance.paymentStatus || 'pending')}
                         <div>
                           <div className="font-medium">{balance.weekLabel}</div>
                           <div className="text-sm text-muted-foreground">
                             Facturat: {formatCurrency(parseFloat(balance.totalInvoiced || '0'))} | 
-                            Plătit: {formatCurrency(parseFloat(balance.amountPaid || '0'))}
+                            Plătit: {formatCurrency(parseFloat(balance.totalPaid || '0'))}
                           </div>
                         </div>
                       </div>
@@ -427,7 +392,7 @@ export default function CompanyBalancesView() {
                           <div className="font-semibold">
                             {formatCurrency(parseFloat(balance.outstandingBalance || '0'))}
                           </div>
-                          {getStatusBadge(balance.status || 'pending')}
+                          {getStatusBadge(balance.paymentStatus || 'pending')}
                         </div>
                         {parseFloat(balance.outstandingBalance || '0') > 0 && (
                           <Button
