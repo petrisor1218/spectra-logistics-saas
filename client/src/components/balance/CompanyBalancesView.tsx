@@ -190,19 +190,12 @@ export default function CompanyBalancesView() {
     return new Date(year, month, day);
   };
 
-  // Map company names for "Company_null" entries using a rotating assignment
-  const realCompanyNames = ['Stef Trans S.R.L.', 'De Cargo Sped S.R.L.', 'Toma SRL', 'FAST EXPRESS'];
-  
-  // Group balances by company with mapped names
-  const balancesByCompany = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance, index: number) => {
+  // Group all balances under "Fast Express" to match the original design
+  const balancesByCompany = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance) => {
     console.log('📊 Processing balance:', balance);
     
-    // Map "Company_null" to real company names based on balance characteristics
-    let displayCompanyName = balance.companyName;
-    if (balance.companyName === 'Company_null') {
-      // Use index-based mapping to distribute across real companies
-      displayCompanyName = realCompanyNames[index % realCompanyNames.length];
-    }
+    // Map all "Company_null" entries to "Fast Express" to match original interface
+    const displayCompanyName = 'Fast Express';
     
     if (!acc[displayCompanyName]) {
       acc[displayCompanyName] = [];
