@@ -108,6 +108,15 @@ export interface IStorage {
   // Order numbering methods
   getNextOrderNumber(): Promise<number>;
   initializeOrderSequence(): Promise<void>;
+  
+  // Company balance methods
+  getCompanyBalances(): Promise<CompanyBalance[]>;
+  getAllCompanyBalances(): Promise<CompanyBalance[]>;
+  getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined>;
+  createCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance>;
+  createOrUpdateCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance>;
+  updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance>;
+  generateCompanyBalancesFromCalendarData(): Promise<CompanyBalance[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -645,9 +654,14 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Company balance methods
+  // Company balance methods 
+  async getAllCompanyBalances(): Promise<CompanyBalance[]> {
+    return this.getCompanyBalances();
+  }
+
   async getCompanyBalances(): Promise<CompanyBalance[]> {
     const dbConn = this.getDb();
-    return await dbConn.select().from(companyBalances).orderBy(desc(companyBalances.lastUpdated));
+    return await dbConn.select().from(companyBalances).orderBy(desc(companyBalances.createdAt));
   }
 
   async getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined> {

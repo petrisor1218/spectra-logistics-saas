@@ -58,18 +58,31 @@ export function createTenantDetectionMiddleware(storage: IStorage) {
         });
       }
 
-      // Obține utilizatorul din baza de date (check both storages)
-      let user = await storage.getUser(req.session.userId);
+      // Obține utilizatorul din baza de date - PRIORITIZE SUPABASE pentru utilizatori noi
+      let user = null;
       
-      // If not found and this might be user 4 (Petrisor), check Supabase
-      if (!user && req.session.userId === 4) {
+      // Pentru petrisor (ID: 1), încearcă direct în SupabaseMainStorage
+      if (req.session.userId === 1) {
         try {
-          const { supabaseMultiTenantManager } = await import('./supabase-multi-tenant-manager.js');
           const { SupabaseMainStorage } = await import('./supabase-main-storage.js');
-          const supabaseMainStorage = new SupabaseMainStorage(supabaseMultiTenantManager.getMainSupabase());
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+          const supabaseMainStorage = new SupabaseMainStorage(supabase);
           user = await supabaseMainStorage.getUser(req.session.userId);
+          
+          if (user) {
+            console.log(`🎯 ISOLATION: Found user ${user.username} (ID: ${user.id}) in Supabase`);
+          }
         } catch (error) {
-          console.warn('Could not check Supabase for user 4:', error);
+          console.warn('Could not check Supabase for user 1:', error);
+        }
+      }
+      
+      // Dacă nu se găsește în Supabase, verifică în storage-ul vechi
+      if (!user) {
+        user = await storage.getUser(req.session.userId);
+        if (user) {
+          console.log(`🎯 ISOLATION: Found user ${user.username} (ID: ${user.id}) in legacy storage`);
         }
       }
       

@@ -172,8 +172,13 @@ export class SupabaseMainStorage {
 
   async createCompany(company: InsertCompany): Promise<Company> {
     try {
+      // Map camelCase fields to Supabase snake_case schema
       const companyData = {
-        ...company,
+        name: company.name,
+        commission_rate: parseFloat(company.commissionRate || '0.04'), // Correct field name for Supabase
+        cif: company.cif,
+        trade_registry: company.tradeRegisterNumber,
+        address: company.address,
         tenant_id: 'main'
       };
 
@@ -184,7 +189,22 @@ export class SupabaseMainStorage {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Map response back to camelCase for consistency
+      return {
+        id: data.id,
+        name: data.name,
+        commissionRate: data.commission_rate?.toString() || '0.04',
+        cif: data.cif,
+        tradeRegisterNumber: data.trade_registry,
+        address: data.address,
+        location: data.location,
+        county: data.county,
+        country: data.country || 'Romania',
+        contact: data.contact,
+        isMainCompany: data.is_main_company || false,
+        createdAt: new Date(data.created_at)
+      } as Company;
     } catch (error) {
       console.error(`❌ Error creating company:`, error);
       throw error;

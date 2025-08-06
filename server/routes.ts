@@ -478,7 +478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/companies", async (req: TenantRequest, res) => {
     try {
-      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
+      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_ALL ? supabaseMainStorage : storage);
       const companyData = { ...req.body, tenantId: req.tenantId };
       
       const company = await tenantStorage.createCompany(companyData);
@@ -498,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 🔒 PAYMENTS - Complete tenant isolation
   app.get("/api/payments", async (req: TenantRequest, res) => {
     try {
-      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
+      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_ALL ? supabaseMainStorage : storage);
       const { weekLabel } = req.query;
       
       let payments: any[] = [];
@@ -520,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/payments", async (req: TenantRequest, res) => {
     try {
-      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_MAIN && req.user?.id === 4 ? supabaseMainStorage : storage);
+      const tenantStorage = getTenantStorage(req, USE_SUPABASE_FOR_ALL ? supabaseMainStorage : storage);
       const paymentData = { ...req.body, tenantId: req.tenantId };
       
       const payment = await tenantStorage.createPayment(paymentData);
