@@ -675,15 +675,17 @@ export class TenantStorageSimple implements IStorage {
   }
 
   async createCompanyBalance(balance: InsertCompanyBalance): Promise<CompanyBalance> {
+    console.log(`💰 Creating balance for tenant ${this.tenantId}:`, balance);
+    
     const result = await this.db.execute(
       sql`
         INSERT INTO ${sql.identifier(this.tenantId)}.company_balances 
-        (company_name, week_label, total_invoiced, total_paid, outstanding_balance, payment_status)
+        (company_name, week_label, total_invoiced, amount_paid, outstanding_balance, status)
         VALUES (
           ${balance.companyName},
           ${balance.weekLabel},
           ${balance.totalInvoiced},
-          ${balance.totalPaid || 0},
+          ${balance.totalPaid || '0'},
           ${balance.outstandingBalance},
           ${balance.paymentStatus || 'pending'}
         )
@@ -691,6 +693,7 @@ export class TenantStorageSimple implements IStorage {
       `
     );
     const balances = this.extractRows(result);
+    console.log(`✅ Balance created successfully for ${balance.companyName}`);
     return balances[0] as CompanyBalance;
   }
 
@@ -702,9 +705,9 @@ export class TenantStorageSimple implements IStorage {
           company_name = COALESCE(${balance.companyName}, company_name),
           week_label = COALESCE(${balance.weekLabel}, week_label),
           total_invoiced = COALESCE(${balance.totalInvoiced}, total_invoiced),
-          total_paid = COALESCE(${balance.totalPaid}, total_paid),
+          amount_paid = COALESCE(${balance.totalPaid}, amount_paid),
           outstanding_balance = COALESCE(${balance.outstandingBalance}, outstanding_balance),
-          payment_status = COALESCE(${balance.paymentStatus}, payment_status)
+          status = COALESCE(${balance.paymentStatus}, status)
         WHERE id = ${id}
         RETURNING *
       `
