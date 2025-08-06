@@ -212,7 +212,7 @@ export default function CompanyBalancesView() {
   const totalInvoiced = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalInvoiced || '0'), 0);
   const totalPaid = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
-    sum + parseFloat(balance.amountPaid || balance.totalPaid || '0'), 0);
+    sum + parseFloat(balance.amountPaid || '0'), 0);
 
   const generateBalances = useMutation({
     mutationFn: async () => {
@@ -383,12 +383,12 @@ export default function CompanyBalancesView() {
                     <div key={`${balance.companyName}-${balance.weekLabel}`} 
                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        {getStatusIcon(balance.paymentStatus || 'pending')}
+                        {getStatusIcon(balance.status || 'pending')}
                         <div>
                           <div className="font-medium">{balance.weekLabel}</div>
                           <div className="text-sm text-muted-foreground">
                             Facturat: {formatCurrency(parseFloat(balance.totalInvoiced || '0'))} | 
-                            Plătit: {formatCurrency(parseFloat(balance.totalPaid || '0'))}
+                            Plătit: {formatCurrency(parseFloat(balance.amountPaid || '0'))}
                           </div>
                         </div>
                       </div>
@@ -397,7 +397,7 @@ export default function CompanyBalancesView() {
                           <div className="font-semibold">
                             {formatCurrency(parseFloat(balance.outstandingBalance || '0'))}
                           </div>
-                          {getStatusBadge(balance.paymentStatus || 'pending')}
+                          {getStatusBadge(balance.status || 'pending')}
                         </div>
                         {parseFloat(balance.outstandingBalance || '0') > 0 && (
                           <Button

@@ -685,9 +685,9 @@ export class TenantStorageSimple implements IStorage {
           ${balance.companyName},
           ${balance.weekLabel},
           ${balance.totalInvoiced},
-          ${balance.totalPaid || '0'},
+          ${balance.amountPaid || balance.totalPaid || '0'},
           ${balance.outstandingBalance},
-          ${balance.paymentStatus || 'pending'}
+          ${balance.status || balance.paymentStatus || 'pending'}
         )
         RETURNING *
       `

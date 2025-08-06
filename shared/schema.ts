@@ -91,10 +91,11 @@ export const companyBalances = pgTable("company_balances", {
   companyName: varchar("company_name", { length: 100 }).notNull(),
   weekLabel: varchar("week_label", { length: 100 }).notNull(),
   totalInvoiced: decimal("total_invoiced", { precision: 10, scale: 2 }).notNull(), // Total amount invoiced
-  totalPaid: decimal("total_paid", { precision: 10, scale: 2 }).default("0"), // Amount paid so far
+  amountPaid: decimal("amount_paid", { precision: 10, scale: 2 }).default("0"), // Amount paid so far
   outstandingBalance: decimal("outstanding_balance", { precision: 10, scale: 2 }).notNull(), // Amount still owed
-  paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // 'pending', 'partial', 'paid'
-  lastUpdated: timestamp("last_updated").defaultNow(),
+  status: varchar("status", { length: 50 }).default("pending"), // 'pending', 'partial', 'paid'
+  paymentDate: timestamp("payment_date"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
