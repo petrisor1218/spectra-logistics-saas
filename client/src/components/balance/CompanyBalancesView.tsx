@@ -154,9 +154,16 @@ export default function CompanyBalancesView() {
   const { toast } = useToast();
 
   const { data: balances = [], isLoading } = useQuery({
-    queryKey: ['/api/company-balances'],
+    queryKey: ['/api/company-balances', Date.now()], // Force fresh data
     queryFn: async () => {
-      const response = await fetch('/api/company-balances');
+      const response = await fetch(`/api/company-balances?t=${Date.now()}`, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch balances');
       }
@@ -164,6 +171,8 @@ export default function CompanyBalancesView() {
       console.log('🔍 Fetched balances:', data);
       return data;
     },
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache results
     refetchInterval: 30000, // Refresh every 30 seconds
   }) as { data: CompanyBalance[], isLoading: boolean };
 
