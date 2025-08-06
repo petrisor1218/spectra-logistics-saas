@@ -197,19 +197,10 @@ export default function CompanyBalancesView() {
     // Try to extract real company name from existing data or use a smart mapping
     let companyName = balance.companyName;
     
-    if (companyName === 'Company_null' || !companyName) {
-      // Map based on patterns from your real data - use actual company names from the system
-      const invoiced = parseFloat(balance.totalInvoiced || '0');
-      
-      if (invoiced >= 2000 && invoiced <= 8000) {
-        companyName = 'Fast Express';
-      } else if (invoiced >= 8000 && invoiced <= 15000) {
-        companyName = 'Stef Trans S.R.L.';
-      } else if (invoiced >= 1000 && invoiced < 2000) {
-        companyName = 'De Cargo Sped S.R.L.';
-      } else {
-        companyName = 'Toma SRL';
-      }
+    // Skip any balance entries with corrupted company names
+    if (companyName === 'Company_null' || !companyName || companyName.includes('null')) {
+      console.log(`⏭️ Skipping corrupted balance entry with company: "${companyName}"`);
+      return acc; // Skip this balance entirely
     }
     
     if (!acc[companyName]) {
