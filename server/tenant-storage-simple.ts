@@ -323,26 +323,34 @@ export class TenantStorageSimple implements IStorage {
   }
 
   async createWeeklyProcessing(processing: InsertWeeklyProcessing): Promise<WeeklyProcessing> {
-    const result = await this.db.execute(
-      sql`
-        INSERT INTO ${sql.identifier(this.tenantId)}.weekly_processing 
-        (week_label, trip_data_count, invoice7_count, invoice30_count, processed_data, trip_data, invoice7_data, invoice30_data, processing_date)
-        VALUES (
-          ${processing.weekLabel},
-          ${processing.tripDataCount || 0},
-          ${processing.invoice7Count || 0},
-          ${processing.invoice30Count || 0},
-          ${JSON.stringify(processing.processedData)},
-          ${JSON.stringify(processing.tripData)},
-          ${JSON.stringify(processing.invoice7Data)},
-          ${JSON.stringify(processing.invoice30Data)},
-          CURRENT_TIMESTAMP
-        )
-        RETURNING *
-      `
-    );
-    const results = this.extractRows(result);
-    return results[0] as WeeklyProcessing;
+    console.log(`💾 TenantStorageSimple.createWeeklyProcessing - Tenant: ${this.tenantId}, Week: ${processing.weekLabel}`);
+    
+    try {
+      const result = await this.db.execute(
+        sql`
+          INSERT INTO ${sql.identifier(this.tenantId)}.weekly_processing 
+          (week_label, trip_data_count, invoice7_count, invoice30_count, processed_data, trip_data, invoice7_data, invoice30_data, processing_date)
+          VALUES (
+            ${processing.weekLabel},
+            ${processing.tripDataCount || 0},
+            ${processing.invoice7Count || 0},
+            ${processing.invoice30Count || 0},
+            ${JSON.stringify(processing.processedData || {})},
+            ${JSON.stringify(processing.tripData || [])},
+            ${JSON.stringify(processing.invoice7Data || [])},
+            ${JSON.stringify(processing.invoice30Data || [])},
+            CURRENT_TIMESTAMP
+          )
+          RETURNING *
+        `
+      );
+      const results = this.extractRows(result);
+      console.log(`✅ Weekly processing saved successfully for tenant ${this.tenantId}`);
+      return results[0] as WeeklyProcessing;
+    } catch (error) {
+      console.error(`❌ Error saving weekly processing for tenant ${this.tenantId}:`, error);
+      throw error;
+    }
   }
 
   async updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing> {

@@ -598,20 +598,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Weekly processing routes
-  app.post("/api/weekly-processing", async (req, res) => {
+  app.post("/api/weekly-processing", async (req: any, res) => {
     try {
-      const { weekLabel, data, processedAt } = req.body;
+      if (!req.session?.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      const { weekLabel, data, processedAt, tripData, invoice7Data, invoice30Data } = req.body;
       
       const weeklyProcessingData = {
         weekLabel,
         processingDate: processedAt ? new Date(processedAt) : new Date(),
-        tripDataCount: 0,
-        invoice7Count: 0, 
-        invoice30Count: 0,
-        processedData: data
+        tripDataCount: tripData?.length || 0,
+        invoice7Count: invoice7Data?.length || 0, 
+        invoice30Count: invoice30Data?.length || 0,
+        processedData: data,
+        tripData: tripData || [],
+        invoice7Data: invoice7Data || [],
+        invoice30Data: invoice30Data || []
       };
 
-      const savedProcessing = await storage.createWeeklyProcessing(weeklyProcessingData);
+      let savedProcessing;
+
+      // Use tenant-specific storage for saving
+      if (user.tenantId && user.tenantId !== 'main') {
+        const { multiTenantManager } = await import('./multi-tenant-manager.js');
+        const tenantStorage = await multiTenantManager.getTenantStorage(user.tenantId);
+        
+        savedProcessing = await tenantStorage.createWeeklyProcessing(weeklyProcessingData);
+        console.log(`💾 TENANT SAVE: Weekly processing saved for tenant ${user.tenantId}, week ${weekLabel}`);
+      } else {
+        savedProcessing = await storage.createWeeklyProcessing(weeklyProcessingData);
+        console.log(`💾 MAIN SAVE: Weekly processing saved for main user, week ${weekLabel}`);
+      }
+
       res.json(savedProcessing);
     } catch (error) {
       console.error("Error saving weekly processing:", error);
