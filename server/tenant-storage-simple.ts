@@ -326,27 +326,58 @@ export class TenantStorageSimple implements IStorage {
     console.log(`💾 TenantStorageSimple.createWeeklyProcessing - Tenant: ${this.tenantId}, Week: ${processing.weekLabel}`);
     
     try {
-      const result = await this.db.execute(
-        sql`
-          INSERT INTO ${sql.identifier(this.tenantId)}.weekly_processing 
-          (week_label, trip_data_count, invoice7_count, invoice30_count, processed_data, trip_data, invoice7_data, invoice30_data, processing_date)
-          VALUES (
-            ${processing.weekLabel},
-            ${processing.tripDataCount || 0},
-            ${processing.invoice7Count || 0},
-            ${processing.invoice30Count || 0},
-            ${JSON.stringify(processing.processedData || {})},
-            ${JSON.stringify(processing.tripData || [])},
-            ${JSON.stringify(processing.invoice7Data || [])},
-            ${JSON.stringify(processing.invoice30Data || [])},
-            CURRENT_TIMESTAMP
-          )
-          RETURNING *
-        `
+      // Check if record exists first
+      const existingResult = await this.db.execute(
+        sql`SELECT id FROM ${sql.identifier(this.tenantId)}.weekly_processing WHERE week_label = ${processing.weekLabel} LIMIT 1`
       );
-      const results = this.extractRows(result);
-      console.log(`✅ Weekly processing saved successfully for tenant ${this.tenantId}`);
-      return results[0] as WeeklyProcessing;
+      const existing = this.extractRows(existingResult);
+      
+      if (existing.length > 0) {
+        // Update existing record
+        console.log(`🔄 Updating existing record for week ${processing.weekLabel}`);
+        const result = await this.db.execute(
+          sql`
+            UPDATE ${sql.identifier(this.tenantId)}.weekly_processing 
+            SET 
+              trip_data_count = ${processing.tripDataCount || 0},
+              invoice7_count = ${processing.invoice7Count || 0},
+              invoice30_count = ${processing.invoice30Count || 0},
+              processed_data = ${JSON.stringify(processing.processedData || {})},
+              trip_data = ${JSON.stringify(processing.tripData || [])},
+              invoice7_data = ${JSON.stringify(processing.invoice7Data || [])},
+              invoice30_data = ${JSON.stringify(processing.invoice30Data || [])},
+              processing_date = CURRENT_TIMESTAMP
+            WHERE week_label = ${processing.weekLabel}
+            RETURNING *
+          `
+        );
+        const results = this.extractRows(result);
+        console.log(`✅ Weekly processing updated successfully for tenant ${this.tenantId}`);
+        return results[0] as WeeklyProcessing;
+      } else {
+        // Create new record
+        const result = await this.db.execute(
+          sql`
+            INSERT INTO ${sql.identifier(this.tenantId)}.weekly_processing 
+            (week_label, trip_data_count, invoice7_count, invoice30_count, processed_data, trip_data, invoice7_data, invoice30_data, processing_date)
+            VALUES (
+              ${processing.weekLabel},
+              ${processing.tripDataCount || 0},
+              ${processing.invoice7Count || 0},
+              ${processing.invoice30Count || 0},
+              ${JSON.stringify(processing.processedData || {})},
+              ${JSON.stringify(processing.tripData || [])},
+              ${JSON.stringify(processing.invoice7Data || [])},
+              ${JSON.stringify(processing.invoice30Data || [])},
+              CURRENT_TIMESTAMP
+            )
+            RETURNING *
+          `
+        );
+        const results = this.extractRows(result);
+        console.log(`✅ Weekly processing created successfully for tenant ${this.tenantId}`);
+        return results[0] as WeeklyProcessing;
+      }
     } catch (error) {
       console.error(`❌ Error saving weekly processing for tenant ${this.tenantId}:`, error);
       throw error;
