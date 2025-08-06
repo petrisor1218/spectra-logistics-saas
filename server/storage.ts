@@ -826,9 +826,11 @@ export class DatabaseStorage implements IStorage {
           company_name: balance.companyName,
           week_label: balance.weekLabel,
           total_invoiced: balance.totalInvoiced,
-          amount_paid: balance.amountPaid, // Now using the new column
+          amount_paid: balance.amountPaid,
           outstanding_balance: balance.outstandingBalance,
-          status: balance.status
+          status: balance.status,
+          payment_date: null,
+          notes: ""
         }));
         
         const createdBalances = await db
