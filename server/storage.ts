@@ -766,8 +766,9 @@ export class DatabaseStorage implements IStorage {
         
         // Extract company totals from processed data
         Object.keys(processedData).forEach(companyName => {
-          if (companyName === 'Unmatched' || companyName === 'Totals') {
-            console.log(`⏭️ Skipping ${companyName} (not a real company)`);
+          // Skip invalid company names
+          if (!companyName || companyName.trim() === '' || companyName === 'Unmatched' || companyName === 'Totals') {
+            console.log(`⏭️ Skipping invalid company: "${companyName}"`);
             return;
           }
           
@@ -803,14 +804,19 @@ export class DatabaseStorage implements IStorage {
               paymentStatus = 'partial';
             }
             
-            balancesToCreate.push({
-              companyName,
-              weekLabel: week.weekLabel,
-              totalInvoiced: totalInvoiced.toString(),
-              amountPaid: totalPaid.toString(),
-              outstandingBalance: outstandingBalance.toString(),
-              status: paymentStatus
-            });
+            // Final validation before adding to creation list
+            if (companyName && companyName.trim() !== '' && week.weekLabel && week.weekLabel.trim() !== '') {
+              balancesToCreate.push({
+                companyName: companyName.trim(),
+                weekLabel: week.weekLabel.trim(),
+                totalInvoiced: totalInvoiced.toString(),
+                amountPaid: totalPaid.toString(),
+                outstandingBalance: outstandingBalance.toString(),
+                status: paymentStatus
+              });
+            } else {
+              console.log(`❌ Skipping invalid balance entry: company="${companyName}", week="${week.weekLabel}"`);
+            }
             
             console.log(`✅ Created balance entry for ${companyName} - ${week.weekLabel}: €${totalInvoiced}`);
           }
