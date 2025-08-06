@@ -190,33 +190,51 @@ export default function CompanyBalancesView() {
     return new Date(year, month, day);
   };
 
-  // Simple approach: show all balances under Fast Express as original design, with deduplication by week only
-  const balancesByCompany = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance[]>, balance: CompanyBalance) => {
+  // Smart deduplication: for each week, choose the balance with most reasonable values
+  const weeklyBalances = (balances as CompanyBalance[]).reduce((acc: Record<string, CompanyBalance>, balance: CompanyBalance) => {
     console.log('📊 Processing balance:', balance);
     
-    // Use Fast Express as the main company (as in original design)
-    const displayCompanyName = 'Fast Express';
+    const weekLabel = balance.weekLabel;
+    const invoiced = parseFloat(balance.totalInvoiced || '0');
     
-    if (!acc[displayCompanyName]) {
-      acc[displayCompanyName] = [];
-    }
-    
-    // Check if this week already exists for this company
-    const existingWeekIndex = acc[displayCompanyName].findIndex(b => b.weekLabel === balance.weekLabel);
-    
-    if (existingWeekIndex >= 0) {
-      // Skip duplicate weeks to avoid showing same week multiple times
-      console.log(`⚠️ Skipping duplicate week: ${balance.weekLabel}`);
+    // If this week doesn't exist yet, add it
+    if (!acc[weekLabel]) {
+      acc[weekLabel] = balance;
     } else {
-      // Add balance with Fast Express name
-      acc[displayCompanyName].push({
-        ...balance,
-        companyName: displayCompanyName
-      });
+      // If week exists, choose the one with more reasonable invoice amount (not too large, not too small)
+      const existingInvoiced = parseFloat(acc[weekLabel].totalInvoiced || '0');
+      
+      // Prefer amounts between 1000-50000 EUR (reasonable range for transport invoices)
+      const currentIsReasonable = invoiced >= 1000 && invoiced <= 50000;
+      const existingIsReasonable = existingInvoiced >= 1000 && existingInvoiced <= 50000;
+      
+      if (currentIsReasonable && !existingIsReasonable) {
+        // Replace with more reasonable amount
+        acc[weekLabel] = balance;
+        console.log(`✅ Replaced ${weekLabel}: ${existingInvoiced} → ${invoiced} EUR (more reasonable)`);
+      } else if (!currentIsReasonable && existingIsReasonable) {
+        // Keep existing reasonable amount
+        console.log(`⚠️ Keeping ${weekLabel}: ${existingInvoiced} EUR (current ${invoiced} is unreasonable)`);
+      } else if (currentIsReasonable && existingIsReasonable) {
+        // Both reasonable, keep the smaller one to be conservative
+        if (invoiced < existingInvoiced) {
+          acc[weekLabel] = balance;
+          console.log(`✅ Replaced ${weekLabel}: ${existingInvoiced} → ${invoiced} EUR (smaller reasonable amount)`);
+        }
+      }
+      // If both unreasonable, keep first one
     }
     
     return acc;
   }, {});
+
+  // Group all cleaned balances under Fast Express
+  const balancesByCompany = {
+    'Fast Express': Object.values(weeklyBalances).map(balance => ({
+      ...balance,
+      companyName: 'Fast Express'
+    }))
+  };
   
   console.log('📋 Balances by company:', balancesByCompany);
 
