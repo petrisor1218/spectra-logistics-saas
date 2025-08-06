@@ -810,9 +810,19 @@ export class DatabaseStorage implements IStorage {
       await db.delete(companyBalances);
       
       if (balancesToCreate.length > 0) {
+        // Map to database column names for compatibility
+        const dbCompatibleBalances = balancesToCreate.map(balance => ({
+          company_name: balance.companyName,
+          week_label: balance.weekLabel,
+          total_invoiced: balance.totalInvoiced,
+          amount_paid: balance.amountPaid, // Now using the new column
+          outstanding_balance: balance.outstandingBalance,
+          status: balance.status
+        }));
+        
         const createdBalances = await db
           .insert(companyBalances)
-          .values(balancesToCreate)
+          .values(dbCompatibleBalances)
           .returning();
         
         console.log(`✅ Generated ${createdBalances.length} company balances from calendar data`);
