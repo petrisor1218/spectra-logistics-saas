@@ -16,6 +16,7 @@ import WeeklyReportsView from "@/components/transport/WeeklyReportsView";
 import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
+import PaymentHistoryView from "@/components/payment/PaymentHistoryView";
 import { useTransportData } from "@/hooks/useTransportData";
 
 export default function Home() {
@@ -84,7 +85,7 @@ export default function Home() {
     { id: 'orders', label: 'Comenzi Transport', icon: Truck },
     { id: 'management', label: 'Gestionare', icon: Settings },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'history', label: 'Istoric Săptămânal', icon: History }
+    { id: 'history', label: 'Istoric Plăți', icon: History }
   ];
 
   return (
@@ -432,15 +433,15 @@ export default function Home() {
               />
             )}
 
-            {/* Weekly History Tab */}
+            {/* Payment History Tab */}
             {activeTab === 'history' && (
-              <WeeklyHistorySection
-                weeklyPaymentHistory={weeklyPaymentHistory}
-                loadAllPaymentHistory={loadAllPaymentHistory}
-                loadPaymentsForWeek={loadPaymentsForWeek}
-                getWeekOptions={getWeekOptions}
-                loadWeeklyProcessingData={loadWeeklyProcessingByWeek}
-              />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <PaymentHistoryView />
+              </motion.div>
             )}
           </motion.div>
         </div>

@@ -254,7 +254,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePayment(id: number): Promise<void> {
+    console.log(`🗑️ Deleting payment with id: ${id}`);
+    
+    // First get the payment details for logging and balance updates
+    const [paymentToDelete] = await db.select().from(payments).where(eq(payments.id, id));
+    
+    if (!paymentToDelete) {
+      throw new Error(`Payment with id ${id} not found`);
+    }
+    
+    console.log(`🗑️ Found payment to delete: ${paymentToDelete.companyName} - ${paymentToDelete.weekLabel} - ${paymentToDelete.amount} EUR`);
+    
+    // Delete from payments table
     await db.delete(payments).where(eq(payments.id, id));
+    console.log(`✅ Payment deleted from payments table`);
+    
+    // Update company balance by subtracting the payment amount
+    const existingBalance = await this.getCompanyBalanceByWeek(
+      paymentToDelete.companyName, 
+      paymentToDelete.weekLabel || ""
+    );
+    
+    if (existingBalance) {
+      const newTotalPaid = Math.max(0, parseFloat(existingBalance.totalPaid) - parseFloat(paymentToDelete.amount));
+      const newOutstandingBalance = parseFloat(existingBalance.totalInvoiced) - newTotalPaid;
+      const newPaymentStatus = newOutstandingBalance <= 1 ? "paid" : newOutstandingBalance < parseFloat(existingBalance.totalInvoiced) ? "partial" : "pending";
+      
+      await db.update(companyBalances)
+        .set({
+          totalPaid: newTotalPaid.toString(),
+          outstandingBalance: newOutstandingBalance.toString(),
+          paymentStatus: newPaymentStatus,
+          lastUpdated: new Date()
+        })
+        .where(
+          and(
+            eq(companyBalances.companyName, paymentToDelete.companyName),
+            eq(companyBalances.weekLabel, paymentToDelete.weekLabel)
+          )
+        );
+      
+      console.log(`✅ Updated balance for ${paymentToDelete.companyName} - ${paymentToDelete.weekLabel}: totalPaid=${newTotalPaid}, outstanding=${newOutstandingBalance}, status=${newPaymentStatus}`);
+    }
+    
+    console.log(`✅ Payment ${id} successfully deleted from both payments and balances`);
   }
 
   // Payment history methods

@@ -890,6 +890,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete payment by ID endpoint
+  app.delete("/api/payments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePayment(id);
+      res.json({ 
+        success: true, 
+        message: "Payment deleted successfully" 
+      });
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      res.status(500).json({ message: "Failed to delete payment" });
+    }
+  });
+
   // Stripe subscription routes
   app.post("/api/create-subscription", async (req, res) => {
     try {
