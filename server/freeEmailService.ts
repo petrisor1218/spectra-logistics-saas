@@ -246,9 +246,7 @@ export class FreeEmailService {
 
       const attachments = emailData.attachments?.map(att => ({
         filename: att.filename,
-        content: typeof att.content === 'string' && att.content.startsWith('data:') 
-          ? Buffer.from(att.content.split(',')[1], 'base64')
-          : typeof att.content === 'string'
+        content: typeof att.content === 'string' 
           ? Buffer.from(att.content, 'base64') 
           : att.content,
         contentType: att.contentType || 'application/pdf'

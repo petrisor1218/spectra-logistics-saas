@@ -771,7 +771,8 @@ export function TransportOrdersView() {
       doc.text('Intocmit de: [Completati Nume]', 20, notesY + 10);
       
       // Get PDF as base64 string for email
-      const pdfContent = doc.output('datauristring');
+      const pdfArrayBuffer = doc.output('arraybuffer');
+      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfArrayBuffer)));
       
       const response = await fetch('/api/send-transport-order', {
         method: 'POST',
@@ -781,7 +782,7 @@ export function TransportOrdersView() {
         body: JSON.stringify({
           orderData: order,
           companyEmail: companyEmail,
-          pdfContent: pdfContent
+          pdfContent: pdfBase64
         })
       });
 
