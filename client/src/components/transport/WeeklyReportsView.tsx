@@ -253,7 +253,12 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     
     try {
       // Găsim compania pentru a obține email-ul
-      const company = companiesData?.find((comp: any) => 
+      if (!companiesData || !Array.isArray(companiesData)) {
+        alert('❌ Nu s-au încărcat datele companiilor. Încercați din nou.');
+        return;
+      }
+      
+      const company = companiesData.find((comp: any) => 
         comp.name === selectedCompany || 
         comp.name.includes(selectedCompany) ||
         selectedCompany.includes(comp.name.split(' ')[0])
@@ -338,7 +343,8 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
 
       // Convertim PDF-ul în buffer
       const pdfBuffer = doc.output('arraybuffer');
-      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+      const pdfArray = Array.from(new Uint8Array(pdfBuffer));
+      const pdfBase64 = btoa(String.fromCharCode.apply(null, pdfArray));
 
       // Trimitem email-ul cu PDF-ul
       const response = await fetch('/api/send-weekly-report', {
