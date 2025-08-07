@@ -88,6 +88,20 @@ export function TransportOrdersView() {
     }
   };
 
+  // Extract email from contact field (handles formats like "email@domain.com, phone, name")
+  const extractEmailFromContact = (contact: string): string => {
+    if (!contact) return 'office@company.com';
+    
+    // Look for email pattern in the contact string
+    const emailMatch = contact.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})/);
+    if (emailMatch) {
+      return emailMatch[1];
+    }
+    
+    // Fallback to default email if no valid email found
+    return 'office@company.com';
+  };
+
   const getCompanyDetails = (companyName: string) => {
     console.log('Looking for company:', companyName, 'in companies:', companies);
     
@@ -513,7 +527,7 @@ export function TransportOrdersView() {
       
       // Get company email from database
       const companyDetails = getCompanyDetails(order.companyName);
-      const companyEmail = companyDetails.contact || 'office@company.com'; // Default email
+      const companyEmail = extractEmailFromContact(companyDetails.contact);
       
       // Generate PDF for email attachment
       const doc = new jsPDF();
