@@ -247,13 +247,21 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
   });
 
   const sendEmailWithPDF = async () => {
-    if (!selectedCompany || !currentCompanyData || sendingEmail) return;
+    console.log('🚀 Starting sendEmailWithPDF...', { selectedCompany, currentCompanyData: !!currentCompanyData, sendingEmail });
+    
+    if (!selectedCompany || !currentCompanyData || sendingEmail) {
+      console.log('❌ Early return - missing data:', { selectedCompany, currentCompanyData: !!currentCompanyData, sendingEmail });
+      return;
+    }
 
     setSendingEmail(true);
     
     try {
+      console.log('📋 Checking companies data...', { companiesData: !!companiesData, isArray: Array.isArray(companiesData) });
+      
       // Găsim compania pentru a obține email-ul
       if (!companiesData || !Array.isArray(companiesData)) {
+        console.log('❌ Missing companies data');
         alert('❌ Nu s-au încărcat datele companiilor. Încercați din nou.');
         return;
       }
@@ -263,6 +271,8 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         comp.name.includes(selectedCompany) ||
         selectedCompany.includes(comp.name.split(' ')[0])
       );
+      
+      console.log('🏢 Company search result:', { selectedCompany, company: !!company });
 
       if (!company?.contact) {
         alert('❌ Nu s-a găsit adresa de email pentru această companie!\n\nVerificați configurarea companiei în secțiunea Management.');
@@ -278,6 +288,8 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         return;
       }
 
+      console.log('📄 Starting PDF generation...');
+      
       // Generăm PDF-ul în format Blob
       const doc = new jsPDF();
       
@@ -341,11 +353,22 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         }
       });
 
+      console.log('🔄 Converting PDF to base64...');
+      
       // Convertim PDF-ul în buffer
       const pdfBuffer = doc.output('arraybuffer');
       const pdfArray = Array.from(new Uint8Array(pdfBuffer));
       const pdfBase64 = btoa(String.fromCharCode.apply(null, pdfArray));
+      
+      console.log('✅ PDF conversion complete:', { base64Length: pdfBase64.length });
 
+      console.log('📧 Sending email request...', {
+        companyName: selectedCompany,
+        companyEmail: companyEmail,
+        weekLabel: selectedReportWeek,
+        pdfSize: pdfBase64.length
+      });
+      
       // Trimitem email-ul cu PDF-ul
       const response = await fetch('/api/send-weekly-report', {
         method: 'POST',
@@ -381,8 +404,15 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       }
 
     } catch (error) {
-      console.error('Error sending weekly report email:', error);
-      alert('❌ Eroare la trimiterea raportului săptămânal. Verificați conexiunea la internet.');
+      console.error('DETAILED Error sending weekly report email:', {
+        error: error,
+        message: error?.message || 'No message',
+        stack: error?.stack || 'No stack',
+        selectedCompany,
+        currentCompanyData: currentCompanyData ? 'Present' : 'Missing',
+        totals: totals ? 'Present' : 'Missing'
+      });
+      alert(`❌ Eroare la trimiterea raportului săptămânal: ${error?.message || 'Eroare necunoscută'}`);
     } finally {
       setSendingEmail(false);
     }
