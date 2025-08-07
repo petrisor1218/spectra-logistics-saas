@@ -416,31 +416,17 @@ export class DatabaseStorage implements IStorage {
       processedData
     };
 
-    // Check if processing for this week already exists
-    const existingProcessing = await db
-      .select()
-      .from(weeklyProcessing)
-      .where(eq(weeklyProcessing.weekLabel, weekLabel))
-      .limit(1);
-    
-    let processing;
-    if (existingProcessing.length > 0) {
-      // Update existing record
-      [processing] = await db
-        .update(weeklyProcessing)
-        .set({
+    const [processing] = await db
+      .insert(weeklyProcessing)
+      .values(weeklyData)
+      .onConflictDoUpdate({
+        target: weeklyProcessing.weekLabel,
+        set: {
           ...weeklyData,
           processingDate: new Date()
-        })
-        .where(eq(weeklyProcessing.weekLabel, weekLabel))
-        .returning();
-    } else {
-      // Insert new record
-      [processing] = await db
-        .insert(weeklyProcessing)
-        .values(weeklyData)
-        .returning();
-    }
+        }
+      })
+      .returning();
 
     // Save individual trip records to historical table
     for (const trip of tripData) {
