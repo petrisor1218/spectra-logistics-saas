@@ -167,6 +167,82 @@ export default function AnalyticsDashboard() {
     }
   });
 
+  // Calculate monthly data for yearly analysis
+  const monthlyData = weeklyInvoicedData.reduce((acc: any[], week: any) => {
+    const weekDate = new Date(week.processingDate);
+    const monthKey = `${weekDate.getFullYear()}-${String(weekDate.getMonth() + 1).padStart(2, '0')}`;
+    const monthName = weekDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
+    
+    const existing = acc.find(item => item.monthKey === monthKey);
+    if (existing) {
+      existing.totalInvoiced += week.totalInvoiced;
+      existing.weekCount += 1;
+    } else {
+      acc.push({
+        monthKey,
+        monthName,
+        totalInvoiced: week.totalInvoiced,
+        weekCount: 1,
+        date: weekDate
+      });
+    }
+    return acc;
+  }, []).sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
+
+  // Calculate quarterly data
+  const quarterlyData = monthlyData.reduce((acc: any[], month: any) => {
+    const date = month.date;
+    const quarter = Math.ceil((date.getMonth() + 1) / 3);
+    const quarterKey = `${date.getFullYear()}-Q${quarter}`;
+    const quarterName = `Trimestrul ${quarter} ${date.getFullYear()}`;
+    
+    const existing = acc.find(item => item.quarterKey === quarterKey);
+    if (existing) {
+      existing.totalInvoiced += month.totalInvoiced;
+      existing.monthCount += 1;
+    } else {
+      acc.push({
+        quarterKey,
+        quarterName,
+        totalInvoiced: month.totalInvoiced,
+        monthCount: 1,
+        date
+      });
+    }
+    return acc;
+  }, []);
+
+  // Generate forecast for next year based on trends
+  const currentYear = new Date().getFullYear();
+  const currentYearData = monthlyData.filter(month => month.date.getFullYear() === currentYear);
+  const previousYearData = monthlyData.filter(month => month.date.getFullYear() === currentYear - 1);
+  
+  // Calculate yearly growth rate
+  const currentYearTotal = currentYearData.reduce((sum, month) => sum + month.totalInvoiced, 0);
+  const previousYearTotal = previousYearData.reduce((sum, month) => sum + month.totalInvoiced, 0);
+  const yearlyGrowthRate = previousYearTotal > 0 ? ((currentYearTotal - previousYearTotal) / previousYearTotal) * 100 : 0;
+  
+  // Generate next year forecast
+  const nextYearForecast = monthlyData.slice(-12).map((month: any, index: number) => {
+    const nextYearDate = new Date(month.date);
+    nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+    
+    // Apply growth trend with seasonal adjustments
+    const seasonalMultiplier = 1 + (Math.sin((index * Math.PI) / 6) * 0.1); // Seasonal variation
+    const forecastAmount = month.totalInvoiced * (1 + yearlyGrowthRate / 100) * seasonalMultiplier;
+    
+    return {
+      monthKey: `${nextYearDate.getFullYear()}-${String(nextYearDate.getMonth() + 1).padStart(2, '0')}`,
+      monthName: nextYearDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' }),
+      totalInvoiced: forecastAmount,
+      isForecast: true,
+      date: nextYearDate
+    };
+  });
+
+  // Combine actual data with forecast for charts
+  const yearlyChartData = [...monthlyData, ...nextYearForecast].slice(-24); // Last 12 months + next 12 months
+
   // Payment trend data (last 30 days simulation)
   const paymentTrendData = payments
     .filter(payment => payment.paymentDate && !isNaN(new Date(payment.paymentDate).getTime()))
@@ -313,6 +389,109 @@ export default function AnalyticsDashboard() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Yearly Analytics Section */}
+      {monthlyData.length > 0 && (
+        <>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  Evoluție Anuală și Prognoză {currentYear + 1}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Analiză pe 12 luni + prognoză pentru anul următor (Creștere anuală: {yearlyGrowthRate.toFixed(1)}%)
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={yearlyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="monthName" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      fontSize={12}
+                    />
+                    <YAxis formatter={(value: number) => `€${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        `€${value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}`,
+                        name === 'totalInvoiced' ? 'Facturat' : 'Prognoză'
+                      ]}
+                      labelFormatter={(label: string) => `Luna: ${label}`}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="totalInvoiced" 
+                      stroke="#3b82f6" 
+                      strokeWidth={3}
+                      dot={(props: any) => {
+                        const { payload } = props;
+                        return (
+                          <circle 
+                            {...props} 
+                            fill={payload.isForecast ? '#10b981' : '#3b82f6'}
+                            stroke={payload.isForecast ? '#10b981' : '#3b82f6'}
+                            strokeWidth={2}
+                            r={payload.isForecast ? 6 : 4}
+                          />
+                        );
+                      }}
+                      strokeDasharray={(dataPoint: any) => dataPoint?.isForecast ? '5 5' : '0'}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                
+                {/* Yearly Summary Stats */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-blue-600">€{currentYearTotal.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</div>
+                    <div className="text-sm text-muted-foreground">{currentYear} Total</div>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-green-600">{yearlyGrowthRate > 0 ? '+' : ''}{yearlyGrowthRate.toFixed(1)}%</div>
+                    <div className="text-sm text-muted-foreground">Creștere Anuală</div>
+                  </div>
+                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-purple-600">€{nextYearForecast.reduce((sum, month) => sum + month.totalInvoiced, 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</div>
+                    <div className="text-sm text-muted-foreground">Prognoză {currentYear + 1}</div>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 text-center">
+                    <div className="text-2xl font-bold text-orange-600">€{(currentYearTotal / 12).toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</div>
+                    <div className="text-sm text-muted-foreground">Media Lunară</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Quarterly Analysis */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  Analiză Trimestrială
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={quarterlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="quarterName" />
+                    <YAxis formatter={(value: number) => `€${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value: number) => [`€${value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}`, 'Total Trimestrial']} />
+                    <Bar dataKey="totalInvoiced" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </>
+      )}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
