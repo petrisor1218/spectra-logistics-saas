@@ -235,7 +235,7 @@ export class FreeEmailService {
         secure: false,
         auth: {
           user: '9436e8001@smtp-brevo.com',
-          pass: process.env.BREVO_API_KEY || 'dummy'
+          pass: 'xsmtpsib-8c9203b1a987fe14e15ec46cdee350c7ed075fd696b9104cc8835872ca7437dd-DynB6bk2N10sFagT'
         },
         debug: true
       });
