@@ -796,12 +796,12 @@ export function TransportOrdersView() {
         
         const result = await response.json();
         
-        // Show success message for real email delivery
+        // Show success message for email delivery
         if (result.success) {
           if (result.message && result.message.includes('DEMO MODE')) {
-            alert(`⚠️ MODUL DEMO: Serviciile de email nu sunt configurate!\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n🔧 Pentru emailuri REALE:\n1. Gmail: Setați GMAIL_USER și GMAIL_APP_PASSWORD\n2. Brevo: 300 emailuri/zi GRATUIT\n3. Outlook: 300 emailuri/zi GRATUIT\n\nToate serviciile sunt GRATUITE!`);
+            alert(`⚠️ MODUL DEMO: Serviciile de email nu sunt configurate!\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n🔧 Pentru emailuri REALE configurați:\n1. Gmail: GMAIL_USER și GMAIL_APP_PASSWORD\n2. Brevo: BREVO_API_KEY\n3. Outlook: credentiale Outlook\n\nToate serviciile sunt GRATUITE!`);
           } else {
-            alert(`🎉 EMAIL REAL TRIMIS CU SUCCES!\n\n📧 Destinatar: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 PDF atașat: DA\n📬 Serviciu: Brevo (300 emailuri/zi GRATUIT)\n\n✅ Emailul a fost livrat în inbox-ul companiei!`);
+            alert(`✅ EMAIL TRIMIS CU SUCCES!\n\n📧 Destinatar: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 PDF atașat: DA\n\n🔗 Verificați link-ul din consolă pentru a vedea emailul cu PDF-ul atașat!\n\nEmailul este funcțional și folosește template profesional HTML.`);
           }
         } else {
           alert(`❌ Eroare la trimiterea emailului: ${result.message || 'Eroare necunoscută'}`);

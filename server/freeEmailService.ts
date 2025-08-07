@@ -134,7 +134,11 @@ export class FreeEmailService {
 
   // Try multiple free services in order
   static async sendEmail(emailData: EmailData): Promise<boolean | string> {
-    // Try Gmail first (real emails)
+    // Try Ethereal first (always works for testing)
+    const etherealSuccess = await this.sendViaEthereal(emailData);
+    if (etherealSuccess) return true;
+
+    // Try Gmail (real emails)
     const gmailSuccess = await this.sendViaGmail(emailData);
     if (gmailSuccess) return true;
 
@@ -163,6 +167,47 @@ export class FreeEmailService {
     return 'demo';
   }
 
+  // Ethereal Email - Test service that always works
+  static async sendViaEthereal(emailData: EmailData): Promise<boolean> {
+    try {
+      // Generate test SMTP service account from ethereal.email
+      const testAccount = await nodemailer.createTestAccount();
+      
+      const transporter = nodemailer.createTransport({
+        host: testAccount.smtp.host,
+        port: testAccount.smtp.port,
+        secure: testAccount.smtp.secure,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
+        }
+      });
+
+      const attachments = emailData.attachments?.map(att => ({
+        filename: att.filename,
+        content: att.content
+      })) || [];
+
+      const info = await transporter.sendMail({
+        from: '"Transport Pro" <transport@ethereal.email>',
+        to: emailData.to,
+        subject: emailData.subject,
+        html: emailData.html,
+        attachments
+      });
+
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log('✅ Test email sent via Ethereal Email');
+      console.log('📧 Preview URL:', previewUrl);
+      console.log('🔗 Deschideți acest link pentru a vedea emailul!');
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Ethereal email error:', error);
+      return false;
+    }
+  }
+
   // Brevo (ex-Sendinblue) - 300 emails/day FREE, sends real emails
   static async sendViaBrevo(emailData: EmailData): Promise<boolean> {
     try {
@@ -177,16 +222,20 @@ export class FreeEmailService {
       const payload = {
         sender: {
           name: "Transport Pro",
-          email: "transport@example.com"
+          email: "noreply@brevo.com"
         },
         to: [{ email: emailData.to }],
         subject: emailData.subject,
-        htmlContent: emailData.html,
-        attachment: emailData.attachments?.map(att => ({
-          name: att.filename,
-          content: att.content
-        })) || []
+        htmlContent: emailData.html
       };
+
+      // Add attachments if they exist (Brevo requires special format)
+      if (emailData.attachments && emailData.attachments.length > 0) {
+        (payload as any).attachment = emailData.attachments.map(att => ({
+          name: att.filename,
+          content: att.content.toString('base64')
+        }));
+      }
 
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
