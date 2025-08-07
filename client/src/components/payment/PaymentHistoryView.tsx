@@ -541,21 +541,155 @@ export default function PaymentHistoryView() {
       {Object.keys(totalByCompany).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Sumar pe Companii</CardTitle>
+            <CardTitle>Sumar pe Companii - Situația Financiară</CardTitle>
+            <CardDescription>
+              Totaluri plătite și restul de încasat pentru fiecare companie
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(totalByCompany).map(([company, total]) => (
-                <div key={company} className="border rounded-lg p-4">
-                  <div className="font-medium mb-1">{company}</div>
-                  <div className="text-xl font-bold text-green-600">
-                    {formatCurrency(total)}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Object.entries(totalByCompany).map(([company, totalPaid]) => {
+                // Calculate total amounts across all weeks for this company
+                let totalInvoiced = 0;
+                let totalToPay = 0;
+                let totalCommission = 0;
+                
+                // Get all weeks where this company has data
+                const companyWeeks = [...new Set(
+                  filteredPayments
+                    .filter(p => p.companyName === company)
+                    .map(p => p.weekLabel)
+                )];
+                
+                // Sum up all financial data for this company across weeks
+                companyWeeks.forEach(weekLabel => {
+                  const weekDetails = getWeeklyDetails(weekLabel, company);
+                  if (weekDetails) {
+                    totalInvoiced += weekDetails.totalInvoiced;
+                    totalToPay += weekDetails.totalToPay;
+                    totalCommission += weekDetails.totalCommission;
+                  }
+                });
+                
+                const remainingToPay = Math.max(0, totalToPay - totalPaid);
+                const paymentProgress = totalToPay > 0 ? (totalPaid / totalToPay) * 100 : 100;
+                
+                return (
+                  <div key={company} className="border rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800/50">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-lg">{company}</h3>
+                      <Badge variant={remainingToPay <= 1 ? "default" : "secondary"}>
+                        {remainingToPay <= 1 ? "Complet" : "În progres"}
+                      </Badge>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Progres plată</span>
+                        <span>{paymentProgress.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            remainingToPay <= 1 
+                              ? 'bg-green-500' 
+                              : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                          }`}
+                          style={{ width: `${Math.min(100, paymentProgress)}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Financial Details */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Total facturat:</span>
+                        <span className="font-medium">{formatCurrency(totalInvoiced)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Comision:</span>
+                        <span className="font-medium text-red-600">-{formatCurrency(totalCommission)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center border-t pt-2">
+                        <span className="text-sm font-medium">De plată total:</span>
+                        <span className="font-bold text-indigo-600">{formatCurrency(totalToPay)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Plătit deja:</span>
+                        <span className="font-medium text-green-600">{formatCurrency(totalPaid)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center border-t pt-2">
+                        <span className="text-sm font-bold">Rămâne de încasat:</span>
+                        <span className={`font-bold text-lg ${
+                          remainingToPay <= 1 
+                            ? 'text-green-600' 
+                            : 'text-orange-600'
+                        }`}>
+                          {formatCurrency(remainingToPay)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Additional Info */}
+                    <div className="mt-4 pt-3 border-t text-xs text-muted-foreground">
+                      {filteredPayments.filter(p => p.companyName === company).length} plăți • {companyWeeks.length} săptămâni
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {filteredPayments.filter(p => p.companyName === company).length} plăți
+                );
+              })}
+            </div>
+            
+            {/* Overall Summary */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {Object.keys(totalByCompany).length}
                   </div>
+                  <div className="text-sm text-muted-foreground">Companii Active</div>
                 </div>
-              ))}
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(totalAmount)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Plătit</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {formatCurrency(
+                      Object.entries(totalByCompany).reduce((total, [company, paid]) => {
+                        const companyWeeks = [...new Set(
+                          filteredPayments
+                            .filter(p => p.companyName === company)
+                            .map(p => p.weekLabel)
+                        )];
+                        
+                        let companyTotalToPay = 0;
+                        companyWeeks.forEach(weekLabel => {
+                          const weekDetails = getWeeklyDetails(weekLabel, company);
+                          if (weekDetails) {
+                            companyTotalToPay += weekDetails.totalToPay;
+                          }
+                        });
+                        
+                        return total + Math.max(0, companyTotalToPay - paid);
+                      }, 0)
+                    )}
+                  </div>
+                  <div className="text-sm text-muted-foreground">De Încasat</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {filteredPayments.length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Plăți</div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
