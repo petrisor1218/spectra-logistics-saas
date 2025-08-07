@@ -215,7 +215,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllWeeklyProcessing(): Promise<WeeklyProcessing[]> {
-    return await db.select().from(weeklyProcessing).orderBy(weeklyProcessing.processingDate);
+    return await db.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
   }
 
   async updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing> {
@@ -229,11 +229,11 @@ export class DatabaseStorage implements IStorage {
 
   // Payment methods
   async getPaymentsByWeek(weekLabel: string): Promise<Payment[]> {
-    return await db.select().from(payments).where(eq(payments.weekLabel, weekLabel)).orderBy(payments.paymentDate);
+    return await db.select().from(payments).where(eq(payments.weekLabel, weekLabel)).orderBy(desc(payments.paymentDate));
   }
 
   async getAllPayments(): Promise<Payment[]> {
-    return await db.select().from(payments).orderBy(payments.paymentDate);
+    return await db.select().from(payments).orderBy(desc(payments.paymentDate));
   }
 
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
@@ -457,8 +457,8 @@ export class DatabaseStorage implements IStorage {
   
   // Company balance methods
   async getCompanyBalances(): Promise<CompanyBalance[]> {
-    // Order by creation date for consistent chronological ordering
-    return await db.select().from(companyBalances).orderBy(companyBalances.createdAt);
+    // Order by creation date - newest first (inverse chronological)
+    return await db.select().from(companyBalances).orderBy(desc(companyBalances.createdAt));
   }
 
   async getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined> {

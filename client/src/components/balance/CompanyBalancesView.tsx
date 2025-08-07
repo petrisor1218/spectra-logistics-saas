@@ -192,12 +192,12 @@ export default function CompanyBalancesView() {
     return acc;
   }, {});
 
-  // Sort balances within each company by date (oldest first for chronological order)
+  // Sort balances within each company by date (newest first - inverse chronological)
   Object.keys(balancesByCompany).forEach(companyName => {
     balancesByCompany[companyName].sort((a, b) => {
       const dateA = parseRomanianWeekDate(a.weekLabel);
       const dateB = parseRomanianWeekDate(b.weekLabel);
-      return dateA.getTime() - dateB.getTime(); // Chronological order (oldest first)
+      return dateB.getTime() - dateA.getTime(); // Newest first (inverse chronological)
     });
   });
 

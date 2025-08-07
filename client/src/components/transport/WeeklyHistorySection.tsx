@@ -101,13 +101,13 @@ export function WeeklyHistorySection({
     return new Date(year, month, day);
   };
 
-  // Chronological sorting based on user preference using proper date parsing
+  // Default to newest first (recent), but allow user to change
   const availableWeeks = Object.keys(historicalData).sort((a, b) => {
     const dateA = parseRomanianWeekDate(a);
     const dateB = parseRomanianWeekDate(b);
     
     if (sortOrder === 'recent') {
-      // Recent first: newer dates first
+      // Recent first: newer dates first (default)
       return dateB.getTime() - dateA.getTime();
     } else {
       // Oldest first: older dates first

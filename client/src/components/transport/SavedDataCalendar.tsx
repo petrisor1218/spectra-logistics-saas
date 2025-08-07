@@ -95,13 +95,13 @@ export function SavedDataCalendar({
     return new Date(year, month, day);
   };
 
-  // Sort saved weeks based on user preference using proper date parsing
+  // Default to newest first (recent), but allow user to change
   const sortedSavedWeeks = [...savedWeeks].sort((a, b) => {
     const dateA = parseRomanianWeekDate(a.weekLabel);
     const dateB = parseRomanianWeekDate(b.weekLabel);
     
     if (sortOrder === 'recent') {
-      // Recent first: newer dates first
+      // Recent first: newer dates first (default)
       return dateB.getTime() - dateA.getTime();
     } else {
       // Oldest first: older dates first
