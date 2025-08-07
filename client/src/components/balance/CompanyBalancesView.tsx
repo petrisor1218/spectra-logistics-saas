@@ -146,11 +146,11 @@ function getStatusIcon(status: string) {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'paid':
-      return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Plătit</Badge>;
+      return <Badge variant="default" className="bg-green-500 hover:bg-green-600">✓ Plătit complet</Badge>;
     case 'partial':
-      return <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">Parțial</Badge>;
+      return <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">⚡ Plată parțială</Badge>;
     default:
-      return <Badge variant="destructive">În așteptare</Badge>;
+      return <Badge variant="destructive">⏳ Neplătit</Badge>;
   }
 }
 
@@ -226,7 +226,7 @@ function DeletePaymentModal({ balance, isOpen, onClose }: DeletePaymentModalProp
             Ștergere Plată
           </DialogTitle>
           <DialogDescription>
-            Ștergeți o plată pentru {balance.companyName} - {balance.weekLabel}
+            Corectați o plată greșită pentru <strong>{balance.companyName}</strong> în săptămâna <strong>{balance.weekLabel}</strong>
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -251,9 +251,12 @@ function DeletePaymentModal({ balance, isOpen, onClose }: DeletePaymentModalProp
             <div className="text-sm text-muted-foreground">
               Suma plătită total: {formatCurrency(parseFloat(balance.totalPaid || '0'))}
             </div>
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-              <div className="text-sm text-red-600 dark:text-red-400">
-                ⚠️ Această acțiune va reduce suma plătită și va recalcula balanța restantă.
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+              <div className="text-sm text-orange-700 dark:text-orange-300">
+                💡 <strong>Ce se întâmplă:</strong>
+                <br />• Suma plătită va scădea cu valoarea introdusă
+                <br />• Balanța restantă va crește corespunzător  
+                <br />• Statusul se va actualiza automat (Neplătit/Parțial/Complet)
               </div>
             </div>
           </div>
