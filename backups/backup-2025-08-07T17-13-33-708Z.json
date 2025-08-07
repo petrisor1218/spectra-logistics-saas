@@ -1,0 +1,3965 @@
+{
+  "metadata": {
+    "created_at": "2025-08-07T17:13:33.801Z",
+    "created_by": "manual",
+    "version": "1.0"
+  },
+  "data": {
+    "users": [
+      {
+        "id": 2,
+        "username": "admin",
+        "password": "$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+        "email": "admin@transportpro.com",
+        "firstName": "Administrator",
+        "lastName": "Transport Pro",
+        "role": "admin",
+        "tenantId": null,
+        "companyName": null,
+        "stripeCustomerId": null,
+        "stripeSubscriptionId": null,
+        "subscriptionStatus": "inactive",
+        "trialEndsAt": null,
+        "subscriptionEndsAt": null,
+        "lastLoginAt": null,
+        "createdAt": "2025-08-01T12:52:40.831Z",
+        "updatedAt": "2025-08-01T12:52:40.831Z"
+      },
+      {
+        "id": 1,
+        "username": "Fastexpress",
+        "password": "$2b$10$H7P9irMTDGPc6ePb7uYn.OnAHqUFhtIVdznG9tTZiCWqPf06e4rM.",
+        "email": "demo@fastexpress.ro",
+        "firstName": null,
+        "lastName": null,
+        "role": "subscriber",
+        "tenantId": "demo-tenant-001",
+        "companyName": "Fast Express Demo",
+        "stripeCustomerId": null,
+        "stripeSubscriptionId": null,
+        "subscriptionStatus": "active",
+        "trialEndsAt": null,
+        "subscriptionEndsAt": null,
+        "lastLoginAt": null,
+        "createdAt": "2025-08-01T12:09:13.441Z",
+        "updatedAt": "2025-08-01T12:09:13.957Z"
+      },
+      {
+        "id": 3,
+        "username": "admin_owner",
+        "password": "$2b$10$example_hash",
+        "email": "owner@transportpro.com",
+        "firstName": null,
+        "lastName": null,
+        "role": "admin",
+        "tenantId": null,
+        "companyName": "Transport Pro Owner",
+        "stripeCustomerId": null,
+        "stripeSubscriptionId": null,
+        "subscriptionStatus": "active",
+        "trialEndsAt": null,
+        "subscriptionEndsAt": null,
+        "lastLoginAt": null,
+        "createdAt": "2025-08-01T13:23:56.616Z",
+        "updatedAt": "2025-08-01T13:23:56.616Z"
+      },
+      {
+        "id": 4,
+        "username": "petrisor",
+        "password": "$2b$10$aNDeL02LO2xrOVHnX35NqO1oy2h4bRE37GlNMZllN9qWdhM3r0VMC",
+        "email": "petrisor@fastexpress.ro",
+        "firstName": null,
+        "lastName": null,
+        "role": "admin",
+        "tenantId": null,
+        "companyName": "Fast Express",
+        "stripeCustomerId": null,
+        "stripeSubscriptionId": null,
+        "subscriptionStatus": "active",
+        "trialEndsAt": null,
+        "subscriptionEndsAt": null,
+        "lastLoginAt": null,
+        "createdAt": "2025-08-01T13:28:10.167Z",
+        "updatedAt": "2025-08-01T13:28:10.167Z"
+      }
+    ],
+    "companies": [
+      {
+        "id": 21,
+        "name": "Fast & Express S.R.L.",
+        "commissionRate": "0.0200",
+        "cif": "RO35986465",
+        "tradeRegisterNumber": "J34/227/2016",
+        "address": "Str. Dunarii, -, Bl:1604, Sc:d, Et:parter, Ap:42",
+        "location": "Alexandria",
+        "county": "Teleorman",
+        "country": "Romania",
+        "contact": "",
+        "tenantId": null,
+        "createdAt": "2025-07-24T15:25:56.192Z"
+      },
+      {
+        "id": 22,
+        "name": "Stef Trans S.R.L.",
+        "commissionRate": "0.0400",
+        "cif": "RO19075934",
+        "tradeRegisterNumber": "J34/570/2006",
+        "address": "-, -",
+        "location": "Dobrotesti",
+        "county": "Teleorman",
+        "country": "Romania",
+        "contact": "0729897775, scsteftrans@yahoo.com",
+        "tenantId": null,
+        "createdAt": "2025-07-24T15:25:56.222Z"
+      },
+      {
+        "id": 23,
+        "name": "De Cargo Sped S.R.L.",
+        "commissionRate": "0.0400",
+        "cif": "RO43642683",
+        "tradeRegisterNumber": "J34/70/2021",
+        "address": "Str. Iasomiei, 9",
+        "location": "Mavrodin",
+        "county": "Teleorman",
+        "country": "Romania",
+        "contact": "Ginel, 0763698696, decargosped@gmail.com",
+        "tenantId": null,
+        "createdAt": "2025-07-24T15:25:56.238Z"
+      },
+      {
+        "id": 28,
+        "name": "Toma SRL",
+        "commissionRate": "0.0400",
+        "cif": null,
+        "tradeRegisterNumber": null,
+        "address": null,
+        "location": null,
+        "county": null,
+        "country": "Romania",
+        "contact": null,
+        "tenantId": null,
+        "createdAt": "2025-07-31T04:55:48.450Z"
+      }
+    ],
+    "drivers": [
+      {
+        "id": 25,
+        "name": "ADRIAN MIRON",
+        "companyId": 21,
+        "nameVariants": [
+          "ADRIAN MIRON",
+          "Adrian miron"
+        ],
+        "phone": "0740-111111",
+        "email": "adrian.miron@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.284Z"
+      },
+      {
+        "id": 26,
+        "name": "Andrei Serban Badea",
+        "companyId": 21,
+        "nameVariants": [
+          "Andrei Serban Badea"
+        ],
+        "phone": "0740-111112",
+        "email": "andrei.badea@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.304Z"
+      },
+      {
+        "id": 27,
+        "name": "Petrisor Besteala",
+        "companyId": 21,
+        "nameVariants": [
+          "Petrisor Besteala"
+        ],
+        "phone": "0740-111113",
+        "email": "petrisor.besteala@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.319Z"
+      },
+      {
+        "id": 28,
+        "name": "Georgian Florentin Moise",
+        "companyId": 21,
+        "nameVariants": [
+          "Georgian Florentin Moise"
+        ],
+        "phone": "0740-111114",
+        "email": "georgian.moise@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.335Z"
+      },
+      {
+        "id": 29,
+        "name": "Gabriel Marian Ivan",
+        "companyId": 21,
+        "nameVariants": [
+          "Gabriel Marian Ivan"
+        ],
+        "phone": "0740-111115",
+        "email": "gabriel.ivan@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.351Z"
+      },
+      {
+        "id": 30,
+        "name": "Olteanu Ionut",
+        "companyId": 21,
+        "nameVariants": [
+          "Olteanu Ionut"
+        ],
+        "phone": "0740-111116",
+        "email": "ionut.olteanu@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.367Z"
+      },
+      {
+        "id": 31,
+        "name": "Marius Condila",
+        "companyId": 21,
+        "nameVariants": [
+          "Marius Condila"
+        ],
+        "phone": "0740-111117",
+        "email": "marius.condila@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.382Z"
+      },
+      {
+        "id": 32,
+        "name": "Teodor Petrișor Chiar",
+        "companyId": 21,
+        "nameVariants": [
+          "Teodor Petrișor Chiar"
+        ],
+        "phone": "0740-111118",
+        "email": "teodor.chiar@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.398Z"
+      },
+      {
+        "id": 33,
+        "name": "Tiberiu Iulian Ivan",
+        "companyId": 21,
+        "nameVariants": [
+          "Tiberiu Iulian Ivan"
+        ],
+        "phone": "0740-111119",
+        "email": "tiberiu.ivan@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.414Z"
+      },
+      {
+        "id": 34,
+        "name": "Marius Adrian Badea",
+        "companyId": 21,
+        "nameVariants": [
+          "Marius Adrian Badea"
+        ],
+        "phone": "0740-111120",
+        "email": "marius.badea@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.429Z"
+      },
+      {
+        "id": 35,
+        "name": "Florin Oprea",
+        "companyId": 21,
+        "nameVariants": [
+          "Florin Oprea"
+        ],
+        "phone": "0740-111121",
+        "email": "florin.oprea@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.445Z"
+      },
+      {
+        "id": 36,
+        "name": "George Mihaita Butnaru",
+        "companyId": 21,
+        "nameVariants": [
+          "George Mihaita Butnaru"
+        ],
+        "phone": "0740-111122",
+        "email": "george.butnaru@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.460Z"
+      },
+      {
+        "id": 37,
+        "name": "Dan Costinel Savu",
+        "companyId": 21,
+        "nameVariants": [
+          "Dan Costinel Savu"
+        ],
+        "phone": "0740-111123",
+        "email": "dan.savu@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.475Z"
+      },
+      {
+        "id": 38,
+        "name": "Iosip Ionel",
+        "companyId": 21,
+        "nameVariants": [
+          "Iosip Ionel"
+        ],
+        "phone": "0740-111124",
+        "email": "iosip.ionel@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.490Z"
+      },
+      {
+        "id": 39,
+        "name": "Andrei Tanase",
+        "companyId": 21,
+        "nameVariants": [
+          "Andrei Tanase"
+        ],
+        "phone": "0740-111125",
+        "email": "andrei.tanase@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.506Z"
+      },
+      {
+        "id": 40,
+        "name": "Pana Stefan Daniel",
+        "companyId": 21,
+        "nameVariants": [
+          "Pana Stefan Daniel"
+        ],
+        "phone": "0740-111126",
+        "email": "stefan.pana@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.521Z"
+      },
+      {
+        "id": 41,
+        "name": "Vasilică Roman",
+        "companyId": 21,
+        "nameVariants": [
+          "Vasilică Roman"
+        ],
+        "phone": "0740-111127",
+        "email": "vasilica.roman@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.536Z"
+      },
+      {
+        "id": 42,
+        "name": "Florin Nicolae Sanislai",
+        "companyId": 21,
+        "nameVariants": [
+          "Florin Nicolae Sanislai"
+        ],
+        "phone": "0740-111128",
+        "email": "florin.sanislai@fastexpress.ro",
+        "createdAt": "2025-07-24T15:25:56.551Z"
+      },
+      {
+        "id": 49,
+        "name": "Cernat Lucian Marian",
+        "companyId": 23,
+        "nameVariants": [
+          "Cernat Lucian Marian"
+        ],
+        "phone": "0763-698696",
+        "email": "lucian.cernat@decargosped.ro",
+        "createdAt": "2025-07-24T15:25:56.660Z"
+      },
+      {
+        "id": 50,
+        "name": "Draghici Marius Sorin",
+        "companyId": 23,
+        "nameVariants": [
+          "Draghici Marius Sorin"
+        ],
+        "phone": "0763-698697",
+        "email": "marius.draghici@decargosped.ro",
+        "createdAt": "2025-07-24T15:25:56.675Z"
+      },
+      {
+        "id": 51,
+        "name": "Sorin petrisor Dumitrache",
+        "companyId": 23,
+        "nameVariants": [
+          "Sorin petrisor Dumitrache"
+        ],
+        "phone": "0763-698698",
+        "email": "sorin.dumitrache@decargosped.ro",
+        "createdAt": "2025-07-24T15:25:56.690Z"
+      },
+      {
+        "id": 52,
+        "name": "Petre Iulian LEUCE",
+        "companyId": 23,
+        "nameVariants": [
+          "Petre Iulian LEUCE"
+        ],
+        "phone": "0763-698699",
+        "email": "petre.leuce@decargosped.ro",
+        "createdAt": "2025-07-24T15:25:56.706Z"
+      },
+      {
+        "id": 53,
+        "name": "Gorgos Adrian",
+        "companyId": 22,
+        "nameVariants": [
+          "Gorgos Adrian"
+        ],
+        "phone": "0729-897775",
+        "email": "adrian.gorgos@steftrans.ro",
+        "createdAt": "2025-07-24T15:25:56.721Z"
+      },
+      {
+        "id": 54,
+        "name": "Barbuceanu Anghel",
+        "companyId": 22,
+        "nameVariants": [
+          "Barbuceanu Anghel"
+        ],
+        "phone": "0729-897776",
+        "email": "anghel.barbuceanu@steftrans.ro",
+        "createdAt": "2025-07-24T15:25:56.735Z"
+      },
+      {
+        "id": 55,
+        "name": "Adi-Nicolae Gocea",
+        "companyId": 22,
+        "nameVariants": [
+          "Adi-Nicolae Gocea"
+        ],
+        "phone": "0729-897777",
+        "email": "adi.gocea@steftrans.ro",
+        "createdAt": "2025-07-24T15:25:56.751Z"
+      },
+      {
+        "id": 56,
+        "name": "Dumitru Ciobanu",
+        "companyId": 22,
+        "nameVariants": [
+          "Dumitru Ciobanu"
+        ],
+        "phone": "0729-897778",
+        "email": "dumitru.ciobanu@steftrans.ro",
+        "createdAt": "2025-07-24T15:25:56.766Z"
+      },
+      {
+        "id": 57,
+        "name": "Dimache Mihalache",
+        "companyId": 22,
+        "nameVariants": [
+          "Dimache Mihalache"
+        ],
+        "phone": "0729-897779",
+        "email": "dimache.mihalache@steftrans.ro",
+        "createdAt": "2025-07-24T15:25:56.781Z"
+      },
+      {
+        "id": 58,
+        "name": "Toma Alin Marian",
+        "companyId": 28,
+        "nameVariants": [
+          "toma alin marian",
+          "marian alin toma",
+          "toma marian alin"
+        ],
+        "phone": "0740-999999",
+        "email": "alin.toma@bisgeneral.ro",
+        "createdAt": "2025-07-24T15:25:56.796Z"
+      },
+      {
+        "id": 59,
+        "name": "Balanean Daniel",
+        "companyId": 28,
+        "nameVariants": [
+          "balanean daniel",
+          "daniel balanean"
+        ],
+        "phone": "0740-999998",
+        "email": "daniel.balanean@bisgeneral.ro",
+        "createdAt": "2025-07-24T15:25:56.812Z"
+      },
+      {
+        "id": 60,
+        "name": "Alexandru Sorin Geanta",
+        "companyId": 28,
+        "nameVariants": [
+          "alexandru sorin geanta",
+          "geanta sorin alexandru",
+          "alexandru geanta sorin"
+        ],
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-24T16:11:48.208Z"
+      },
+      {
+        "id": 63,
+        "name": "Feleaga Cristian",
+        "companyId": 21,
+        "nameVariants": null,
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-31T05:36:05.913Z"
+      },
+      {
+        "id": 64,
+        "name": "Feleaga Cristian",
+        "companyId": 21,
+        "nameVariants": null,
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-31T05:38:53.614Z"
+      },
+      {
+        "id": 65,
+        "name": "Feleaga Cristian",
+        "companyId": 21,
+        "nameVariants": null,
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-31T05:48:14.496Z"
+      },
+      {
+        "id": 66,
+        "name": "Feleaga Cristian",
+        "companyId": 21,
+        "nameVariants": null,
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-31T05:58:07.556Z"
+      },
+      {
+        "id": 67,
+        "name": "Feleaga Cristian",
+        "companyId": 21,
+        "nameVariants": null,
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-31T06:02:31.367Z"
+      },
+      {
+        "id": 68,
+        "name": "Feleaga Cristian",
+        "companyId": 21,
+        "nameVariants": null,
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-31T06:06:45.333Z"
+      },
+      {
+        "id": 69,
+        "name": "Feleaga Cristian",
+        "companyId": 21,
+        "nameVariants": null,
+        "phone": "",
+        "email": "",
+        "createdAt": "2025-07-31T06:08:46.109Z"
+      }
+    ],
+    "weekly_processing": [
+      {
+        "id": 1,
+        "weekLabel": "13 iul. - 19 iul.",
+        "processingDate": "2025-07-24T10:25:51.608Z",
+        "tripDataCount": 0,
+        "invoice7Count": 0,
+        "invoice30Count": 0,
+        "processedData": {
+          "Stef Trans": {
+            "Total_7_days": 4601.639999999999,
+            "VRID_details": {
+              "1113N238M": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 21.974
+              },
+              "111B44GTK": {
+                "7_days": 2202.93,
+                "30_days": 0,
+                "commission": 88.1172
+              },
+              "112SJBG79": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "11366Q3FT": {
+                "7_days": 603.31,
+                "30_days": 0,
+                "commission": 24.132399999999997
+              },
+              "113942HN4": {
+                "7_days": 0,
+                "30_days": 344.81,
+                "commission": 13.7924
+              },
+              "113JYPMNR": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 21.974
+              },
+              "1144F9GZ4": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "1148QMZ6T": {
+                "7_days": 400.65,
+                "30_days": 0,
+                "commission": 16.026
+              },
+              "114R8QSYG": {
+                "7_days": 0,
+                "30_days": 489.41,
+                "commission": 19.576400000000003
+              },
+              "1157X9TXR": {
+                "7_days": 586.37,
+                "30_days": 0,
+                "commission": 23.454800000000002
+              },
+              "115FXWD9J": {
+                "7_days": 282.38,
+                "30_days": 0,
+                "commission": 11.2952
+              },
+              "115NJVW6N": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 35.7528
+              },
+              "1169PVVGF": {
+                "7_days": 526,
+                "30_days": 0,
+                "commission": 21.04
+              },
+              "116HLCD52": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 19.214000000000002
+              }
+            },
+            "Total_30_days": 3848.4899999999993,
+            "Total_comision": 338.00519999999995
+          },
+          "Fast Express": {
+            "Total_7_days": 6446.530000000001,
+            "VRID_details": {
+              "11132CH77": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "11135QGLP": {
+                "7_days": 0,
+                "30_days": 520.22,
+                "commission": 10.4044
+              },
+              "11153PZYZ": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "11159W383": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "1117H9N5C": {
+                "7_days": 0,
+                "30_days": 557.77,
+                "commission": 11.1554
+              },
+              "1117SCSVT": {
+                "7_days": 0,
+                "30_days": 489.41,
+                "commission": 9.788200000000002
+              },
+              "111GZ9694": {
+                "7_days": 0,
+                "30_days": 508.12,
+                "commission": 10.1624
+              },
+              "111JP8GWM": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "111KGHH7N": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "111NZ78ND": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 10.987
+              },
+              "111QL2VBW": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "111SD24YD": {
+                "7_days": 864.68,
+                "30_days": 0,
+                "commission": 17.293599999999998
+              },
+              "111T1Z2SZ": {
+                "7_days": 418.35,
+                "30_days": 0,
+                "commission": 8.367
+              },
+              "1121LCBY2": {
+                "7_days": 516.05,
+                "30_days": 0,
+                "commission": 10.321
+              },
+              "1121VRKVH": {
+                "7_days": 0,
+                "30_days": 349.16,
+                "commission": 6.983200000000001
+              },
+              "1122RCZPR": {
+                "7_days": 0,
+                "30_days": 222.86,
+                "commission": 4.4572
+              },
+              "1123GRJ6C": {
+                "7_days": 0,
+                "30_days": 507.07,
+                "commission": 10.1414
+              },
+              "1126GF6Q6": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "1126XRDLX": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 17.9034
+              },
+              "112FPWQ2F": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 5.414
+              },
+              "112HLWP4R": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "112LPXKV8": {
+                "7_days": 0,
+                "30_days": 344.81,
+                "commission": 6.8962
+              },
+              "112MJP87J": {
+                "7_days": 0,
+                "30_days": 371.54,
+                "commission": 7.4308000000000005
+              },
+              "112NSSHXH": {
+                "7_days": 0,
+                "30_days": 508.12,
+                "commission": 10.1624
+              },
+              "112PCRFYJ": {
+                "7_days": 0,
+                "30_days": 472.21,
+                "commission": 9.4442
+              },
+              "112T1M11H": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "112WXYBSC": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "11327CZ9V": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "1136CMVDS": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "113GGQZ97": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "113PLC1FS": {
+                "7_days": 0,
+                "30_days": 243.98,
+                "commission": 4.8796
+              },
+              "113TM7FY7": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "113X1RTYC": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 17.9034
+              },
+              "113Z2BQ4J": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 5.414
+              },
+              "114147M2V": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "1144KPYWN": {
+                "7_days": 0,
+                "30_days": 222.86,
+                "commission": 4.4572
+              },
+              "1147S8TFZ": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 5.414
+              },
+              "114RYHGSF": {
+                "7_days": 0,
+                "30_days": 237.99,
+                "commission": 4.7598
+              },
+              "114TCVPTB": {
+                "7_days": 477.29,
+                "30_days": 0,
+                "commission": 9.5458
+              },
+              "114VFVNCB": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "114VQ3X84": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "114W62T31": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 17.9034
+              },
+              "114ZFQ4BR": {
+                "7_days": 0,
+                "30_days": 489.41,
+                "commission": 9.788200000000002
+              },
+              "1151RNBNN": {
+                "7_days": 402.88,
+                "30_days": 0,
+                "commission": 8.0576
+              },
+              "1155JZBSM": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 17.9034
+              },
+              "115C6YJNX": {
+                "7_days": 0,
+                "30_days": 3.83,
+                "commission": 0.0766
+              },
+              "115DX6K1D": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "115LBNT22": {
+                "7_days": 319.95,
+                "30_days": 0,
+                "commission": 6.399
+              },
+              "115M9WKPN": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "115NHMNL3": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "115SKBKPV": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "115TK64C1": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "115ZPJBH2": {
+                "7_days": 639.43,
+                "30_days": 0,
+                "commission": 12.788599999999999
+              },
+              "116225S3G": {
+                "7_days": 1241.26,
+                "30_days": 0,
+                "commission": 24.8252
+              },
+              "1165GJ9HQ": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "1165R3YB2": {
+                "7_days": 0,
+                "30_days": 472.21,
+                "commission": 9.4442
+              },
+              "11679S989": {
+                "7_days": 0,
+                "30_days": 349.16,
+                "commission": 6.983200000000001
+              },
+              "1167MBMGJ": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "11683VRF2": {
+                "7_days": 466.64,
+                "30_days": 0,
+                "commission": 9.3328
+              },
+              "11694XHPT": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "116FJ26SP": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "116FX3491": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "116LJ7KFJ": {
+                "7_days": 0,
+                "30_days": 557.77,
+                "commission": 11.1554
+              },
+              "116P75VPM": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "116VVGWGZ": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "T-111HLG32Z": {
+                "7_days": 0,
+                "30_days": 722.99,
+                "commission": 14.459800000000001
+              },
+              "T-1135VBC8R": {
+                "7_days": 0,
+                "30_days": 755.41,
+                "commission": 19.5084
+              },
+              "T-11388S81J": {
+                "7_days": 0,
+                "30_days": 633.66,
+                "commission": 12.6732
+              },
+              "T-114Y8P2T6": {
+                "7_days": 0,
+                "30_days": 585.82,
+                "commission": 11.716400000000002
+              },
+              "T-11615PKGQ": {
+                "7_days": 0,
+                "30_days": 798.14,
+                "commission": 15.963
+              },
+              "T-1169MGYWQ": {
+                "7_days": 0,
+                "30_days": 682.69,
+                "commission": 13.653800000000002
+              },
+              "T-116SWF9SK": {
+                "7_days": 0,
+                "30_days": 518.61,
+                "commission": 10.372200000000001
+              }
+            },
+            "Total_30_days": 35644.52999999999,
+            "Total_comision": 841.8212000000001
+          },
+          "DE Cargo Speed": {
+            "Total_7_days": 1454.24,
+            "VRID_details": {
+              "111771Z46": {
+                "7_days": 0,
+                "30_days": 631.24,
+                "commission": 25.2496
+              },
+              "111FC2YW2": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 35.7528
+              },
+              "112FTTQD2": {
+                "7_days": 418.08,
+                "30_days": 0,
+                "commission": 16.7232
+              },
+              "1141V8WZL": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "114DXSC62": {
+                "7_days": 367.19,
+                "30_days": 0,
+                "commission": 14.6876
+              },
+              "114QV24PH": {
+                "7_days": 0,
+                "30_days": 379.76,
+                "commission": 15.1904
+              },
+              "1152WRZ1Z": {
+                "7_days": 0,
+                "30_days": 489.41,
+                "commission": 19.576400000000003
+              },
+              "115PS2QBY": {
+                "7_days": 330.44,
+                "30_days": 0,
+                "commission": 13.217600000000001
+              },
+              "116VLLGN9": {
+                "7_days": 338.53,
+                "30_days": 0,
+                "commission": 13.5412
+              },
+              "T-112GDK6C8": {
+                "7_days": 0,
+                "30_days": 626.76,
+                "commission": 25.0704
+              },
+              "T-116VV2JGM": {
+                "7_days": 0,
+                "30_days": 702.33,
+                "commission": 28.093200000000003
+              }
+            },
+            "Total_30_days": 3994.0199999999995,
+            "Total_comision": 217.93040000000005
+          }
+        },
+        "tripData": null,
+        "invoice7Data": null,
+        "invoice30Data": null
+      },
+      {
+        "id": 2,
+        "weekLabel": "6 iul. - 12 iul.",
+        "processingDate": "2025-07-24T12:32:42.175Z",
+        "tripDataCount": 0,
+        "invoice7Count": 0,
+        "invoice30Count": 0,
+        "processedData": {
+          "Stef Trans": {
+            "Total_7_days": 1196.38,
+            "VRID_details": {
+              "111ZL4LVR": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 35.7528
+              },
+              "11271CTWT": {
+                "7_days": 399.16,
+                "30_days": 0,
+                "commission": 15.966400000000002
+              },
+              "113MRP234": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 8.8
+              },
+              "113YCYJ2Q": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "1152QZS2Q": {
+                "7_days": 577.22,
+                "30_days": 0,
+                "commission": 23.088800000000003
+              },
+              "115YT17HJ": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 35.7528
+              },
+              "T-114X5GXK6": {
+                "7_days": 0,
+                "30_days": 676.35,
+                "commission": 27.054000000000002
+              }
+            },
+            "Total_30_days": 2734.69,
+            "Total_comision": 157.24280000000002
+          },
+          "Fast Express": {
+            "Total_7_days": 9326.44,
+            "VRID_details": {
+              "1113YDGGG": {
+                "7_days": 0,
+                "30_days": 631.24,
+                "commission": 12.6248
+              },
+              "111BW4F29": {
+                "7_days": 555.78,
+                "30_days": 0,
+                "commission": 11.115599999999999
+              },
+              "111DT1Q77": {
+                "7_days": 0,
+                "30_days": 222.86,
+                "commission": 4.4572
+              },
+              "111FWNNQW": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "111H4SVYY": {
+                "7_days": 533.76,
+                "30_days": 0,
+                "commission": 10.6752
+              },
+              "111JYBVB4": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "111LHRCX1": {
+                "7_days": 0,
+                "30_days": 243.98,
+                "commission": 4.8796
+              },
+              "111N6BRMC": {
+                "7_days": 458.29,
+                "30_days": 0,
+                "commission": 9.1658
+              },
+              "111NDH6QP": {
+                "7_days": 305.62,
+                "30_days": 0,
+                "commission": 6.1124
+              },
+              "111S2QLXH": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "1122YKLVR": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "11299786K": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 0.0002
+              },
+              "112CJ1N9F": {
+                "7_days": 0,
+                "30_days": 388.51,
+                "commission": 7.7702
+              },
+              "112D5VXZL": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "112GVYXKN": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 0.0002
+              },
+              "112HKRC8S": {
+                "7_days": 811.24,
+                "30_days": 0,
+                "commission": 16.224800000000002
+              },
+              "112L3G9N6": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 0.0002
+              },
+              "112L5JVGD": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "112LNH43T": {
+                "7_days": 414.33,
+                "30_days": 0,
+                "commission": 8.2866
+              },
+              "112MF4S2K": {
+                "7_days": 0,
+                "30_days": 577.34,
+                "commission": 11.546800000000001
+              },
+              "112P31SKS": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "112QQNR7J": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "112X869KB": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "112Y8KDF9": {
+                "7_days": 521.43,
+                "30_days": 0,
+                "commission": 10.4286
+              },
+              "112Z2WF5Z": {
+                "7_days": 563.18,
+                "30_days": 0,
+                "commission": 11.263599999999999
+              },
+              "1131V5RTH": {
+                "7_days": 430.56,
+                "30_days": 0,
+                "commission": 8.6112
+              },
+              "1133T8HZS": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "113BTSWGY": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 5.414
+              },
+              "113G5YH6S": {
+                "7_days": 307.5,
+                "30_days": 0,
+                "commission": 6.15
+              },
+              "113K5KS6D": {
+                "7_days": 0,
+                "30_days": 577.34,
+                "commission": 11.546800000000001
+              },
+              "113K8CJRM": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 10.987
+              },
+              "113KLQ61H": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "113LMVSB4": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "113RTGFX6": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "113VVS747": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 0.0002
+              },
+              "1141MZF26": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "1144DN878": {
+                "7_days": 520.89,
+                "30_days": 0,
+                "commission": 10.4178
+              },
+              "11456756L": {
+                "7_days": 412.79,
+                "30_days": 0,
+                "commission": 8.2558
+              },
+              "114BFQMRG": {
+                "7_days": 0,
+                "30_days": 577.34,
+                "commission": 11.546800000000001
+              },
+              "114CWFGQW": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "114FKC4C7": {
+                "7_days": 0,
+                "30_days": 353.13,
+                "commission": 7.0626
+              },
+              "114GY1JNK": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "114KH5G9J": {
+                "7_days": 428.76,
+                "30_days": 0,
+                "commission": 8.5752
+              },
+              "114L2V9SH": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "114MBHG5F": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "114MTV61X": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "114N1YDZ6": {
+                "7_days": 0,
+                "30_days": 508.12,
+                "commission": 10.1624
+              },
+              "114RKDKW9": {
+                "7_days": 809.92,
+                "30_days": 0,
+                "commission": 16.1984
+              },
+              "114TMVMGT": {
+                "7_days": 0,
+                "30_days": 130.65,
+                "commission": 2.613
+              },
+              "114VZTJLJ": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "114XLVGQW": {
+                "7_days": 0,
+                "30_days": 507.07,
+                "commission": 10.1414
+              },
+              "114ZTQB8Z": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "1153W5NQV": {
+                "7_days": 0,
+                "30_days": 894.44,
+                "commission": 17.8888
+              },
+              "1159NQ5P4": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "115BSJ3N8": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "115DVT2K6": {
+                "7_days": 0,
+                "30_days": 513.42,
+                "commission": 10.2684
+              },
+              "115F3NSQF": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "115GRQ19C": {
+                "7_days": 0,
+                "30_days": 237.99,
+                "commission": 4.7598
+              },
+              "115GYQR6C": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 5.414
+              },
+              "115J252X9": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "115KDHRJ4": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "115NGCPL4": {
+                "7_days": 0,
+                "30_days": 237.99,
+                "commission": 4.7598
+              },
+              "115Q9WLWM": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "115SVYZ2N": {
+                "7_days": 555.98,
+                "30_days": 0,
+                "commission": 22.2392
+              },
+              "115SWRXJ6": {
+                "7_days": 0,
+                "30_days": 222.86,
+                "commission": 4.4572
+              },
+              "115TWNL71": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "115XN8N3W": {
+                "7_days": 0,
+                "30_days": 222.3,
+                "commission": 4.446000000000001
+              },
+              "11622LLKM": {
+                "7_days": 427.22,
+                "30_days": 0,
+                "commission": 8.544400000000001
+              },
+              "1168SQ7CL": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "1169BDMYF": {
+                "7_days": 0,
+                "30_days": 218.26,
+                "commission": 4.3652
+              },
+              "1169R77NB": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 0.0002
+              },
+              "116BX3B7Z": {
+                "7_days": 829.19,
+                "30_days": 0,
+                "commission": 16.5838
+              },
+              "116HVDQLJ": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "116KLHQYC": {
+                "7_days": 0,
+                "30_days": 472.21,
+                "commission": 9.4442
+              },
+              "116MZ3PR5": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "116NL25QT": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "116SNH433": {
+                "7_days": 0,
+                "30_days": 894.44,
+                "commission": 17.8888
+              },
+              "116WH9MQ1": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 12
+              },
+              "T-112W4GMCV": {
+                "7_days": 0,
+                "30_days": 658.75,
+                "commission": 13.175
+              },
+              "T-1161R8JPX": {
+                "7_days": 0,
+                "30_days": 674.05,
+                "commission": 13.481
+              },
+              "T-116HFKT5N": {
+                "7_days": 0,
+                "30_days": 744.83,
+                "commission": 14.896600000000001
+              }
+            },
+            "Total_30_days": 30934.079999999998,
+            "Total_comision": 828.33
+          },
+          "DE Cargo Speed": {
+            "Total_7_days": 2956.2300000000005,
+            "VRID_details": {
+              "1111PBDGV": {
+                "7_days": 0,
+                "30_days": 349.47,
+                "commission": 13.978800000000001
+              },
+              "1112Y8DG7": {
+                "7_days": 307.55,
+                "30_days": 0,
+                "commission": 12.302000000000001
+              },
+              "111JTBXZT": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 33.387600000000006
+              },
+              "111XJDLDV": {
+                "7_days": 0,
+                "30_days": 541.68,
+                "commission": 21.667199999999998
+              },
+              "112BDBD4M": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 23.1336
+              },
+              "112NZT1P8": {
+                "7_days": 425.39,
+                "30_days": 0,
+                "commission": 17.0156
+              },
+              "1135WT4TT": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 21.974
+              },
+              "1137P7ZSG": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 19.214000000000002
+              },
+              "113B764N2": {
+                "7_days": 322.08,
+                "30_days": 0,
+                "commission": 12.8832
+              },
+              "113ZHJGJD": {
+                "7_days": 0,
+                "30_days": 237.99,
+                "commission": 9.5196
+              },
+              "1149GBC5H": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 21.974
+              },
+              "114ND6S8S": {
+                "7_days": 0,
+                "30_days": 508.12,
+                "commission": 20.3248
+              },
+              "114YJ75FX": {
+                "7_days": 439.24,
+                "30_days": 0,
+                "commission": 17.5696
+              },
+              "1151WMH9M": {
+                "7_days": 212.29,
+                "30_days": 0,
+                "commission": 8.4916
+              },
+              "1152CXDHD": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 8.8
+              },
+              "115B9G8TJ": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "115JZWCY4": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 35.8068
+              },
+              "115LW42H2": {
+                "7_days": 508.09,
+                "30_days": 0,
+                "commission": 20.3236
+              },
+              "115YMVRDP": {
+                "7_days": 0,
+                "30_days": 489.41,
+                "commission": 19.576400000000003
+              },
+              "1163FPJDN": {
+                "7_days": 521.59,
+                "30_days": 0,
+                "commission": 20.8636
+              },
+              "116RY4HKH": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 23.1336
+              }
+            },
+            "Total_30_days": 6862.960000000001,
+            "Total_comision": 392.76759999999996
+          }
+        },
+        "tripData": null,
+        "invoice7Data": null,
+        "invoice30Data": null
+      },
+      {
+        "id": 3,
+        "weekLabel": "29 iun. - 5 iul.",
+        "processingDate": "2025-07-24T15:39:05.678Z",
+        "tripDataCount": 0,
+        "invoice7Count": 0,
+        "invoice30Count": 0,
+        "processedData": {
+          "Stef Trans": {
+            "Total_7_days": 2725.57,
+            "VRID_details": {
+              "111CM5TK3": {
+                "7_days": 327.08,
+                "30_days": 0,
+                "commission": 13.0832
+              },
+              "1138K9SN1": {
+                "7_days": 0,
+                "30_days": 222.59,
+                "commission": 8.9036
+              },
+              "113Y63KXK": {
+                "7_days": 0,
+                "30_days": 512.12,
+                "commission": 20.4848
+              },
+              "1159B623H": {
+                "7_days": 1748.91,
+                "30_days": 0,
+                "commission": 69.9564
+              },
+              "115NQZLG3": {
+                "7_days": 315.79,
+                "30_days": 0,
+                "commission": 12.6316
+              },
+              "116RHRSNG": {
+                "7_days": 333.79,
+                "30_days": 0,
+                "commission": 13.351600000000001
+              },
+              "T-112VNGSBX": {
+                "7_days": 0,
+                "30_days": 574.97,
+                "commission": 22.998800000000003
+              },
+              "T-113YG8TFV": {
+                "7_days": 0,
+                "30_days": 718.31,
+                "commission": 28.7324
+              }
+            },
+            "Total_30_days": 2027.99,
+            "Total_comision": 190.14240000000007
+          },
+          "Fast Express": {
+            "Total_7_days": 21487.940000000002,
+            "VRID_details": {
+              "1111S9XYT": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "111247N11": {
+                "7_days": 0,
+                "30_days": 892.69,
+                "commission": 17.853800000000003
+              },
+              "1112BVV5Y": {
+                "7_days": 483.32,
+                "30_days": 0,
+                "commission": 9.6664
+              },
+              "1112W8QFD": {
+                "7_days": 284.45,
+                "30_days": 0,
+                "commission": 5.689
+              },
+              "111852LNP": {
+                "7_days": 721.67,
+                "30_days": 0,
+                "commission": 14.433399999999999
+              },
+              "1119P8ZBX": {
+                "7_days": 0,
+                "30_days": 892.69,
+                "commission": 17.853800000000003
+              },
+              "111BKL68C": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "111CDL2D7": {
+                "7_days": 0,
+                "30_days": 471.45,
+                "commission": 9.429
+              },
+              "111DJNVQ9": {
+                "7_days": 0,
+                "30_days": 892.84,
+                "commission": 17.8568
+              },
+              "111FHJFKZ": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "111G89LZP": {
+                "7_days": 330.78,
+                "30_days": 0,
+                "commission": 6.6156
+              },
+              "111T1SVTX": {
+                "7_days": 966.13,
+                "30_days": 0,
+                "commission": 19.3226
+              },
+              "111WLLHPC": {
+                "7_days": 0,
+                "30_days": 892.84,
+                "commission": 17.8568
+              },
+              "111WQDF5V": {
+                "7_days": 0,
+                "30_days": 583.38,
+                "commission": 11.6676
+              },
+              "111ZT6542": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "11242NXGX": {
+                "7_days": 615.39,
+                "30_days": 0,
+                "commission": 12.3078
+              },
+              "112B11S4J": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "112G8DDL6": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "112GZP8QK": {
+                "7_days": 357.44,
+                "30_days": 0,
+                "commission": 7.1488000000000005
+              },
+              "112HR1LHW": {
+                "7_days": 409.83,
+                "30_days": 0,
+                "commission": 8.1966
+              },
+              "112MC2S62": {
+                "7_days": 530.2,
+                "30_days": 0,
+                "commission": 10.604000000000001
+              },
+              "112NGSYS8": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "112NS1W63": {
+                "7_days": 0,
+                "30_days": 222.62,
+                "commission": 4.4524
+              },
+              "112NWX7H2": {
+                "7_days": 528.19,
+                "30_days": 0,
+                "commission": 10.5638
+              },
+              "112Q5JGPQ": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "112T3NZGJ": {
+                "7_days": 404.58,
+                "30_days": 0,
+                "commission": 8.0916
+              },
+              "112WSKF6F": {
+                "7_days": 0,
+                "30_days": 479.45,
+                "commission": 9.589
+              },
+              "1132LW4XF": {
+                "7_days": 503.28,
+                "30_days": 0,
+                "commission": 10.0656
+              },
+              "1139Q81JH": {
+                "7_days": 540.41,
+                "30_days": 0,
+                "commission": 10.8082
+              },
+              "1139XLWY1": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 0.0002
+              },
+              "113BJZT68": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "113C36YZ6": {
+                "7_days": 369.72,
+                "30_days": 0,
+                "commission": 7.394400000000001
+              },
+              "113GVJ5VM": {
+                "7_days": 422.56,
+                "30_days": 0,
+                "commission": 8.4512
+              },
+              "113KSQXTT": {
+                "7_days": 0,
+                "30_days": 583.52,
+                "commission": 11.670399999999999
+              },
+              "113LBBJ7N": {
+                "7_days": 0,
+                "30_days": 479.31,
+                "commission": 9.5862
+              },
+              "113MBZGX4": {
+                "7_days": 0,
+                "30_days": 479.31,
+                "commission": 9.5862
+              },
+              "113QDRD53": {
+                "7_days": 0,
+                "30_days": 479.31,
+                "commission": 9.5862
+              },
+              "113S1RJVT": {
+                "7_days": 475.66,
+                "30_days": 0,
+                "commission": 9.513200000000001
+              },
+              "113VGK3WR": {
+                "7_days": 0,
+                "30_days": 226.92,
+                "commission": 4.5384
+              },
+              "113W8WR6K": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "113WGRVRQ": {
+                "7_days": 1486.23,
+                "30_days": 0,
+                "commission": 29.724600000000002
+              },
+              "1144V237J": {
+                "7_days": 431.68,
+                "30_days": 0,
+                "commission": 8.6336
+              },
+              "1145H6MCJ": {
+                "7_days": 474.03,
+                "30_days": 0,
+                "commission": 9.480599999999999
+              },
+              "1147D9M7T": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "1147P7FX7": {
+                "7_days": 637.3,
+                "30_days": 0,
+                "commission": 12.745999999999999
+              },
+              "1148HJCFW": {
+                "7_days": 249.38,
+                "30_days": 0,
+                "commission": 4.9876
+              },
+              "1149F4XW3": {
+                "7_days": 528.55,
+                "30_days": 0,
+                "commission": 10.571
+              },
+              "114GG1FRN": {
+                "7_days": 570.99,
+                "30_days": 0,
+                "commission": 11.4198
+              },
+              "114HLMNGB": {
+                "7_days": 529.25,
+                "30_days": 0,
+                "commission": 10.585
+              },
+              "114QNZZH5": {
+                "7_days": 0,
+                "30_days": 892.69,
+                "commission": 17.853800000000003
+              },
+              "114T6J9HM": {
+                "7_days": 235.53,
+                "30_days": 0,
+                "commission": 4.7106
+              },
+              "114TS5DTF": {
+                "7_days": 0,
+                "30_days": 892.69,
+                "commission": 17.853800000000003
+              },
+              "114XB9JZB": {
+                "7_days": 0,
+                "30_days": 982.69,
+                "commission": 19.6538
+              },
+              "114ZLQ3KD": {
+                "7_days": 477.57,
+                "30_days": 0,
+                "commission": 9.5514
+              },
+              "1151FV3GH": {
+                "7_days": 625.2,
+                "30_days": 0,
+                "commission": 12.504000000000001
+              },
+              "1152P9DGL": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "11565284R": {
+                "7_days": 480.37,
+                "30_days": 0,
+                "commission": 19.2148
+              },
+              "1156T4LCV": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 4.4
+              },
+              "1157PPTZ8": {
+                "7_days": 335.4,
+                "30_days": 0,
+                "commission": 6.707999999999999
+              },
+              "115BZNV4J": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "115C94VR9": {
+                "7_days": 0,
+                "30_days": 222.59,
+                "commission": 4.4518
+              },
+              "115CN7ZW3": {
+                "7_days": 832.64,
+                "30_days": 0,
+                "commission": 16.6528
+              },
+              "115FVQ1S1": {
+                "7_days": 401.07,
+                "30_days": 0,
+                "commission": 8.0214
+              },
+              "115M4Y91B": {
+                "7_days": 0,
+                "30_days": 222.59,
+                "commission": 4.4518
+              },
+              "115PPDNFC": {
+                "7_days": 591.16,
+                "30_days": 0,
+                "commission": 11.8232
+              },
+              "1162NJ9Q9": {
+                "7_days": 519.47,
+                "30_days": 0,
+                "commission": 10.3894
+              },
+              "1164JKR9S": {
+                "7_days": 216.37,
+                "30_days": 0,
+                "commission": 4.3274
+              },
+              "1164WQLWR": {
+                "7_days": 421.79,
+                "30_days": 0,
+                "commission": 8.4358
+              },
+              "11657NV5Z": {
+                "7_days": 0,
+                "30_days": 650.14,
+                "commission": 13.0028
+              },
+              "1165GJ8CY": {
+                "7_days": 0,
+                "30_days": 506.68,
+                "commission": 10.1336
+              },
+              "116861X8Z": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "1168ZZ9NR": {
+                "7_days": 580.44,
+                "30_days": 0,
+                "commission": 11.6088
+              },
+              "116CGFSS2": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 0.0002
+              },
+              "116G8NGQ6": {
+                "7_days": 494.07,
+                "30_days": 0,
+                "commission": 9.8814
+              },
+              "116TVF7WP": {
+                "7_days": 0,
+                "30_days": 344.47,
+                "commission": 6.889400000000001
+              },
+              "116TWFH82": {
+                "7_days": 0,
+                "30_days": 237.77,
+                "commission": 4.755400000000001
+              },
+              "116WCKYJS": {
+                "7_days": 504.52,
+                "30_days": 0,
+                "commission": 10.0904
+              },
+              "116WQHLSG": {
+                "7_days": 601.32,
+                "30_days": 0,
+                "commission": 12.0264
+              },
+              "T-114RPXT7G": {
+                "7_days": 0,
+                "30_days": 644.1,
+                "commission": 12.882000000000001
+              },
+              "T-115GWZWSC": {
+                "7_days": 0,
+                "30_days": 583.35,
+                "commission": 11.667
+              }
+            },
+            "Total_30_days": 18376.26,
+            "Total_comision": 806.8913999999999
+          },
+          "DE Cargo Speed": {
+            "Total_7_days": 4849.7699999999995,
+            "VRID_details": {
+              "111NBKTZK": {
+                "7_days": 0,
+                "30_days": 650.32,
+                "commission": 26.012800000000002
+              },
+              "1124GRTHB": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 8.8
+              },
+              "1126VZSYB": {
+                "7_days": 381.51,
+                "30_days": 0,
+                "commission": 15.2604
+              },
+              "112F5WM1Z": {
+                "7_days": 0,
+                "30_days": 361.88,
+                "commission": 14.475200000000001
+              },
+              "112R7WLXV": {
+                "7_days": 570.41,
+                "30_days": 0,
+                "commission": 22.816399999999998
+              },
+              "1134J8D7S": {
+                "7_days": 933.77,
+                "30_days": 0,
+                "commission": 37.3508
+              },
+              "113B2LHTL": {
+                "7_days": 467.08,
+                "30_days": 0,
+                "commission": 18.6832
+              },
+              "113M6F98G": {
+                "7_days": 0,
+                "30_days": 892.69,
+                "commission": 35.707600000000006
+              },
+              "11452NC1K": {
+                "7_days": 639.51,
+                "30_days": 0,
+                "commission": 25.5804
+              },
+              "114MCTV91": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 8.8
+              },
+              "115HJHPL3": {
+                "7_days": 530.95,
+                "30_days": 0,
+                "commission": 21.238000000000003
+              },
+              "115WVS7HJ": {
+                "7_days": 0,
+                "30_days": 650.14,
+                "commission": 26.0056
+              },
+              "11641CK5K": {
+                "7_days": 735.42,
+                "30_days": 0,
+                "commission": 29.4168
+              },
+              "116MGHCVS": {
+                "7_days": 371.12,
+                "30_days": 0,
+                "commission": 14.844800000000001
+              },
+              "T-112XQ8K83": {
+                "7_days": 0,
+                "30_days": 636.88,
+                "commission": 25.4752
+              },
+              "T-114N7VRVC": {
+                "7_days": 0,
+                "30_days": 654.7,
+                "commission": 26.188000000000002
+              }
+            },
+            "Total_30_days": 4066.6100000000006,
+            "Total_comision": 356.65520000000004
+          }
+        },
+        "tripData": null,
+        "invoice7Data": null,
+        "invoice30Data": null
+      },
+      {
+        "id": 4,
+        "weekLabel": "22 iun. - 28 iun.",
+        "processingDate": "2025-07-24T16:15:20.675Z",
+        "tripDataCount": 0,
+        "invoice7Count": 0,
+        "invoice30Count": 0,
+        "processedData": {
+          "Fast Express": {
+            "Total_7_days": 21249.370000000006,
+            "VRID_details": {
+              "1116MQ7FN": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 5.409
+              },
+              "111B1LPJT": {
+                "7_days": 0,
+                "30_days": 411.17,
+                "commission": 8.2234
+              },
+              "111BC96DH": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 5.409
+              },
+              "111DSN6KQ": {
+                "7_days": 405.65,
+                "30_days": 0,
+                "commission": 8.113
+              },
+              "111HF3HC9": {
+                "7_days": 0,
+                "30_days": 479.45,
+                "commission": 9.589
+              },
+              "111NCFY6P": {
+                "7_days": 0,
+                "30_days": 344.47,
+                "commission": 6.889400000000001
+              },
+              "111Q18YC8": {
+                "7_days": 0,
+                "30_days": 479.45,
+                "commission": 9.589
+              },
+              "111QBKW14": {
+                "7_days": 0,
+                "30_days": 237.77,
+                "commission": 4.755400000000001
+              },
+              "111SCPSBC": {
+                "7_days": 653.64,
+                "30_days": 0,
+                "commission": 13.0728
+              },
+              "111SG89VN": {
+                "7_days": 0,
+                "30_days": 237.77,
+                "commission": 4.755400000000001
+              },
+              "111VBN33L": {
+                "7_days": 422.83,
+                "30_days": 0,
+                "commission": 8.4566
+              },
+              "111W3RKBB": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "111WFXD1Z": {
+                "7_days": 375.08,
+                "30_days": 0,
+                "commission": 7.5016
+              },
+              "111WS3GSW": {
+                "7_days": 0,
+                "30_days": 548.38,
+                "commission": 10.967600000000001
+              },
+              "111XBGZJM": {
+                "7_days": 430.42,
+                "30_days": 0,
+                "commission": 8.608400000000001
+              },
+              "111XQ1PYG": {
+                "7_days": 373.8,
+                "30_days": 0,
+                "commission": 7.476
+              },
+              "1125DCMNS": {
+                "7_days": 368.94,
+                "30_days": 0,
+                "commission": 7.3788
+              },
+              "1125F41LP": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "1129HSKBH": {
+                "7_days": 435.32,
+                "30_days": 0,
+                "commission": 8.7064
+              },
+              "112C8W7QB": {
+                "7_days": 0,
+                "30_days": 578.86,
+                "commission": 11.577200000000001
+              },
+              "112DHHJ6S": {
+                "7_days": 0,
+                "30_days": 650.32,
+                "commission": 13.006400000000001
+              },
+              "112HPPXSW": {
+                "7_days": 863.26,
+                "30_days": 0,
+                "commission": 17.2652
+              },
+              "112J91MJX": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 5.409
+              },
+              "112JHL8M5": {
+                "7_days": 895.82,
+                "30_days": 0,
+                "commission": 17.916400000000003
+              },
+              "112LXSWMT": {
+                "7_days": 0,
+                "30_days": 371.19,
+                "commission": 7.4238
+              },
+              "112M34WZ9": {
+                "7_days": 682.56,
+                "30_days": 0,
+                "commission": 13.6512
+              },
+              "112NGX6CK": {
+                "7_days": 601.84,
+                "30_days": 0,
+                "commission": 12.036800000000001
+              },
+              "112Q23QLX": {
+                "7_days": 571.59,
+                "30_days": 0,
+                "commission": 11.4318
+              },
+              "112X6VC5K": {
+                "7_days": 0,
+                "30_days": 360.2,
+                "commission": 7.204
+              },
+              "1131PSWSW": {
+                "7_days": 0,
+                "30_days": 479.45,
+                "commission": 9.589
+              },
+              "1131ZYL77": {
+                "7_days": 0,
+                "30_days": 242.05,
+                "commission": 4.841
+              },
+              "1133LFRYM": {
+                "7_days": 441.89,
+                "30_days": 0,
+                "commission": 8.8378
+              },
+              "1134XKBV4": {
+                "7_days": 484.24,
+                "30_days": 0,
+                "commission": 9.684800000000001
+              },
+              "1136XQM76": {
+                "7_days": 348.75,
+                "30_days": 0,
+                "commission": 6.9750000000000005
+              },
+              "1139S2T3C": {
+                "7_days": 0,
+                "30_days": 226.93,
+                "commission": 4.538600000000001
+              },
+              "113BH5N1W": {
+                "7_days": 0,
+                "30_days": 831.45,
+                "commission": 16.629
+              },
+              "113BM8CB9": {
+                "7_days": 296.03,
+                "30_days": 0,
+                "commission": 5.920599999999999
+              },
+              "113BNQLKL": {
+                "7_days": 305.47,
+                "30_days": 0,
+                "commission": 6.109400000000001
+              },
+              "113JB9JLF": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "113JPC2RW": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 5.409
+              },
+              "113JPMMNC": {
+                "7_days": 542.01,
+                "30_days": 0,
+                "commission": 10.8402
+              },
+              "113KHSYPM": {
+                "7_days": 0,
+                "30_days": 578.07,
+                "commission": 11.5614
+              },
+              "113M7Q5JG": {
+                "7_days": 0,
+                "30_days": 578.86,
+                "commission": 11.577200000000001
+              },
+              "113NRPGQ9": {
+                "7_days": 480.13,
+                "30_days": 0,
+                "commission": 9.6026
+              },
+              "113NRS5YQ": {
+                "7_days": 501.38,
+                "30_days": 0,
+                "commission": 10.0276
+              },
+              "113PGGHRX": {
+                "7_days": 521.04,
+                "30_days": 0,
+                "commission": 10.4208
+              },
+              "113RVF84S": {
+                "7_days": 323.04,
+                "30_days": 0,
+                "commission": 6.460800000000001
+              },
+              "113SYHNFD": {
+                "7_days": 0,
+                "30_days": 578.07,
+                "commission": 11.5614
+              },
+              "113WWZN25": {
+                "7_days": 0,
+                "30_days": 479.45,
+                "commission": 9.589
+              },
+              "113ZMQBTN": {
+                "7_days": 395.41,
+                "30_days": 0,
+                "commission": 7.908200000000001
+              },
+              "1146FSXKK": {
+                "7_days": 0,
+                "30_days": 479.45,
+                "commission": 9.589
+              },
+              "1146MRPBB": {
+                "7_days": 0,
+                "30_days": 548.38,
+                "commission": 10.967600000000001
+              },
+              "1146SX82F": {
+                "7_days": 624.38,
+                "30_days": 0,
+                "commission": 12.4876
+              },
+              "11491BRGG": {
+                "7_days": 0,
+                "30_days": 344.47,
+                "commission": 6.889400000000001
+              },
+              "114CNLY24": {
+                "7_days": 355.36,
+                "30_days": 0,
+                "commission": 7.107200000000001
+              },
+              "114DLHBNF": {
+                "7_days": 0,
+                "30_days": 482.05,
+                "commission": 9.641
+              },
+              "114G3LZ9Y": {
+                "7_days": 0,
+                "30_days": 650.32,
+                "commission": 13.006400000000001
+              },
+              "114GQQB5M": {
+                "7_days": 437.17,
+                "30_days": 0,
+                "commission": 8.743400000000001
+              },
+              "114HDXHTW": {
+                "7_days": 325.8,
+                "30_days": 0,
+                "commission": 6.516
+              },
+              "114LPFQDL": {
+                "7_days": 341.16,
+                "30_days": 0,
+                "commission": 6.823200000000001
+              },
+              "114M4CYFG": {
+                "7_days": 0,
+                "30_days": 371.19,
+                "commission": 7.4238
+              },
+              "114MTFK5B": {
+                "7_days": 0,
+                "30_days": 237.77,
+                "commission": 4.755400000000001
+              },
+              "114PPMDGD": {
+                "7_days": 477.85,
+                "30_days": 0,
+                "commission": 9.557
+              },
+              "114Q9Z4QG": {
+                "7_days": 354.89,
+                "30_days": 0,
+                "commission": 7.097799999999999
+              },
+              "1153CVG1C": {
+                "7_days": 598.98,
+                "30_days": 0,
+                "commission": 11.979600000000001
+              },
+              "1153NRXL2": {
+                "7_days": 425.19,
+                "30_days": 0,
+                "commission": 8.5038
+              },
+              "11564B77X": {
+                "7_days": 0,
+                "30_days": 222.62,
+                "commission": 4.4524
+              },
+              "1158MKGCM": {
+                "7_days": 507.4,
+                "30_days": 0,
+                "commission": 10.148
+              },
+              "115KMDGTM": {
+                "7_days": 0,
+                "30_days": 892.84,
+                "commission": 17.8568
+              },
+              "115LBLWK6": {
+                "7_days": 467.69,
+                "30_days": 0,
+                "commission": 9.3538
+              },
+              "115MD17N2": {
+                "7_days": 348.27,
+                "30_days": 0,
+                "commission": 6.9654
+              },
+              "115SV3BP9": {
+                "7_days": 295.9,
+                "30_days": 0,
+                "commission": 5.917999999999999
+              },
+              "115SYL4Z7": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 5.409
+              },
+              "115WYWXB6": {
+                "7_days": 526.93,
+                "30_days": 0,
+                "commission": 10.538599999999999
+              },
+              "115XL5HPX": {
+                "7_days": 261.03,
+                "30_days": 0,
+                "commission": 5.220599999999999
+              },
+              "115ZYLCLT": {
+                "7_days": 0,
+                "30_days": 577.07,
+                "commission": 11.541400000000001
+              },
+              "1161CDSDL": {
+                "7_days": 521.05,
+                "30_days": 0,
+                "commission": 10.421
+              },
+              "116BB33WR": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 5.409
+              },
+              "116BGMNYB": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "116CBBNCQ": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "116F7KN4F": {
+                "7_days": 448.86,
+                "30_days": 0,
+                "commission": 8.9772
+              },
+              "116FXXNWS": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "116KRRNQ6": {
+                "7_days": 0,
+                "30_days": 577.07,
+                "commission": 11.541400000000001
+              },
+              "116NK85LZ": {
+                "7_days": 0,
+                "30_days": 471.45,
+                "commission": 9.429
+              },
+              "116NMDV3P": {
+                "7_days": 0,
+                "30_days": 812.58,
+                "commission": 16.2516
+              },
+              "116TRDFQ4": {
+                "7_days": 511.58,
+                "30_days": 0,
+                "commission": 10.2316
+              },
+              "T-111G9S9N9": {
+                "7_days": 0,
+                "30_days": 573.47,
+                "commission": 22.9388
+              },
+              "T-113J9CR9P": {
+                "7_days": 0,
+                "30_days": 595.18,
+                "commission": 11.903599999999999
+              },
+              "T-1146FD5VM": {
+                "7_days": 0,
+                "30_days": 638.65,
+                "commission": 25.546
+              },
+              "T-114KV3SMS": {
+                "7_days": 379.74,
+                "30_days": 0,
+                "commission": 7.5948
+              },
+              "T-114T8PKF9": {
+                "7_days": 0,
+                "30_days": 574.95,
+                "commission": 11.499
+              },
+              "T-115LS5S26": {
+                "7_days": 0,
+                "30_days": 579.03,
+                "commission": 11.5806
+              },
+              "T-115ZF7V69": {
+                "7_days": 0,
+                "30_days": 595.58,
+                "commission": 11.911600000000002
+              },
+              "T-116WJVJCP": {
+                "7_days": 0,
+                "30_days": 608.8,
+                "commission": 12.176
+              }
+            },
+            "Total_30_days": 21148.98000000001,
+            "Total_comision": 872.2094000000001
+          },
+          "DE Cargo Speed": {
+            "Total_7_days": 3823.46,
+            "VRID_details": {
+              "1114W9VNF": {
+                "7_days": 449.52,
+                "30_days": 0,
+                "commission": 17.9808
+              },
+              "11167NRP2": {
+                "7_days": 285.44,
+                "30_days": 0,
+                "commission": 11.4176
+              },
+              "111GDWXS2": {
+                "7_days": 421.06,
+                "30_days": 0,
+                "commission": 16.8424
+              },
+              "111R9NH1Z": {
+                "7_days": 823.03,
+                "30_days": 0,
+                "commission": 32.9212
+              },
+              "1129RF732": {
+                "7_days": 0,
+                "30_days": 237.77,
+                "commission": 9.510800000000001
+              },
+              "112GWGP76": {
+                "7_days": 0,
+                "30_days": 548.38,
+                "commission": 21.935200000000002
+              },
+              "1136XWT6V": {
+                "7_days": 0,
+                "30_days": 548.38,
+                "commission": 21.935200000000002
+              },
+              "1147HC7DV": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 10.818
+              },
+              "114K2FLJ2": {
+                "7_days": 0,
+                "30_days": 379.23,
+                "commission": 15.169200000000002
+              },
+              "114S16648": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 10.818
+              },
+              "1151VHG35": {
+                "7_days": 0,
+                "30_days": 270.45,
+                "commission": 10.818
+              },
+              "115N1KPVH": {
+                "7_days": 603.77,
+                "30_days": 0,
+                "commission": 24.1508
+              },
+              "116437ZLR": {
+                "7_days": 588.78,
+                "30_days": 0,
+                "commission": 23.551199999999998
+              },
+              "1165VD5CP": {
+                "7_days": 0,
+                "30_days": 583.52,
+                "commission": 23.340799999999998
+              },
+              "116NGT4LH": {
+                "7_days": 651.86,
+                "30_days": 0,
+                "commission": 26.0744
+              }
+            },
+            "Total_30_days": 3108.63,
+            "Total_comision": 277.2836
+          }
+        },
+        "tripData": null,
+        "invoice7Data": null,
+        "invoice30Data": null
+      },
+      {
+        "id": 5,
+        "weekLabel": "20 iul. - 26 iul.",
+        "processingDate": "2025-07-31T06:22:42.309Z",
+        "tripDataCount": 0,
+        "invoice7Count": 0,
+        "invoice30Count": 0,
+        "processedData": {
+          "Toma SRL": {
+            "Total_7_days": 543.03,
+            "VRID_details": {
+              "111KTDY4F": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 8.8
+              },
+              "111NJ16PF": {
+                "7_days": 0,
+                "30_days": 220,
+                "commission": 8.8
+              },
+              "112FW1B1Y": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 35.7528
+              },
+              "1135DG3TG": {
+                "7_days": 323.03,
+                "30_days": 0,
+                "commission": 12.921199999999999
+              },
+              "113GGMWJF": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 35.7528
+              }
+            },
+            "Total_30_days": 2007.6400000000003,
+            "Total_comision": 102.02680000000001
+          },
+          "Stef Trans": {
+            "Total_7_days": 4699.18,
+            "VRID_details": {
+              "111196RV6": {
+                "7_days": 0,
+                "30_days": 222.86,
+                "commission": 8.9144
+              },
+              "1119F6XTN": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "111T641FJ": {
+                "7_days": 0,
+                "30_days": 379.76,
+                "commission": 15.1904
+              },
+              "111WL7FBB": {
+                "7_days": 529.67,
+                "30_days": 0,
+                "commission": 21.186799999999998
+              },
+              "1123VC33K": {
+                "7_days": 364.49,
+                "30_days": 0,
+                "commission": 14.579600000000001
+              },
+              "11256H7K9": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 21.974
+              },
+              "1128DT5WC": {
+                "7_days": 333.83,
+                "30_days": 0,
+                "commission": 13.3532
+              },
+              "1128SJWWB": {
+                "7_days": 401.82,
+                "30_days": 0,
+                "commission": 16.0728
+              },
+              "112BGQ4RS": {
+                "7_days": 516.98,
+                "30_days": 0,
+                "commission": 20.6792
+              },
+              "112CMS6D4": {
+                "7_days": 310.44,
+                "30_days": 0,
+                "commission": 12.4176
+              },
+              "112N5LC4Z": {
+                "7_days": 0,
+                "30_days": 344.81,
+                "commission": 13.7924
+              },
+              "112RCHKD9": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "112Z4D83N": {
+                "7_days": 0,
+                "30_days": 371.54,
+                "commission": 14.861600000000001
+              },
+              "1133QRDDL": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 35.7528
+              },
+              "11345P97M": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 8.8
+              },
+              "1138PCZGM": {
+                "7_days": 0,
+                "30_days": 270.7,
+                "commission": 10.828
+              },
+              "113RD969X": {
+                "7_days": 0,
+                "30_days": 229.91,
+                "commission": 9.1964
+              },
+              "113SLJDRH": {
+                "7_days": 625.54,
+                "30_days": 0,
+                "commission": 25.0216
+              },
+              "113ZMRMFV": {
+                "7_days": 275.66,
+                "30_days": 0,
+                "commission": 11.0264
+              },
+              "1148B7579": {
+                "7_days": 523.33,
+                "30_days": 0,
+                "commission": 20.933200000000003
+              },
+              "114C74ST7": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 21.974
+              },
+              "114VW9PFG": {
+                "7_days": 347.24,
+                "30_days": 0,
+                "commission": 13.889600000000002
+              },
+              "115Y2FPZS": {
+                "7_days": 0,
+                "30_days": 237.99,
+                "commission": 9.5196
+              },
+              "1165FBQGR": {
+                "7_days": 250.18,
+                "30_days": 0,
+                "commission": 10.007200000000001
+              }
+            },
+            "Total_30_days": 4591.49,
+            "Total_comision": 371.62679999999995
+          },
+          "Fast Express": {
+            "Total_7_days": 6247.070000000001,
+            "VRID_details": {
+              "1113LQLKG": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "1116MCS8Y": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "1118ZXNXX": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "111BYT359": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "111DPS6TX": {
+                "7_days": 0,
+                "30_days": 579.02,
+                "commission": 11.5804
+              },
+              "111G5ZGGF": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "111GGPCWH": {
+                "7_days": 0,
+                "30_days": 205.2,
+                "commission": 4.104
+              },
+              "111HNKFK6": {
+                "7_days": 0,
+                "30_days": 237.99,
+                "commission": 4.7598
+              },
+              "111LGXJFN": {
+                "7_days": 0,
+                "30_days": 371.54,
+                "commission": 7.4308000000000005
+              },
+              "111N6Y7N6": {
+                "7_days": 0,
+                "30_days": 577.34,
+                "commission": 11.546800000000001
+              },
+              "111PHBJXF": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "111T3TSNH": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "111V46SWC": {
+                "7_days": 0,
+                "30_days": 450.27,
+                "commission": 9.0054
+              },
+              "111Y5JTJS": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "11214RG7N": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "1121J3FSS": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "1123478SN": {
+                "7_days": 596.21,
+                "30_days": 0,
+                "commission": 11.9242
+              },
+              "1123PJVD4": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "1123Y9QKQ": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "1123Z3QTH": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 17.9034
+              },
+              "1125HYT5Q": {
+                "7_days": 0,
+                "30_days": 578.34,
+                "commission": 11.5668
+              },
+              "1125ZC8ZL": {
+                "7_days": 0,
+                "30_days": 379.76,
+                "commission": 7.5952
+              },
+              "1128H1NC8": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "112D4NWPL": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 10.987
+              },
+              "112NL6764": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "112SWQZN8": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "112TQ8PGR": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "112VY5TCZ": {
+                "7_days": 0,
+                "30_days": 222.86,
+                "commission": 4.4572
+              },
+              "112XFWBCG": {
+                "7_days": 403.41,
+                "30_days": 0,
+                "commission": 8.068200000000001
+              },
+              "112Y86RDL": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "112ZZRL37": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "11391D12Y": {
+                "7_days": 521.86,
+                "30_days": 0,
+                "commission": 10.4372
+              },
+              "1139DGCWB": {
+                "7_days": 0,
+                "30_days": 512.12,
+                "commission": 10.2424
+              },
+              "113CCN3F2": {
+                "7_days": 584.81,
+                "30_days": 0,
+                "commission": 11.6962
+              },
+              "113MRNJD6": {
+                "7_days": 508.13,
+                "30_days": 0,
+                "commission": 10.1626
+              },
+              "113NMG8B9": {
+                "7_days": 257.69,
+                "30_days": 0,
+                "commission": 5.1538
+              },
+              "113RNWMXJ": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 17.9034
+              },
+              "113RYQZBK": {
+                "7_days": 329.97,
+                "30_days": 0,
+                "commission": 6.599400000000001
+              },
+              "113SB9C46": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "113WC4F1M": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "11437J8JY": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "1144BPQ1R": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "1144NGCFY": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "1146JKFKS": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "114C4RPK3": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "114M1X3VG": {
+                "7_days": 220,
+                "30_days": 0,
+                "commission": 4.4
+              },
+              "114N2H87N": {
+                "7_days": 301.56,
+                "30_days": 0,
+                "commission": 6.0312
+              },
+              "114RXN3D8": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "114V6LM4C": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "114Z798GW": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 17.9034
+              },
+              "11512WTT4": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "1157G8N1P": {
+                "7_days": 0,
+                "30_days": 344.81,
+                "commission": 6.8962
+              },
+              "1158H752D": {
+                "7_days": 0,
+                "30_days": 207.83,
+                "commission": 4.1566
+              },
+              "115FBXCJ5": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "115FR98QW": {
+                "7_days": 576.04,
+                "30_days": 0,
+                "commission": 11.5208
+              },
+              "115JMCMZ5": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "115KGQN1K": {
+                "7_days": 341.1,
+                "30_days": 0,
+                "commission": 6.822000000000001
+              },
+              "115N3G93Q": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "1162JF1RG": {
+                "7_days": 0,
+                "30_days": 450.27,
+                "commission": 9.0054
+              },
+              "1162WMDRX": {
+                "7_days": 360.58,
+                "30_days": 0,
+                "commission": 7.2116
+              },
+              "116421N78": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "11686ZZCH": {
+                "7_days": 362.75,
+                "30_days": 0,
+                "commission": 7.255
+              },
+              "11695L1HB": {
+                "7_days": 0,
+                "30_days": 222.68,
+                "commission": 4.453600000000001
+              },
+              "116CDSNF7": {
+                "7_days": 0,
+                "30_days": 651.47,
+                "commission": 13.0294
+              },
+              "116G1FKP2": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "116HD15ZR": {
+                "7_days": 0,
+                "30_days": 834.69,
+                "commission": 16.693800000000003
+              },
+              "116K4G236": {
+                "7_days": 0,
+                "30_days": 450.27,
+                "commission": 9.0054
+              },
+              "116LG94WM": {
+                "7_days": 0,
+                "30_days": 480.35,
+                "commission": 9.607000000000001
+              },
+              "116NKSBWY": {
+                "7_days": 0,
+                "30_days": 584.41,
+                "commission": 11.6882
+              },
+              "116RSTPTN": {
+                "7_days": 320.47,
+                "30_days": 0,
+                "commission": 6.409400000000001
+              },
+              "116TL1XBG": {
+                "7_days": 0,
+                "30_days": 600,
+                "commission": 24
+              },
+              "116V69SFJ": {
+                "7_days": 0,
+                "30_days": 893.82,
+                "commission": 17.8764
+              },
+              "T-111594QB6": {
+                "7_days": 0,
+                "30_days": 132.96,
+                "commission": 5.3184000000000005
+              },
+              "T-11159XJFG": {
+                "7_days": 0,
+                "30_days": 77.66,
+                "commission": 3.1064
+              },
+              "T-111KV269G": {
+                "7_days": 0,
+                "30_days": 38.63,
+                "commission": 1.5452000000000001
+              },
+              "T-112JY85HL": {
+                "7_days": 0,
+                "30_days": 86.58,
+                "commission": 3.4632
+              },
+              "T-112L48ZNF": {
+                "7_days": 0,
+                "30_days": 45.46,
+                "commission": 1.8184
+              },
+              "T-112MFP1T3": {
+                "7_days": 0,
+                "30_days": 56.26,
+                "commission": 2.2504
+              },
+              "T-112RKB1BJ": {
+                "7_days": 0,
+                "30_days": 77.66,
+                "commission": 3.1064
+              },
+              "T-112SSP3VC": {
+                "7_days": 0,
+                "30_days": 487.13,
+                "commission": 9.7426
+              },
+              "T-112TFY1MW": {
+                "7_days": 0,
+                "30_days": 63.77,
+                "commission": 2.5508
+              },
+              "T-113J9CR9P": {
+                "7_days": 0,
+                "30_days": 39.37,
+                "commission": 1.5748
+              },
+              "T-113PMHJTY": {
+                "7_days": 0,
+                "30_days": 46.14,
+                "commission": 1.8456000000000001
+              },
+              "T-113TN6XCQ": {
+                "7_days": 0,
+                "30_days": 0.01,
+                "commission": 4.400400000000001
+              },
+              "T-113VR5C7N": {
+                "7_days": 0,
+                "30_days": 134.56,
+                "commission": 5.3824000000000005
+              },
+              "T-114T8PKF9": {
+                "7_days": 0,
+                "30_days": 86.27,
+                "commission": 3.4508
+              },
+              "T-115JX939Q": {
+                "7_days": 342.49,
+                "30_days": 0,
+                "commission": 6.8498
+              },
+              "T-115LS5S26": {
+                "7_days": 0,
+                "30_days": 98.67,
+                "commission": 3.9468
+              },
+              "T-115Z3HXF2": {
+                "7_days": 0,
+                "30_days": 70.35,
+                "commission": 2.8139999999999996
+              },
+              "T-115ZF7V69": {
+                "7_days": 0,
+                "30_days": 134.27,
+                "commission": 5.370800000000001
+              },
+              "T-116WJVJCP": {
+                "7_days": 0,
+                "30_days": 42.32,
+                "commission": 1.6928
+              },
+              "T-116WKW93V": {
+                "7_days": 0,
+                "30_days": 28.49,
+                "commission": 1.1396
+              }
+            },
+            "Total_30_days": 37763.61999999998,
+            "Total_comision": 1037.4022
+          },
+          "DE Cargo Speed": {
+            "Total_7_days": 2777.57,
+            "VRID_details": {
+              "112LCW89N": {
+                "7_days": 0,
+                "30_days": 237.99,
+                "commission": 9.5196
+              },
+              "112W57PS4": {
+                "7_days": 445.98,
+                "30_days": 0,
+                "commission": 17.8392
+              },
+              "113TDYQWG": {
+                "7_days": 0,
+                "30_days": 549.35,
+                "commission": 21.974
+              },
+              "11461LS1Y": {
+                "7_days": 399.74,
+                "30_days": 0,
+                "commission": 15.989600000000001
+              },
+              "114HHN7WF": {
+                "7_days": 0,
+                "30_days": 371.54,
+                "commission": 14.861600000000001
+              },
+              "11578QRCM": {
+                "7_days": 0,
+                "30_days": 895.17,
+                "commission": 35.8068
+              },
+              "115FR817S": {
+                "7_days": 661.51,
+                "30_days": 0,
+                "commission": 26.4604
+              },
+              "1164FB3JQ": {
+                "7_days": 0,
+                "30_days": 222.86,
+                "commission": 8.9144
+              },
+              "116DND8V9": {
+                "7_days": 391.42,
+                "30_days": 0,
+                "commission": 15.6568
+              },
+              "116NLZX5W": {
+                "7_days": 332.73,
+                "30_days": 0,
+                "commission": 13.3092
+              },
+              "116TKB7LF": {
+                "7_days": 546.19,
+                "30_days": 0,
+                "commission": 21.847600000000003
+              },
+              "T-1122PSC4L": {
+                "7_days": 0,
+                "30_days": 633.4,
+                "commission": 25.336
+              },
+              "T-114QYYSH3": {
+                "7_days": 0,
+                "30_days": 608.11,
+                "commission": 24.3244
+              }
+            },
+            "Total_30_days": 3518.42,
+            "Total_comision": 251.83960000000002
+          }
+        },
+        "tripData": null,
+        "invoice7Data": null,
+        "invoice30Data": null
+      },
+      {
+        "id": 6,
+        "weekLabel": "15 iun. - 21 iun.",
+        "processingDate": "2025-08-01T11:24:35.989Z",
+        "tripDataCount": 0,
+        "invoice7Count": 0,
+        "invoice30Count": 0,
+        "processedData": null,
+        "tripData": null,
+        "invoice7Data": null,
+        "invoice30Data": null
+      }
+    ],
+    "payments": [
+      {
+        "id": 1,
+        "companyName": "DE Cargo Speed",
+        "amount": "2800.00",
+        "description": "",
+        "paymentDate": "2025-07-24T12:30:35.456Z",
+        "weekLabel": "6 iul. - 12 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 2,
+        "companyName": "Fast Express",
+        "amount": "9300.00",
+        "description": "",
+        "paymentDate": "2025-07-24T12:31:16.831Z",
+        "weekLabel": "6 iul. - 12 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 3,
+        "companyName": "Stef Trans",
+        "amount": "1100.00",
+        "description": "",
+        "paymentDate": "2025-07-24T12:31:36.290Z",
+        "weekLabel": "6 iul. - 12 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 4,
+        "companyName": "Stef Trans",
+        "amount": "2600.00",
+        "description": "",
+        "paymentDate": "2025-07-24T15:39:48.714Z",
+        "weekLabel": "29 iun. - 5 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 5,
+        "companyName": "Fast Express",
+        "amount": "20400.00",
+        "description": "",
+        "paymentDate": "2025-07-24T15:39:59.557Z",
+        "weekLabel": "29 iun. - 5 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 6,
+        "companyName": "DE Cargo Speed",
+        "amount": "4600.00",
+        "description": "",
+        "paymentDate": "2025-07-24T15:40:10.919Z",
+        "weekLabel": "29 iun. - 5 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 7,
+        "companyName": "Fast Express",
+        "amount": "21250.00",
+        "description": "",
+        "paymentDate": "2025-07-24T16:15:10.207Z",
+        "weekLabel": "22 iun. - 28 iun.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 8,
+        "companyName": "DE Cargo Speed",
+        "amount": "3600.00",
+        "description": "",
+        "paymentDate": "2025-07-24T16:15:18.257Z",
+        "weekLabel": "22 iun. - 28 iun.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 9,
+        "companyName": "Stef Trans",
+        "amount": "4500.00",
+        "description": "",
+        "paymentDate": "2025-07-24T18:44:23.032Z",
+        "weekLabel": "13 iul. - 19 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 10,
+        "companyName": "Fast Express",
+        "amount": "6400.00",
+        "description": "",
+        "paymentDate": "2025-07-24T18:44:24.715Z",
+        "weekLabel": "13 iul. - 19 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 11,
+        "companyName": "DE Cargo Speed",
+        "amount": "1400.00",
+        "description": "",
+        "paymentDate": "2025-07-24T18:45:15.900Z",
+        "weekLabel": "13 iul. - 19 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 12,
+        "companyName": "Fast Express",
+        "amount": "20276.14",
+        "description": "",
+        "paymentDate": "2025-07-29T08:33:38.985Z",
+        "weekLabel": "22 iun. - 28 iun.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 13,
+        "companyName": "DE Cargo Speed",
+        "amount": "3054.81",
+        "description": "",
+        "paymentDate": "2025-07-29T08:35:07.894Z",
+        "weekLabel": "22 iun. - 28 iun.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 14,
+        "companyName": "Toma SRL",
+        "amount": "543.00",
+        "description": "",
+        "paymentDate": "2025-08-01T08:51:11.520Z",
+        "weekLabel": "20 iul. - 26 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 15,
+        "companyName": "Fast Express",
+        "amount": "6247.00",
+        "description": "",
+        "paymentDate": "2025-08-01T08:51:34.201Z",
+        "weekLabel": "20 iul. - 26 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 16,
+        "companyName": "Stef Trans",
+        "amount": "4500.00",
+        "description": "",
+        "paymentDate": "2025-08-01T08:52:34.343Z",
+        "weekLabel": "20 iul. - 26 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 17,
+        "companyName": "DE Cargo Speed",
+        "amount": "2700.00",
+        "description": "",
+        "paymentDate": "2025-08-01T08:53:26.669Z",
+        "weekLabel": "20 iul. - 26 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 18,
+        "companyName": "Stef Trans",
+        "amount": "1963.42",
+        "description": "Plată manuală adăugată prin bilanțe",
+        "paymentDate": "2025-08-07T16:26:19.596Z",
+        "weekLabel": "29 iun. - 5 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 19,
+        "companyName": "Fast Express",
+        "amount": "18657.31",
+        "description": "Plată manuală adăugată prin bilanțe",
+        "paymentDate": "2025-08-07T16:26:49.160Z",
+        "weekLabel": "29 iun. - 5 iul.",
+        "paymentType": "partial"
+      },
+      {
+        "id": 20,
+        "companyName": "DE Cargo Speed",
+        "amount": "3959.72",
+        "description": "Plată manuală adăugată prin bilanțe",
+        "paymentDate": "2025-08-07T16:27:14.905Z",
+        "weekLabel": "29 iun. - 5 iul.",
+        "paymentType": "partial"
+      }
+    ],
+    "payment_history": [
+      {
+        "id": 1,
+        "paymentId": 1,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T12:30:35.506Z"
+      },
+      {
+        "id": 2,
+        "paymentId": 2,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T12:31:16.853Z"
+      },
+      {
+        "id": 3,
+        "paymentId": 3,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T12:31:36.313Z"
+      },
+      {
+        "id": 4,
+        "paymentId": 4,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T15:39:48.747Z"
+      },
+      {
+        "id": 5,
+        "paymentId": 5,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T15:39:59.578Z"
+      },
+      {
+        "id": 6,
+        "paymentId": 6,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T15:40:10.941Z"
+      },
+      {
+        "id": 7,
+        "paymentId": 7,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T16:15:10.262Z"
+      },
+      {
+        "id": 8,
+        "paymentId": 8,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T16:15:18.273Z"
+      },
+      {
+        "id": 9,
+        "paymentId": 9,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T18:44:23.100Z"
+      },
+      {
+        "id": 10,
+        "paymentId": 10,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T18:44:24.764Z"
+      },
+      {
+        "id": 11,
+        "paymentId": 11,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-24T18:45:15.949Z"
+      },
+      {
+        "id": 12,
+        "paymentId": 12,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-29T08:33:39.043Z"
+      },
+      {
+        "id": 13,
+        "paymentId": 13,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-07-29T08:35:07.966Z"
+      },
+      {
+        "id": 14,
+        "paymentId": 14,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-08-01T08:51:11.577Z"
+      },
+      {
+        "id": 15,
+        "paymentId": 15,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-08-01T08:51:34.252Z"
+      },
+      {
+        "id": 16,
+        "paymentId": 16,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-08-01T08:52:34.393Z"
+      },
+      {
+        "id": 17,
+        "paymentId": 17,
+        "action": "created",
+        "previousData": null,
+        "createdAt": "2025-08-01T08:53:26.719Z"
+      }
+    ],
+    "company_balances": [
+      {
+        "id": 333,
+        "companyName": "Stef Trans",
+        "weekLabel": "13 iul. - 19 iul.",
+        "totalInvoiced": "8112.12",
+        "totalPaid": "4500.00",
+        "outstandingBalance": "3612.12",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 334,
+        "companyName": "Fast Express",
+        "weekLabel": "13 iul. - 19 iul.",
+        "totalInvoiced": "41249.24",
+        "totalPaid": "6400.00",
+        "outstandingBalance": "34849.24",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 335,
+        "companyName": "DE Cargo Speed",
+        "weekLabel": "13 iul. - 19 iul.",
+        "totalInvoiced": "5230.33",
+        "totalPaid": "1400.00",
+        "outstandingBalance": "3830.33",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 336,
+        "companyName": "Toma SRL",
+        "weekLabel": "20 iul. - 26 iul.",
+        "totalInvoiced": "2448.64",
+        "totalPaid": "543.00",
+        "outstandingBalance": "1905.64",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 337,
+        "companyName": "Stef Trans",
+        "weekLabel": "20 iul. - 26 iul.",
+        "totalInvoiced": "8919.04",
+        "totalPaid": "4500.00",
+        "outstandingBalance": "4419.04",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 338,
+        "companyName": "Fast Express",
+        "weekLabel": "20 iul. - 26 iul.",
+        "totalInvoiced": "42973.29",
+        "totalPaid": "6247.00",
+        "outstandingBalance": "36726.29",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 339,
+        "companyName": "DE Cargo Speed",
+        "weekLabel": "20 iul. - 26 iul.",
+        "totalInvoiced": "6044.15",
+        "totalPaid": "2700.00",
+        "outstandingBalance": "3344.15",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 340,
+        "companyName": "Fast Express",
+        "weekLabel": "22 iun. - 28 iun.",
+        "totalInvoiced": "41526.14",
+        "totalPaid": "41526.14",
+        "outstandingBalance": "0.00",
+        "paymentStatus": "paid",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 341,
+        "companyName": "DE Cargo Speed",
+        "weekLabel": "22 iun. - 28 iun.",
+        "totalInvoiced": "6654.81",
+        "totalPaid": "6654.81",
+        "outstandingBalance": "0.00",
+        "paymentStatus": "paid",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 342,
+        "companyName": "Stef Trans",
+        "weekLabel": "29 iun. - 5 iul.",
+        "totalInvoiced": "4563.42",
+        "totalPaid": "4563.42",
+        "outstandingBalance": "0.00",
+        "paymentStatus": "paid",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 343,
+        "companyName": "Fast Express",
+        "weekLabel": "29 iun. - 5 iul.",
+        "totalInvoiced": "39057.31",
+        "totalPaid": "39057.31",
+        "outstandingBalance": "0.00",
+        "paymentStatus": "paid",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 344,
+        "companyName": "DE Cargo Speed",
+        "weekLabel": "29 iun. - 5 iul.",
+        "totalInvoiced": "8559.72",
+        "totalPaid": "8559.72",
+        "outstandingBalance": "0.00",
+        "paymentStatus": "paid",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 345,
+        "companyName": "Stef Trans",
+        "weekLabel": "6 iul. - 12 iul.",
+        "totalInvoiced": "3773.83",
+        "totalPaid": "1100.00",
+        "outstandingBalance": "2673.83",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 346,
+        "companyName": "Fast Express",
+        "weekLabel": "6 iul. - 12 iul.",
+        "totalInvoiced": "39432.19",
+        "totalPaid": "9300.00",
+        "outstandingBalance": "30132.19",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      },
+      {
+        "id": 347,
+        "companyName": "DE Cargo Speed",
+        "weekLabel": "6 iul. - 12 iul.",
+        "totalInvoiced": "9426.42",
+        "totalPaid": "2800.00",
+        "outstandingBalance": "6626.42",
+        "paymentStatus": "partial",
+        "lastUpdated": "2025-08-07T16:27:56.879Z",
+        "createdAt": "2025-08-07T16:27:56.879Z"
+      }
+    ]
+  }
+}

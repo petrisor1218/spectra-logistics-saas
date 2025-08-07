@@ -6,13 +6,14 @@ import bcrypt from 'bcryptjs';
 import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import Stripe from "stripe";
+import { EmailService } from "./emailService";
 
 let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
   console.log('STRIPE_SECRET_KEY starts with:', process.env.STRIPE_SECRET_KEY.substring(0, 10));
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2024-06-20",
+    apiVersion: "2023-10-16",
   });
 } else {
   console.warn('STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
@@ -826,6 +827,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to delete driver" });
     }
   });
+
+  // Email functionality routes
+  app.post("/api/send-transport-order", async (req, res) => {
+    try {
+      const { orderData, companyEmail, pdfContent } = req.body;
+      
+      if (!orderData || !companyEmail || !pdfContent) {
+        return res.status(400).json({ error: "Missing required fields for email" });
+      }
+
+      const success = await EmailService.sendTransportOrder(
+        companyEmail,
+        orderData,
+        pdfContent
+      );
+
+      if (success) {
+        // Update order status to 'sent'
+        await storage.updateTransportOrder(orderData.id, { status: 'sent' });
+        res.json({ success: true, message: "Email sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send email" });
+      }
+    } catch (error) {
+      console.error("Error sending transport order email:", error);
+      res.status(500).json({ error: "Failed to send email" });
+    }
+  });
+
+  app.post("/api/send-weekly-report", async (req, res) => {
+    try {
+      const { companyEmail, companyName, weekLabel, reportData, pdfContent } = req.body;
+      
+      if (!companyEmail || !companyName || !weekLabel || !reportData || !pdfContent) {
+        return res.status(400).json({ error: "Missing required fields for weekly report" });
+      }
+
+      const success = await EmailService.sendWeeklyReport(
+        companyEmail,
+        companyName,
+        weekLabel,
+        reportData,
+        pdfContent
+      );
+
+      if (success) {
+        res.json({ success: true, message: "Weekly report sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send weekly report" });
+      }
+    } catch (error) {
+      console.error("Error sending weekly report email:", error);
+      res.status(500).json({ error: "Failed to send weekly report" });
+    }
+  });
+
+  app.post("/api/send-payment-notification", async (req, res) => {
+    try {
+      const { companyEmail, companyName, paymentData } = req.body;
+      
+      if (!companyEmail || !companyName || !paymentData) {
+        return res.status(400).json({ error: "Missing required fields for payment notification" });
+      }
+
+      const success = await EmailService.sendPaymentNotification(
+        companyEmail,
+        companyName,
+        paymentData
+      );
+
+      if (success) {
+        res.json({ success: true, message: "Payment notification sent successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to send payment notification" });
+      }
+    } catch (error) {
+      console.error("Error sending payment notification email:", error);
+      res.status(500).json({ error: "Failed to send payment notification" });
+    }
+  });
+
+  // Stripe routes for subscription management
+  if (stripe) {
+    // Stripe subscription routes would go here
+  }
 
   // Company balance endpoints
   app.get("/api/company-balances", async (req, res) => {

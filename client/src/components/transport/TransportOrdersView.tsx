@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { FileText, Eye, Calendar, Truck, Package, AlertCircle, Loader2, Download, Trash2, MapPin, Clock, Euro, Hash, Building2, Route, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { FileText, Eye, Calendar, Truck, Package, AlertCircle, Loader2, Download, Trash2, MapPin, Clock, Euro, Hash, Building2, Route, ChevronDown, ChevronUp, Sparkles, Mail, Send, CheckCircle } from "lucide-react";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -24,6 +24,8 @@ export function TransportOrdersView() {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
+  const [sendingEmail, setSendingEmail] = useState<number | null>(null);
+  const [emailSent, setEmailSent] = useState<number | null>(null);
 
   useEffect(() => {
     loadTransportOrders();
@@ -504,6 +506,292 @@ export function TransportOrdersView() {
     doc.save(`Comanda_Transport_${order.companyName.replace(/\s+/g, '_')}_${order.orderNumber}_${new Date().getTime()}.pdf`);
   };
 
+  // Email functionality
+  const sendOrderByEmail = async (order: TransportOrder) => {
+    try {
+      setSendingEmail(order.id);
+      
+      // Get company email from database
+      const companyDetails = getCompanyDetails(order.companyName);
+      const companyEmail = companyDetails.contact || 'office@company.com'; // Default email
+      
+      // Generate PDF for email attachment
+      const doc = new jsPDF();
+      const companyDetails2 = getCompanyDetails(order.companyName);
+      let currentY = 0;
+      const docPageHeight = 297; // A4 height in mm
+      const pageMargin = 15; // Bottom margin
+      
+      // Helper function to check if we need a new page
+      const checkPageBreak = (requiredHeight: number) => {
+        if (currentY + requiredHeight > docPageHeight - pageMargin) {
+          doc.addPage();
+          // Add simple header on new page
+          doc.setTextColor(37, 99, 235);
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`Transportator: ${order.companyName}`, 15, 15);
+          currentY = 25;
+          return true;
+        }
+        return false;
+      };
+      
+      // Modern Header with Colors and Styling
+      // Background gradient effect (simulated with overlapping rectangles)
+      doc.setFillColor(240, 245, 255); // Light blue background
+      doc.rect(0, 0, 210, 40, 'F');
+      
+      doc.setFillColor(59, 130, 246); // Blue gradient top
+      doc.rect(0, 0, 210, 8, 'F');
+      
+      doc.setFillColor(37, 99, 235); // Darker blue
+      doc.rect(0, 6, 210, 2, 'F');
+      
+      // Company Logo Area (decorative box)
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(59, 130, 246);
+      doc.setLineWidth(2);
+      doc.roundedRect(15, 12, 60, 20, 3, 3, 'FD');
+      
+      // Company Name with modern styling
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('A Z LOGISTIC EOOD', 20, 22);
+      
+      // Contact info in header
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('azlogistic8@gmail.com', 20, 28);
+      
+      // Order information box (top right)
+      doc.setFillColor(249, 250, 251);
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(1);
+      doc.roundedRect(130, 12, 65, 20, 2, 2, 'FD');
+      
+      doc.setTextColor(37, 99, 235);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Comanda #${order.orderNumber}`, 135, 20);
+      
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Data: ${formatDate(order.orderDate)}`, 135, 26);
+      
+      currentY = 50;
+      
+      // Transportator Section
+      doc.setFillColor(236, 254, 255);
+      doc.setDrawColor(6, 182, 212);
+      doc.setLineWidth(1.5);
+      doc.roundedRect(15, currentY, 180, 30, 3, 3, 'FD');
+      
+      doc.setTextColor(8, 145, 178);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TRANSPORTATOR:', 20, currentY + 10);
+      
+      doc.setTextColor(21, 94, 117);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(order.companyName, 20, currentY + 20);
+      
+      currentY += 40;
+      checkPageBreak(25);
+      
+      // Company details in a structured format
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(15, currentY, 180, 45, 3, 3, 'FD');
+      
+      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      
+      // Left column
+      doc.text('CIF:', 20, currentY + 10);
+      doc.text('R.C.:', 20, currentY + 17);
+      doc.text('Adresa:', 20, currentY + 24);
+      doc.text('Contact:', 20, currentY + 31);
+      
+      // Right column values
+      doc.setFont('helvetica', 'normal');
+      doc.text(companyDetails2.cif, 50, currentY + 10);
+      doc.text(companyDetails2.rc, 50, currentY + 17);
+      doc.text(companyDetails2.adresa, 50, currentY + 24);
+      doc.text(companyDetails2.contact, 50, currentY + 31);
+      
+      currentY += 55;
+      checkPageBreak(35);
+      
+      // Trip Details Section
+      doc.setFillColor(254, 249, 195);
+      doc.setDrawColor(245, 158, 11);
+      doc.setLineWidth(2);
+      doc.roundedRect(15, currentY, 180, 25, 3, 3, 'FD');
+      
+      doc.setTextColor(180, 83, 9);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DETALII CURSA:', 20, currentY + 8);
+      
+      doc.setTextColor(146, 64, 14);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Ruta: ${order.route}`, 20, currentY + 16);
+      doc.text(`Perioada: ${order.weekLabel}`, 20, currentY + 22);
+      
+      currentY += 35;
+      checkPageBreak(50);
+      
+      // VRIDs Section
+      if (order.vrids && order.vrids.length > 0) {
+        doc.setFillColor(240, 253, 244);
+        doc.setDrawColor(34, 197, 94);
+        doc.setLineWidth(1);
+        const vridsHeight = Math.max(15, Math.ceil(order.vrids.length / 6) * 6 + 9);
+        doc.roundedRect(15, currentY, 180, vridsHeight, 2, 2, 'FD');
+        
+        doc.setTextColor(21, 128, 61);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('VRID-uri incluse:', 20, currentY + 8);
+        
+        doc.setTextColor(22, 101, 52);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        
+        let vridX = 20;
+        let vridY = currentY + 14;
+        order.vrids.forEach((vrid, index) => {
+          doc.text(vrid, vridX, vridY);
+          vridX += 28;
+          if ((index + 1) % 6 === 0) {
+            vridX = 20;
+            vridY += 5;
+          }
+        });
+        
+        currentY += vridsHeight + 10;
+      }
+      
+      checkPageBreak(30);
+      
+      // Pricing Section with emphasis
+      doc.setFillColor(220, 252, 231);
+      doc.setDrawColor(6, 95, 70);
+      doc.setLineWidth(3);
+      doc.roundedRect(15, currentY, 180, 25, 4, 4, 'FD');
+      
+      doc.setTextColor(6, 95, 70);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`PRET NEGOCIAT: ${parseFloat(order.totalAmount).toFixed(2)} EUR + TVA: 0%`, 20, currentY + 8);
+      
+      doc.setFontSize(10);
+      doc.text('Metoda de plata: Ordin de plata', 20, currentY + 15);
+      
+      currentY += 30;
+      
+      // Check if we need new page for notes section
+      if (currentY + 35 > docPageHeight - pageMargin) {
+        doc.addPage();
+        doc.setTextColor(37, 99, 235);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Transportator: ${order.companyName} - Note Importante`, 15, 15);
+        currentY = 25;
+      }
+      
+      // Notes Section
+      doc.setFillColor(254, 243, 199);
+      doc.setDrawColor(245, 158, 11);
+      doc.roundedRect(15, currentY, 180, 25, 2, 2, 'FD');
+      
+      doc.setTextColor(146, 64, 14);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('NOTA IMPORTANTA:', 20, currentY + 8);
+      
+      doc.setFont('helvetica', 'normal');
+      const notesText = '7 zile termen plata • Documente originale obligatorii: 2 CMR originale, T1, CEMT, Certificat auto, Documente descarcare, Note transport, Nota cantarire';
+      const notesSplit = doc.splitTextToSize(notesText, 170);
+      let notesY = currentY + 13;
+      
+      // Check if notes will overflow current page
+      if (notesY + (notesSplit.length * 4) + 15 > docPageHeight - pageMargin) {
+        doc.addPage();
+        doc.setTextColor(37, 99, 235);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Transportator: ${order.companyName} - Note și Semnătură`, 15, 15);
+        currentY = 25;
+        
+        // Redraw notes section on new page
+        doc.setFillColor(254, 243, 199);
+        doc.setDrawColor(245, 158, 11);
+        doc.roundedRect(15, currentY, 180, 25, 2, 2, 'FD');
+        
+        doc.setTextColor(146, 64, 14);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('NOTA IMPORTANTA:', 20, currentY + 8);
+        
+        doc.setFont('helvetica', 'normal');
+        notesY = currentY + 13;
+      }
+      
+      notesSplit.forEach((line: string) => {
+        doc.text(line, 20, notesY);
+        notesY += 4;
+      });
+      
+      // Signature Section
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Intocmit de: [Completati Nume]', 20, notesY + 10);
+      
+      // Get PDF as base64 string for email
+      const pdfContent = doc.output('datauristring');
+      
+      const response = await fetch('/api/send-transport-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderData: order,
+          companyEmail: companyEmail,
+          pdfContent: pdfContent
+        })
+      });
+
+      if (response.ok) {
+        setEmailSent(order.id);
+        // Update local state to show order as sent
+        setOrders(orders.map(o => 
+          o.id === order.id 
+            ? { ...o, status: 'sent' }
+            : o
+        ));
+        
+        // Clear success indicator after 3 seconds
+        setTimeout(() => setEmailSent(null), 3000);
+      } else {
+        console.error('Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+    } finally {
+      setSendingEmail(null);
+    }
+  };
+
   const handleDeleteOrder = async (orderId: number) => {
     if (deleteConfirm !== orderId) {
       setDeleteConfirm(orderId);
@@ -898,6 +1186,36 @@ export function TransportOrdersView() {
                         title="Descarcă PDF"
                       >
                         <Download className="w-5 h-5" />
+                      </motion.button>
+
+                      {/* Email Button */}
+                      <motion.button
+                        onClick={() => sendOrderByEmail(order)}
+                        disabled={sendingEmail === order.id}
+                        className={`p-3 rounded-xl transition-all duration-300 ${
+                          emailSent === order.id
+                            ? 'bg-green-500/20 border-green-500/30 text-green-400'
+                            : sendingEmail === order.id
+                            ? 'bg-orange-500/20 border-orange-500/30 text-orange-400'
+                            : 'bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400'
+                        }`}
+                        whileHover={{ scale: sendingEmail === order.id ? 1 : 1.1, boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)" }}
+                        whileTap={{ scale: sendingEmail === order.id ? 1 : 0.95 }}
+                        title={
+                          emailSent === order.id 
+                            ? "Email trimis cu succes!" 
+                            : sendingEmail === order.id 
+                            ? "Se trimite email..." 
+                            : "Trimite prin email"
+                        }
+                      >
+                        {sendingEmail === order.id ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : emailSent === order.id ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : (
+                          <Send className="w-5 h-5" />
+                        )}
                       </motion.button>
                       
                       <motion.button
