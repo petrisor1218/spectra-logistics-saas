@@ -202,9 +202,9 @@ export function TransportOrdersView() {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.text('Email: azlogistic8@gmail.com', 85, 18);
-    doc.text('Bank: DSK BANK - BG22STSA93000028729251', 85, 22);
-    doc.text('ID: BG206507560 | Adresa: Ruser, Ruse, Bulgaria', 85, 26);
-    doc.text('TVA: 0%', 85, 30);
+    doc.text('Reg. com.: 206507560 | CIF: BG206507560', 85, 22);
+    doc.text('Adresa: Town of Ruse, Stefan Karadja str. nr. 10', 85, 26);
+    doc.text('RUSE, RUSE, Bulgaria | TVA: 0%', 85, 30);
     
     // Modern Title Section
     currentY = 50;
@@ -770,9 +770,21 @@ export function TransportOrdersView() {
       doc.setFont('helvetica', 'normal');
       doc.text('Intocmit de: [Completati Nume]', 20, notesY + 10);
       
-      // Get PDF as base64 string for email
+      // Get PDF as base64 string for email - safe method for large PDFs
       const pdfArrayBuffer = doc.output('arraybuffer');
-      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfArrayBuffer)));
+      const uint8Array = new Uint8Array(pdfArrayBuffer);
+      
+      // Convert to base64 safely without call stack overflow
+      let binary = '';
+      const len = uint8Array.byteLength;
+      const chunkSize = 8192; // Process in small chunks
+      
+      for (let i = 0; i < len; i += chunkSize) {
+        const chunk = uint8Array.slice(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
+      
+      const pdfBase64 = btoa(binary);
       
       const response = await fetch('/api/send-transport-order', {
         method: 'POST',
