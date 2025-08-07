@@ -798,9 +798,9 @@ export function TransportOrdersView() {
         
         // Show appropriate message based on demo mode or real send
         if (result.message && result.message.includes('DEMO MODE')) {
-          alert(`✅ EMAIL TRIMIS CU SUCCES!\n\n📧 Trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n🔗 Verificați link-ul din consolă pentru a vedea emailul!\n\nSistemul folosește Ethereal Email (serviciu gratuit de test) - emailul este 100% funcțional cu template profesional și PDF atașat.`);
+          alert(`⚠️ MODUL DEMO: Serviciile de email nu sunt configurate!\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n🔧 Pentru emailuri REALE:\n1. Gmail: Setați GMAIL_USER și GMAIL_APP_PASSWORD\n2. Brevo: 300 emailuri/zi GRATUIT\n3. Outlook: 300 emailuri/zi GRATUIT\n\nToate serviciile sunt GRATUITE!`);
         } else {
-          alert(`✅ Email trimis cu succes către ${companyEmail}!\n\nComanda #${order.orderNumber} a fost trimisă cu atașamentul PDF.`);
+          alert(`✅ Email trimis REAL către ${companyEmail}!\n\n📧 Comanda #${order.orderNumber} a fost livrată în inbox-ul companiei cu PDF-ul atașat.`);
         }
         
         // Clear success indicator after 5 seconds
