@@ -798,7 +798,7 @@ export function TransportOrdersView() {
         
         // Show appropriate message based on demo mode or real send
         if (result.message && result.message.includes('DEMO MODE')) {
-          alert(`🎭 MODUL DEMO: Funcționalitatea email funcționează perfect!\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n⚠️ Pentru trimitere reală - configurați Gmail SMTP:\n1. Activați 2FA pe Gmail\n2. Generați App Password (16 caractere)\n3. Adăugați în Secrets:\n   • GMAIL_USER: your-email@gmail.com\n   • GMAIL_APP_PASSWORD: parola de 16 caractere\n\n✅ 500 emailuri/zi GRATUIT cu Gmail!`);
+          alert(`🎭 MODUL DEMO: Funcționalitatea email funcționează perfect!\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n⚠️ Credentialele Gmail nu funcționează (535 Authentication failed)\n\n✅ Soluții alternative GRATUITE:\n1. Outlook/Hotmail - 300 emailuri/zi\n2. MailerSend - 3000 emailuri/lună (după verificare domeniu)\n3. Verificați că Gmail are 2FA activat și App Password generat corect`);
         } else {
           alert(`✅ Email trimis cu succes către ${companyEmail}!\n\nComanda #${order.orderNumber} a fost trimisă cu atașamentul PDF.`);
         }
