@@ -164,6 +164,23 @@ export default function PaymentHistoryView() {
     return matchesSearch && matchesCompany && matchesWeek;
   }).sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
 
+  // Group payments by week
+  const groupedByWeek = filteredPayments.reduce((acc, payment) => {
+    const week = payment.weekLabel;
+    if (!acc[week]) {
+      acc[week] = [];
+    }
+    acc[week].push(payment);
+    return acc;
+  }, {} as Record<string, Payment[]>);
+
+  // Sort weeks by most recent first
+  const sortedWeeks = Object.keys(groupedByWeek).sort((a, b) => {
+    const weekA = groupedByWeek[a][0];
+    const weekB = groupedByWeek[b][0];
+    return new Date(weekB.paymentDate).getTime() - new Date(weekA.paymentDate).getTime();
+  });
+
   // Calculate totals
   const totalAmount = filteredPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
   const totalByCompany = filteredPayments.reduce((acc, payment) => {
@@ -315,12 +332,12 @@ export default function PaymentHistoryView() {
         </CardContent>
       </Card>
 
-      {/* Payments List */}
+      {/* Payments List Grouped by Week */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Plăți ({filteredPayments.length})
+            <Calendar className="h-5 w-5" />
+            Plăți pe Perioade Săptămânale ({filteredPayments.length} total)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -330,48 +347,88 @@ export default function PaymentHistoryView() {
               <p className="text-muted-foreground">Nu s-au găsit plăți cu filtrele selectate</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredPayments.map((payment, index) => (
-                <motion.div
-                  key={payment.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline">{payment.companyName}</Badge>
-                        <Badge variant="secondary">{payment.weekLabel}</Badge>
-                      </div>
-                      <div className="text-2xl font-bold text-green-600 mb-1">
-                        {formatCurrency(parseFloat(payment.amount))}
-                      </div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {formatDate(payment.paymentDate)}
-                      </div>
-                      {payment.description && (
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {payment.description}
+            <div className="space-y-6">
+              {sortedWeeks.map((weekLabel, weekIndex) => {
+                const weekPayments = groupedByWeek[weekLabel];
+                const weekTotal = weekPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+                const companiesInWeek = [...new Set(weekPayments.map(p => p.companyName))];
+                
+                return (
+                  <motion.div
+                    key={weekLabel}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: weekIndex * 0.1 }}
+                    className="border rounded-xl overflow-hidden"
+                  >
+                    {/* Week Header */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-4 border-b">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                          <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                            📅 {weekLabel}
+                          </h3>
+                          <p className="text-sm text-blue-600 dark:text-blue-300">
+                            {weekPayments.length} plăți • {companiesInWeek.length} companii
+                          </p>
                         </div>
-                      )}
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                            {formatCurrency(weekTotal)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">Total săptămână</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteClick(payment)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Șterge
-                      </Button>
+
+                    {/* Week Payments */}
+                    <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {weekPayments.map((payment, paymentIndex) => (
+                        <motion.div
+                          key={payment.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: (weekIndex * 0.1) + (paymentIndex * 0.05) }}
+                          className="px-6 py-4 hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="font-medium">
+                                  {payment.companyName}
+                                </Badge>
+                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {formatDate(payment.paymentDate)}
+                                </div>
+                              </div>
+                              <div className="text-xl font-bold text-green-600 dark:text-green-400 mb-1">
+                                {formatCurrency(parseFloat(payment.amount))}
+                              </div>
+                              {payment.description && (
+                                <div className="text-sm text-muted-foreground">
+                                  💬 {payment.description}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteClick(payment)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Șterge
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </CardContent>
