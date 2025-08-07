@@ -654,6 +654,7 @@ export function useTransportData() {
     
     const results: any = {};
     const unmatchedVrids: string[] = []; // Track unmatched VRIDs for historical search
+    const smallAmountAlerts: Array<{vrid: string, amount: number, company: string, invoiceType: string}> = []; // Track small amounts ≤10 EUR
 
     try {
       const processInvoice = (invoiceData: any[], invoiceType: string) => {
@@ -688,6 +689,17 @@ export function useTransportData() {
           } else {
             console.log(`VRID ${vrid} - Nu s-a găsit în trip data - Căutăm în istoric...`);
             unmatchedVrids.push(vrid); // Track for historical search
+          }
+
+          // ⚠️ DETECTARE SUME MICI - Alert pentru sume ≤10 EUR
+          if (amount <= 10) {
+            smallAmountAlerts.push({
+              vrid: vrid,
+              amount: amount,
+              company: company,
+              invoiceType: invoiceType === '7_days' ? '7 zile' : '30 zile'
+            });
+            console.log(`⚠️ SUMĂ MICĂ DETECTATĂ: VRID ${vrid} - €${amount.toFixed(2)} (${company} - ${invoiceType === '7_days' ? '7 zile' : '30 zile'})`);
           }
 
           if (!results[company]) {
@@ -835,6 +847,18 @@ export function useTransportData() {
     } catch (error: any) {
       alert('Eroare la procesarea datelor: ' + error.message);
     } finally {
+      // 🚨 AFIȘARE ALERTE PENTRU SUME MICI ≤10 EUR
+      if (smallAmountAlerts.length > 0) {
+        const alertMessage = `⚠️ ATENȚIE! Am găsit ${smallAmountAlerts.length} VRID-uri cu sume foarte mici (≤10 EUR):\n\n` +
+          smallAmountAlerts.map((alert, index) => 
+            `${index + 1}. VRID: ${alert.vrid}\n   • Sumă: €${alert.amount.toFixed(2)}\n   • Companie: ${alert.company}\n   • Tip: ${alert.invoiceType}`
+          ).join('\n\n') +
+          '\n\n🔍 Verificați aceste VRID-uri pentru posibile erori sau cursuri incomplete!';
+        
+        alert(alertMessage);
+        console.log('🚨 RAPORT SUME MICI:', smallAmountAlerts);
+      }
+      
       setLoading(false);
     }
   };
