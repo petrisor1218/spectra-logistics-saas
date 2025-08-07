@@ -515,14 +515,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance> {
-    console.log(`🔍 Searching for balance: companyName="${companyName}", weekLabel="${weekLabel}"`);
     const existing = await this.getCompanyBalanceByWeek(companyName, weekLabel);
     if (!existing) {
-      console.error(`❌ No balance found for ${companyName} in week ${weekLabel}`);
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
-    console.log(`✅ Found balance ID: ${existing.id} for company: ${existing.companyName}`);
     const newTotalPaid = parseFloat(existing.totalPaid) + paidAmount;
     const totalInvoiced = parseFloat(existing.totalInvoiced);
     let newOutstandingBalance = totalInvoiced - newTotalPaid;
@@ -540,7 +537,6 @@ export class DatabaseStorage implements IStorage {
       newStatus = 'partial';
     }
 
-    console.log(`💰 Updating payment: ${existing.totalPaid} + ${paidAmount} = ${newTotalPaid}`);
     const [updated] = await db
       .update(companyBalances)
       .set({
@@ -552,7 +548,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companyBalances.id, existing.id))
       .returning();
     
-    console.log(`✅ Updated balance ID: ${updated.id} for company: ${updated.companyName}`);
     return updated;
   }
 

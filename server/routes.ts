@@ -792,12 +792,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/company-balances/payment", async (req, res) => {
     try {
       const { companyName, weekLabel, paidAmount } = req.body;
-      console.log(`🔄 Payment request: Company="${companyName}", Week="${weekLabel}", Amount=${paidAmount}`);
       const balance = await storage.updateCompanyBalancePayment(companyName, weekLabel, paidAmount);
-      console.log(`✅ Payment updated successfully for ${companyName}`);
       res.json(balance);
     } catch (error) {
-      console.error("❌ Error updating company balance payment:", error);
+      console.error("Error updating company balance payment:", error);
       res.status(500).json({ message: "Failed to update payment" });
     }
   });
