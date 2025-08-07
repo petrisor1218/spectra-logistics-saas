@@ -175,7 +175,7 @@ export default function PaymentHistoryView() {
     const matchesWeek = selectedWeek === "all" || payment.weekLabel === selectedWeek;
     
     return matchesSearch && matchesCompany && matchesWeek;
-  }).sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
+  }).sort((a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime()); // Latest payments at the bottom
 
   // Group payments by week
   const groupedByWeek = filteredPayments.reduce((acc, payment) => {
