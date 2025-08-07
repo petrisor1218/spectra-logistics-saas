@@ -148,6 +148,19 @@ export default function PaymentHistoryView() {
     refetchInterval: 30000,
   }) as { data: Payment[], isLoading: boolean };
 
+  // Fetch weekly processing data to get 7-day and 30-day details
+  const { data: weeklyData = [] } = useQuery({
+    queryKey: ['/api/weekly-processing'],
+    queryFn: async () => {
+      const response = await fetch('/api/weekly-processing');
+      if (!response.ok) {
+        throw new Error('Failed to fetch weekly data');
+      }
+      return response.json();
+    },
+    refetchInterval: 60000,
+  });
+
   // Get unique companies and weeks for filters
   const uniqueCompanies = [...new Set(payments.map(p => p.companyName))].sort();
   const uniqueWeeks = [...new Set(payments.map(p => p.weekLabel))].sort();
@@ -180,6 +193,23 @@ export default function PaymentHistoryView() {
     const weekB = groupedByWeek[b][0];
     return new Date(weekB.paymentDate).getTime() - new Date(weekA.paymentDate).getTime();
   });
+
+  // Get weekly processing details for a specific week and company
+  const getWeeklyDetails = (weekLabel: string, companyName: string) => {
+    const weekData = weeklyData.find((w: any) => w.weekLabel === weekLabel);
+    if (!weekData || !weekData.processedData) return null;
+    
+    const companyData = weekData.processedData[companyName];
+    if (!companyData) return null;
+    
+    return {
+      total7Days: companyData.Total_7_days || 0,
+      total30Days: companyData.Total_30_days || 0,
+      totalCommission: companyData.Total_comision || 0,
+      totalInvoiced: (companyData.Total_7_days || 0) + (companyData.Total_30_days || 0),
+      totalToPay: (companyData.Total_7_days || 0) + (companyData.Total_30_days || 0) - (companyData.Total_comision || 0)
+    };
+  };
 
   // Calculate totals
   const totalAmount = filteredPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
@@ -363,7 +393,7 @@ export default function PaymentHistoryView() {
                   >
                     {/* Week Header */}
                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-4 border-b">
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                           <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100">
                             📅 {weekLabel}
@@ -372,12 +402,85 @@ export default function PaymentHistoryView() {
                             {weekPayments.length} plăți • {companiesInWeek.length} companii
                           </p>
                         </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-green-600 dark:text-green-400">
-                            {formatCurrency(weekTotal)}
+                        
+                        {/* Week Totals Summary */}
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <div className="text-center">
+                            <div className="text-xl font-bold text-green-600 dark:text-green-400">
+                              {formatCurrency(weekTotal)}
+                            </div>
+                            <p className="text-xs text-muted-foreground">Total Plăți</p>
                           </div>
-                          <p className="text-sm text-muted-foreground">Total săptămână</p>
                         </div>
+                      </div>
+                      
+                      {/* Company Details for the Week */}
+                      <div className="mt-4 space-y-2">
+                        {companiesInWeek.map(companyName => {
+                          const companyPayments = weekPayments.filter(p => p.companyName === companyName);
+                          const companyPaidTotal = companyPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                          const weekDetails = getWeeklyDetails(weekLabel, companyName);
+                          
+                          return (
+                            <div key={companyName} className="bg-white/10 dark:bg-black/10 rounded-lg p-3">
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="bg-white/20">
+                                    {companyName}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    {companyPayments.length} plată{companyPayments.length !== 1 ? 'i' : ''}
+                                  </span>
+                                </div>
+                                
+                                {weekDetails && (
+                                  <div className="flex gap-4 text-sm">
+                                    <div className="text-center">
+                                      <div className="font-medium text-blue-600 dark:text-blue-400">
+                                        {formatCurrency(weekDetails.total7Days)}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">7 zile</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="font-medium text-purple-600 dark:text-purple-400">
+                                        {formatCurrency(weekDetails.total30Days)}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">30 zile</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="font-medium text-red-600 dark:text-red-400">
+                                        -{formatCurrency(weekDetails.totalCommission)}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Comision</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="font-bold text-indigo-600 dark:text-indigo-400">
+                                        {formatCurrency(weekDetails.totalToPay)}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">De plată</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="font-medium text-green-600 dark:text-green-400">
+                                        {formatCurrency(companyPaidTotal)}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Plătit</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className={`font-medium ${
+                                        weekDetails.totalToPay - companyPaidTotal <= 1 
+                                          ? 'text-green-600 dark:text-green-400' 
+                                          : 'text-orange-600 dark:text-orange-400'
+                                      }`}>
+                                        {formatCurrency(Math.max(0, weekDetails.totalToPay - companyPaidTotal))}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">Rest</div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
