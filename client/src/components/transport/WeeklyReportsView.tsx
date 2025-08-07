@@ -355,10 +355,21 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
 
       console.log('🔄 Converting PDF to base64...');
       
-      // Convertim PDF-ul în buffer
+      // Convertim PDF-ul în buffer - metodă sigură pentru PDF-uri mari
       const pdfBuffer = doc.output('arraybuffer');
-      const pdfArray = Array.from(new Uint8Array(pdfBuffer));
-      const pdfBase64 = btoa(String.fromCharCode.apply(null, pdfArray));
+      const uint8Array = new Uint8Array(pdfBuffer);
+      
+      // Convertim în base64 fără să depășim limita call stack
+      let binary = '';
+      const len = uint8Array.byteLength;
+      const chunkSize = 8192; // Procesăm în bucăți mici
+      
+      for (let i = 0; i < len; i += chunkSize) {
+        const chunk = uint8Array.slice(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
+      
+      const pdfBase64 = btoa(binary);
       
       console.log('✅ PDF conversion complete:', { base64Length: pdfBase64.length });
 
@@ -403,7 +414,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         alert(`❌ Eroare la trimiterea emailului: ${errorData.message || 'Eroare de server'}`);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('DETAILED Error sending weekly report email:', {
         error: error,
         message: error?.message || 'No message',
