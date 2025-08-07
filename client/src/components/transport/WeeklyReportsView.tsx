@@ -53,12 +53,41 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     enabled: !!selectedReportWeek
   });
 
+  // Funcție pentru a converti weekLabel în dată pentru sortare
+  const parseWeekLabelToDate = (weekLabel: string): Date => {
+    try {
+      // Format: "27 iul. - 2 aug." sau "13 iul. - 19 iul."
+      const parts = weekLabel.split(' - ')[0].trim(); // "27 iul."
+      const [day, monthAbbr] = parts.split(' ');
+      
+      const monthMap: Record<string, number> = {
+        'ian.': 0, 'feb.': 1, 'mar.': 2, 'apr.': 3, 'mai': 4, 'iun.': 5,
+        'iul.': 6, 'aug.': 7, 'sep.': 8, 'oct.': 9, 'noi.': 10, 'dec.': 11
+      };
+      
+      const month = monthMap[monthAbbr] ?? 6; // Default to July if not found
+      const year = 2025; // Current year
+      
+      return new Date(year, month, parseInt(day));
+    } catch (e) {
+      return new Date(); // Fallback to current date
+    }
+  };
+  
   const weekOptions = useMemo(() => {
     if (!weeklyProcessingData || !Array.isArray(weeklyProcessingData)) return [];
-    return weeklyProcessingData.map((week: any) => ({
-      value: week.weekLabel,
-      label: week.weekLabel
-    }));
+    
+    const sortedWeeks = weeklyProcessingData
+      .map((week: any) => ({
+        value: week.weekLabel,
+        label: week.weekLabel,
+        sortDate: parseWeekLabelToDate(week.weekLabel)
+      }))
+      .sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime()); // Cele mai recente primele
+    
+    console.log('📅 Săptămâni sortate cronologic:', sortedWeeks.map(w => w.label));
+    
+    return sortedWeeks.map(({ value, label }) => ({ value, label }));
   }, [weeklyProcessingData]);
 
   const processedData = useMemo(() => {
