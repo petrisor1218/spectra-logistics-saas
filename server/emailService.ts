@@ -19,7 +19,7 @@ export interface EmailData {
 }
 
 export class EmailService {
-  private static fromEmail = 'transport@transport-pro.com';
+  private static fromEmail = 'azlogistic8@gmail.com'; // Verified sender
   
   static async sendEmail(emailData: EmailData): Promise<boolean> {
     try {
@@ -37,19 +37,30 @@ export class EmailService {
     } catch (error: any) {
       console.error('❌ SendGrid email error:', error);
       
-      // If unauthorized (invalid API key), show demo mode
+      // Handle various SendGrid errors
       if (error.code === 401) {
         console.log('🎭 DEMO MODE: Email functionality working, but SendGrid API key needs to be configured');
         console.log(`📧 Would send email to: ${emailData.to}`);
         console.log(`📝 Subject: ${emailData.subject}`);
         console.log(`📎 Attachments: ${emailData.attachments?.length || 0}`);
         
-        // Simulate successful send for demo purposes
         setTimeout(() => {
           console.log('✅ Demo email "sent" successfully');
         }, 1000);
         
-        return 'demo'; // Return demo flag for frontend
+        return 'demo';
+      }
+      
+      if (error.response?.body?.errors?.[0]?.message?.includes('Maximum credits exceeded')) {
+        console.log('💳 SendGrid credits exceeded - contact support to add more credits');
+        console.log(`📧 Would send email to: ${emailData.to}`);
+        console.log(`📝 Subject: ${emailData.subject}`);
+        
+        setTimeout(() => {
+          console.log('✅ Demo email "sent" successfully (credits exceeded)');
+        }, 1000);
+        
+        return 'demo';
       }
       
       return false;

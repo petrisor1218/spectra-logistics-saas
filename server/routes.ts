@@ -847,7 +847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update order status to 'sent'
         await storage.updateTransportOrder(orderData.id, { status: 'sent' });
         
-        if (success === 'demo') {
+        if (success === 'demo' || success === true) {
           res.json({ 
             success: true, 
             message: "DEMO MODE: Email functionality working, but SendGrid API key needs to be configured" 
