@@ -607,7 +607,7 @@ export function useTransportData() {
               console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
             }
           } else {
-            console.log(`VRID ${vrid} - Nu s-a găsit în trip data sau nu are driver`);
+            console.log(`VRID ${vrid} - Nu s-a găsit în trip data - Căutăm în istoric...`);
             unmatchedVrids.push(vrid); // Track for historical search
           }
 
@@ -653,20 +653,70 @@ export function useTransportData() {
 
       // Search historical data for unmatched VRIDs
       if (unmatchedVrids.length > 0) {
-        console.log(`🔍 Caut în istoric pentru ${unmatchedVrids.length} VRID-uri neîmperecheate...`);
+        console.log(`🔍 Căutare automatică în istoric pentru ${unmatchedVrids.length} VRID-uri neîmperecheate...`);
         try {
-          const response = await fetch('/api/historical-search', {
+          const response = await fetch('/api/search-historical-vrids', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ vrids: unmatchedVrids })
           });
           
           if (response.ok) {
-            const historicalData = await response.json();
-            if (historicalData.foundCount > 0) {
-              console.log(`📚 Găsite în istoric: ${historicalData.foundCount} VRID-uri`);
-              console.log('Sugestii istorice:', historicalData.foundTrips);
-              // TODO: Display historical suggestions to user
+            const { found, total, historicalData } = await response.json();
+            console.log(`📊 Istoric: ${found}/${total} VRID-uri găsite în datele istorice`);
+            
+            // Automatic matching - move VRIDs from Unmatched to correct companies
+            if (found > 0) {
+              let movedVrids = 0;
+              unmatchedVrids.forEach(vrid => {
+                if (historicalData[vrid]) {
+                  const historicalTrip = historicalData[vrid];
+                  const foundCompany = extractAndFindDriver(historicalTrip.driverName);
+                  
+                  if (foundCompany !== 'Unknown' && foundCompany !== 'Pending' && foundCompany !== 'Unmatched') {
+                    console.log(`✅ VRID matcat automat: ${vrid} → ${foundCompany} (din ${historicalTrip.weekLabel})`);
+                    
+                    // Move from Unmatched to correct company
+                    if (results.Unmatched && results.Unmatched.VRID_details[vrid]) {
+                      const vridDetails = results.Unmatched.VRID_details[vrid];
+                      
+                      // Ensure target company exists
+                      if (!results[foundCompany]) {
+                        results[foundCompany] = {
+                          Total_7_days: 0,
+                          Total_30_days: 0,
+                          Total_comision: 0,
+                          VRID_details: {}
+                        };
+                      }
+                      
+                      // Move VRID details
+                      results[foundCompany].VRID_details[vrid] = vridDetails;
+                      results[foundCompany].Total_7_days += vridDetails['7_days'] || 0;
+                      results[foundCompany].Total_30_days += vridDetails['30_days'] || 0;
+                      results[foundCompany].Total_comision += vridDetails.commission || 0;
+                      
+                      // Remove from Unmatched
+                      delete results.Unmatched.VRID_details[vrid];
+                      results.Unmatched.Total_7_days -= vridDetails['7_days'] || 0;
+                      results.Unmatched.Total_30_days -= vridDetails['30_days'] || 0;
+                      results.Unmatched.Total_comision -= vridDetails.commission || 0;
+                      
+                      movedVrids++;
+                    }
+                  }
+                }
+              });
+              
+              if (movedVrids > 0) {
+                console.log(`🎯 ${movedVrids} VRID-uri mutate automat din istoric la companiile corecte`);
+                
+                // Clean up empty Unmatched category
+                if (results.Unmatched && Object.keys(results.Unmatched.VRID_details).length === 0) {
+                  delete results.Unmatched;
+                  console.log(`🧹 Categoria "Unmatched" eliminată - toate VRID-urile au fost matchate`);
+                }
+              }
             }
           }
         } catch (error) {
@@ -674,23 +724,28 @@ export function useTransportData() {
         }
       }
 
-      // Save weekly data with historical tracking
+      // Save weekly data with complete historical VRID tracking
       try {
-        await fetch('/api/weekly-processing', {
+        const saveResponse = await fetch('/api/weekly-processing', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             weekLabel: processingWeek,
-            processedData: results,
-            tripData: tripData, // Save raw TRIP data
-            invoice7Data: invoice7Data, // Save raw invoice data
-            invoice30Data: invoice30Data, // Save raw invoice data
-            tripDataCount: tripData.length,
-            invoice7Count: invoice7Data.length,
-            invoice30Count: invoice30Data.length
+            data: results,
+            processedAt: new Date().toISOString(),
+            // Raw data for historical VRID persistence
+            tripData: tripData,
+            invoice7Data: invoice7Data,
+            invoice30Data: invoice30Data
           })
         });
-        console.log(`💾 Date salvate pentru săptămâna ${processingWeek} cu ${tripData.length} cursuri în istoric`);
+        
+        if (saveResponse.ok) {
+          console.log(`💾 Date salvate complet pentru ${processingWeek}:`);
+          console.log(`   📋 ${tripData.length} cursuri salvate în istoric permanent`);
+          console.log(`   📊 ${invoice7Data.length + invoice30Data.length} facturi procesate`);
+          console.log(`   🏢 ${Object.keys(results).length} companii identificate`);
+        }
         
         // Create company balances
         await createCompanyBalances(processingWeek, results);
@@ -886,12 +941,17 @@ export function useTransportData() {
         body: JSON.stringify({
           weekLabel: selectedWeek,
           data: processedData,
-          processedAt: new Date().toISOString()
+          processedAt: new Date().toISOString(),
+          // Include raw data for historical VRID tracking
+          tripData: tripData,
+          invoice7Data: invoice7Data,
+          invoice30Data: invoice30Data
         }),
       });
 
       if (response.ok) {
-        alert('Datele au fost salvate cu succes în baza de date!');
+        console.log(`💾 Date salvate manual cu istoric complet pentru ${selectedWeek}`);
+        alert('Datele au fost salvate cu succes în baza de date cu istoric permanent!');
       } else {
         throw new Error('Failed to save processed data');
       }

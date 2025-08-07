@@ -341,6 +341,21 @@ export class DatabaseStorage implements IStorage {
     return trips;
   }
 
+  async getHistoricalTripsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(historicalTrips);
+    return result[0].count;
+  }
+
+  async getUniqueVridsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(distinct ${historicalTrips.vrid})` }).from(historicalTrips);
+    return result[0].count;
+  }
+
+  async getHistoricalWeeksCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(distinct ${historicalTrips.weekLabel})` }).from(historicalTrips);
+    return result[0].count;
+  }
+
   // Enhanced weekly processing with historical data
   async saveWeeklyDataWithHistory(
     weekLabel: string, 

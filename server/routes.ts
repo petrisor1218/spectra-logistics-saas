@@ -408,22 +408,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Weekly processing routes
+  // Weekly processing routes with VRID historical matching
   app.post("/api/weekly-processing", async (req, res) => {
     try {
-      const { weekLabel, data, processedAt } = req.body;
+      const { weekLabel, data, processedAt, tripData, invoice7Data, invoice30Data } = req.body;
       
-      const weeklyProcessingData = {
-        weekLabel,
-        processingDate: processedAt ? new Date(processedAt) : new Date(),
-        tripDataCount: 0,
-        invoice7Count: 0, 
-        invoice30Count: 0,
-        processedData: data
-      };
+      // Enhanced processing with historical VRID matching
+      if (tripData && invoice7Data && invoice30Data) {
+        console.log(`Processing with historical VRID matching for week: ${weekLabel}`);
+        const savedProcessing = await storage.saveWeeklyDataWithHistory(
+          weekLabel,
+          tripData,
+          invoice7Data,
+          invoice30Data
+        );
+        res.json(savedProcessing);
+      } else {
+        // Fallback for basic data save
+        const weeklyProcessingData = {
+          weekLabel,
+          processingDate: processedAt ? new Date(processedAt) : new Date(),
+          tripDataCount: 0,
+          invoice7Count: 0, 
+          invoice30Count: 0,
+          processedData: data
+        };
 
-      const savedProcessing = await storage.createWeeklyProcessing(weeklyProcessingData);
-      res.json(savedProcessing);
+        const savedProcessing = await storage.createWeeklyProcessing(weeklyProcessingData);
+        res.json(savedProcessing);
+      }
     } catch (error) {
       console.error("Error saving weekly processing:", error);
       res.status(500).json({ error: "Failed to save processed data" });
@@ -443,6 +456,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch weekly processing data" });
+    }
+  });
+
+  // VRID historical search route  
+  app.post("/api/search-historical-vrids", async (req, res) => {
+    try {
+      const { vrids } = req.body;
+      
+      if (!vrids || !Array.isArray(vrids)) {
+        return res.status(400).json({ error: "Invalid VRID list provided" });
+      }
+
+      console.log(`🔍 Căutare istorică pentru ${vrids.length} VRIDs: ${vrids.slice(0, 3).join(', ')}${vrids.length > 3 ? '...' : ''}`);
+      const historicalTrips = await storage.searchHistoricalTripsByVrids(vrids);
+      
+      // Group by VRID for easy lookup
+      const historicalByVrid = historicalTrips.reduce((acc, trip) => {
+        acc[trip.vrid] = trip;
+        return acc;
+      }, {} as Record<string, any>);
+
+      const response = {
+        found: historicalTrips.length,
+        total: vrids.length,
+        historicalData: historicalByVrid
+      };
+
+      console.log(`📊 Rezultat căutare: ${response.found}/${response.total} VRID-uri găsite în istoric`);
+      if (response.found > 0) {
+        historicalTrips.forEach(trip => {
+          console.log(`   ✓ ${trip.vrid} → ${trip.driverName || 'N/A'} (${trip.weekLabel})`);
+        });
+      }
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error searching historical VRIDs:", error);
+      res.status(500).json({ error: "Failed to search historical data" });
+    }
+  });
+
+  // Get historical trips statistics
+  app.get("/api/historical-trips/stats", async (req, res) => {
+    try {
+      const totalTrips = await storage.getHistoricalTripsCount();
+      const uniqueVrids = await storage.getUniqueVridsCount();
+      const weeksCovered = await storage.getHistoricalWeeksCount();
+      
+      res.json({
+        totalTrips,
+        uniqueVrids,
+        weeksCovered,
+        message: `Istoric permanent: ${totalTrips} cursuri, ${uniqueVrids} VRID-uri unice din ${weeksCovered} săptămâni`
+      });
+    } catch (error) {
+      console.error("Error fetching historical stats:", error);
+      res.status(500).json({ error: "Failed to fetch historical statistics" });
     }
   });
 
