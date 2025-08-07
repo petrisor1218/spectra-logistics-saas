@@ -74,29 +74,29 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  // Calculate metrics
-  const totalInvoiced = balances.reduce((sum, b) => sum + b.totalInvoiced, 0);
-  const totalPaid = balances.reduce((sum, b) => sum + b.totalPaid, 0);
-  const totalRemaining = balances.reduce((sum, b) => sum + b.remainingAmount, 0);
+  // Calculate metrics with safe number conversion
+  const totalInvoiced = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
+  const totalPaid = balances.reduce((sum, b) => sum + Number(b.totalPaid || 0), 0);
+  const totalRemaining = balances.reduce((sum, b) => sum + Number(b.remainingAmount || 0), 0);
   const activeCompanies = new Set(balances.map(b => b.companyName)).size;
   const averagePayment = payments.length > 0 ? totalPaid / payments.length : 0;
-  const overdueBalances = balances.filter(b => b.status === 'pending' && b.remainingAmount > 1).length;
+  const overdueBalances = balances.filter(b => b.status === 'pending' && Number(b.remainingAmount || 0) > 1).length;
 
   // Prepare chart data
   const companyPerformanceData = balances.reduce((acc: any[], balance) => {
     const existing = acc.find(item => item.company === balance.companyName);
     if (existing) {
-      existing.invoiced += balance.totalInvoiced;
-      existing.paid += balance.totalPaid;
-      existing.remaining += balance.remainingAmount;
+      existing.invoiced += Number(balance.totalInvoiced || 0);
+      existing.paid += Number(balance.totalPaid || 0);
+      existing.remaining += Number(balance.remainingAmount || 0);
     } else {
       acc.push({
         company: balance.companyName.length > 15 
           ? balance.companyName.substring(0, 15) + '...' 
           : balance.companyName,
-        invoiced: balance.totalInvoiced,
-        paid: balance.totalPaid,
-        remaining: balance.remainingAmount
+        invoiced: Number(balance.totalInvoiced || 0),
+        paid: Number(balance.totalPaid || 0),
+        remaining: Number(balance.remainingAmount || 0)
       });
     }
     return acc;
@@ -112,6 +112,7 @@ export default function AnalyticsDashboard() {
 
   // Payment trend data (last 30 days simulation)
   const paymentTrendData = payments
+    .filter(payment => payment.paymentDate && !isNaN(new Date(payment.paymentDate).getTime()))
     .sort((a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime())
     .slice(-10)
     .map(payment => ({
@@ -119,7 +120,7 @@ export default function AnalyticsDashboard() {
         month: 'short', 
         day: 'numeric' 
       }),
-      amount: payment.amount
+      amount: Number(payment.amount || 0)
     }));
 
   const exportAnalytics = () => {
@@ -219,7 +220,7 @@ export default function AnalyticsDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">€{totalPaid.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">
-                {((totalPaid / totalInvoiced) * 100).toFixed(1)}% din total
+                {totalInvoiced > 0 ? ((totalPaid / totalInvoiced) * 100).toFixed(1) : '0'}% din total
               </p>
             </CardContent>
           </Card>

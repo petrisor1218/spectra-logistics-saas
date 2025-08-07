@@ -81,14 +81,18 @@ export default function Backup() {
   }
 
   const formatDate = (date: string) => {
-    return format(new Date(date), 'dd MMM yyyy, HH:mm', { locale: ro });
+    if (!date) return 'N/A';
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) return 'Invalid Date';
+    return format(parsedDate, 'dd MMM yyyy, HH:mm', { locale: ro });
   };
 
   const latestBackup = backupHistory[0];
   const totalBackups = backupHistory.length;
   const totalSize = backupHistory.reduce((sum: number, backup: any) => {
-    const sizeValue = parseFloat(backup.size.replace('MB', ''));
-    return sum + sizeValue;
+    if (!backup.size) return sum;
+    const sizeValue = parseFloat(backup.size.toString().replace(/[^\d.]/g, ''));
+    return sum + (isNaN(sizeValue) ? 0 : sizeValue);
   }, 0);
 
   return (
@@ -260,7 +264,7 @@ export default function Backup() {
                         <div className="text-sm text-muted-foreground flex items-center gap-4">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatDate(backup.createdAt)}
+                            {formatDate(backup.createdAt || backup.timestamp)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Database className="h-3 w-3" />
