@@ -474,10 +474,25 @@ export function useTransportData() {
     return date >= twoYearsAgo && date <= now;
   };
 
-  // File processing - DO NOT MODIFY!
-  const parseExcel = (arrayBuffer: ArrayBuffer) => {
+  // File processing with multi-sheet support
+  const parseExcel = (arrayBuffer: ArrayBuffer, fileName: string = '') => {
     try {
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      console.log(`📊 Excel file "${fileName}" has ${workbook.SheetNames.length} sheets:`, workbook.SheetNames);
+      
+      // Check if there's a "Payment Details" sheet for multi-tab files
+      const paymentDetailsSheet = workbook.SheetNames.find(name => 
+        name.toLowerCase().includes('payment details') || 
+        name.toLowerCase().includes('payment_details') ||
+        name.toLowerCase().includes('paymentdetails')
+      );
+      
+      if (paymentDetailsSheet) {
+        console.log(`💳 Found Payment Details sheet: "${paymentDetailsSheet}"`); 
+        return parsePaymentDetailsSheet(workbook, paymentDetailsSheet);
+      }
+      
+      // Default behavior - use first sheet
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -498,6 +513,56 @@ export function useTransportData() {
     } catch (error) {
       console.error('Eroare la parsarea Excel:', error);
       throw new Error('Nu s-a putut citi fișierul Excel');
+    }
+  };
+  
+  // Parse Payment Details sheet - extract VRIDs from column E and amounts from column AF
+  const parsePaymentDetailsSheet = (workbook: any, sheetName: string) => {
+    try {
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+      
+      console.log(`🔍 Payment Details sheet has ${jsonData.length} rows`);
+      
+      if (jsonData.length < 2) {
+        console.log('❌ Payment Details sheet is empty or has no data rows');
+        return [];
+      }
+      
+      const extractedData = [];
+      
+      // Skip header row, start from row 1 (index 1)
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i] as any[];
+        
+        // Column E (index 4) - VRID
+        const vridRaw = row[4];
+        const vrid = vridRaw ? String(vridRaw).trim() : '';
+        
+        // Column AF (index 31) - Amount (AF is the 32nd column, so index 31)
+        const rawAmount = row[31];
+        const amount = rawAmount ? parseFloat(String(rawAmount).replace(/[^0-9.-]/g, '')) : 0;
+        
+        if (vrid && !isNaN(amount) && amount > 0) {
+          extractedData.push({
+            'Tour ID': vrid,
+            'Load ID': vrid, // Add both for compatibility
+            'Gross Pay Amt (Excl. Tax)': amount,
+            'Source': 'Payment Details Tab',
+            'Row': i + 1
+          });
+        }
+      }
+      
+      console.log(`✅ Extracted ${extractedData.length} records from Payment Details:`);
+      console.log('📋 Sample data:', extractedData.slice(0, 3));
+      console.log('💰 Total amount:', extractedData.reduce((sum, item) => sum + Number(item['Gross Pay Amt (Excl. Tax)']), 0).toFixed(2));
+      
+      return extractedData;
+      
+    } catch (error) {
+      console.error('Error parsing Payment Details sheet:', error);
+      throw new Error('Nu s-a putut citi foaia Payment Details');
     }
   };
 
@@ -529,7 +594,7 @@ export function useTransportData() {
         data = parseCSV(text);
       } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
         const arrayBuffer = await file.arrayBuffer();
-        data = parseExcel(arrayBuffer);
+        data = parseExcel(arrayBuffer, file.name);
       } else {
         throw new Error('Format de fișier nesuportat. Acceptăm CSV și Excel.');
       }

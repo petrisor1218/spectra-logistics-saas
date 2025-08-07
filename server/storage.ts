@@ -276,7 +276,7 @@ export class DatabaseStorage implements IStorage {
     );
     
     if (existingBalance) {
-      const newTotalPaid = Math.max(0, parseFloat(existingBalance.totalPaid) - parseFloat(paymentToDelete.amount));
+      const newTotalPaid = Math.max(0, parseFloat(existingBalance.totalPaid || "0") - parseFloat(paymentToDelete.amount));
       const newOutstandingBalance = parseFloat(existingBalance.totalInvoiced) - newTotalPaid;
       const newPaymentStatus = newOutstandingBalance <= 1 ? "paid" : newOutstandingBalance < parseFloat(existingBalance.totalInvoiced) ? "partial" : "pending";
       
@@ -416,17 +416,31 @@ export class DatabaseStorage implements IStorage {
       processedData
     };
 
-    const [processing] = await db
-      .insert(weeklyProcessing)
-      .values(weeklyData)
-      .onConflictDoUpdate({
-        target: weeklyProcessing.weekLabel,
-        set: {
+    // Check if processing for this week already exists
+    const existingProcessing = await db
+      .select()
+      .from(weeklyProcessing)
+      .where(eq(weeklyProcessing.weekLabel, weekLabel))
+      .limit(1);
+    
+    let processing;
+    if (existingProcessing.length > 0) {
+      // Update existing record
+      [processing] = await db
+        .update(weeklyProcessing)
+        .set({
           ...weeklyData,
           processingDate: new Date()
-        }
-      })
-      .returning();
+        })
+        .where(eq(weeklyProcessing.weekLabel, weekLabel))
+        .returning();
+    } else {
+      // Insert new record
+      [processing] = await db
+        .insert(weeklyProcessing)
+        .values(weeklyData)
+        .returning();
+    }
 
     // Save individual trip records to historical table
     for (const trip of tripData) {
