@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -59,6 +60,7 @@ export default function Home() {
     tripFileRef,
     invoice7FileRef,
     invoice30FileRef,
+    uploadedFiles,
     
     // Actions
     setActiveTab,
@@ -66,6 +68,7 @@ export default function Home() {
     setShowCalendar,
     setCalendarDate,
     handleFileUpload,
+    clearUploadedFiles,
     processData,
     recordPayment,
     deletePayment,
@@ -240,7 +243,25 @@ export default function Home() {
                   invoice7FileRef={invoice7FileRef}
                   invoice30FileRef={invoice30FileRef}
                   handleFileUpload={handleFileUpload}
+                  uploadedFiles={uploadedFiles}
                 />
+                
+                {/* Buton pentru a curăța toate fișierele încărcate */}
+                {(uploadedFiles.trip.length > 0 || uploadedFiles.invoice7.length > 0 || uploadedFiles.invoice30.length > 0) && (
+                  <motion.div 
+                    className="mt-6 text-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <Button 
+                      onClick={clearUploadedFiles}
+                      variant="outline" 
+                      className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                    >
+                      Șterge toate fișierele încărcate
+                    </Button>
+                  </motion.div>
+                )}
               </div>
             )}
 
@@ -403,8 +424,9 @@ export default function Home() {
                         if (weekLabel) {
                           loadWeeklyProcessingByWeek(weekLabel);
                         } else {
-                          setProcessedData({});
-                          setSelectedWeek('');
+                          // Clear processed data if no selection
+                          // setProcessedData({});
+                          // setSelectedWeek('');
                         }
                       }}
                       className="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-primary focus:ring-2 focus:ring-primary/20"

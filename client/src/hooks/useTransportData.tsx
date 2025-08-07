@@ -86,6 +86,7 @@ export function useTransportData() {
   const [tripData, setTripData] = useState<any>(null);
   const [invoice7Data, setInvoice7Data] = useState<any>(null);
   const [invoice30Data, setInvoice30Data] = useState<any>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{[key: string]: string[]}>({ trip: [], invoice7: [], invoice30: [] });
   const [processedData, setProcessedData] = useState<any>({});
   const [payments, setPayments] = useState<any>({});
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
@@ -542,10 +543,23 @@ export function useTransportData() {
       
       if (type === 'trip') {
         setTripData(data);
+        setUploadedFiles(prev => ({ ...prev, trip: [file.name] }));
       } else if (type === 'invoice7') {
         setInvoice7Data(data);
+        setUploadedFiles(prev => ({ ...prev, invoice7: [file.name] }));
       } else if (type === 'invoice30') {
-        setInvoice30Data(data);
+        // Pentru facturile de 30 de zile, adaugă la datele existente
+        if (invoice30Data && invoice30Data.length > 0) {
+          const combinedData = [...invoice30Data, ...data];
+          setInvoice30Data(combinedData);
+        } else {
+          setInvoice30Data(data);
+        }
+        // Adaugă numele fișierului la lista de fișiere încărcate
+        setUploadedFiles(prev => ({ 
+          ...prev, 
+          invoice30: [...prev.invoice30, file.name] 
+        }));
       }
       
     } catch (error: any) {
@@ -1095,6 +1109,13 @@ export function useTransportData() {
     }
   };
 
+  const clearUploadedFiles = () => {
+    setUploadedFiles({ trip: [], invoice7: [], invoice30: [] });
+    setTripData(null);
+    setInvoice7Data(null);
+    setInvoice30Data(null);
+  };
+
   return {
     // State
     tripData,
@@ -1113,6 +1134,7 @@ export function useTransportData() {
     tripFileRef,
     invoice7FileRef,
     invoice30FileRef,
+    uploadedFiles,
     
     // Actions
     setActiveTab,
@@ -1121,6 +1143,7 @@ export function useTransportData() {
     setShowCalendar,
     setCalendarDate,
     handleFileUpload,
+    clearUploadedFiles,
     processData,
     recordPayment,
     deletePayment,

@@ -11,6 +11,7 @@ interface FileUploadSectionProps {
   invoice7FileRef: React.RefObject<HTMLInputElement>;
   invoice30FileRef: React.RefObject<HTMLInputElement>;
   handleFileUpload: (file: File, type: string) => void;
+  uploadedFiles: {[key: string]: string[]};
 }
 
 export function FileUploadSection({
@@ -21,7 +22,8 @@ export function FileUploadSection({
   tripFileRef,
   invoice7FileRef,
   invoice30FileRef,
-  handleFileUpload
+  handleFileUpload,
+  uploadedFiles
 }: FileUploadSectionProps) {
   const uploadSections = [
     {
@@ -120,9 +122,20 @@ export function FileUploadSection({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <div className="flex items-center text-green-400">
-                  <CheckCircle size={16} className="mr-2" />
-                  <span className="text-sm">{section.fileName} uploaded</span>
+                <div className="space-y-1">
+                  {uploadedFiles[section.type] && uploadedFiles[section.type].length > 0 ? (
+                    uploadedFiles[section.type].map((fileName, index) => (
+                      <div key={index} className="flex items-center text-green-400">
+                        <CheckCircle size={16} className="mr-2" />
+                        <span className="text-sm">{fileName}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center text-green-400">
+                      <CheckCircle size={16} className="mr-2" />
+                      <span className="text-sm">{section.fileName} uploaded</span>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
