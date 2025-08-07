@@ -57,13 +57,16 @@ export class FreeEmailService {
         return false;
       }
 
+      // Clean the app password - remove spaces
+      const cleanAppPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, '');
+      
       const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
+        port: 465,
+        secure: true, // Use SSL
         auth: {
           user: process.env.GMAIL_USER,
-          pass: process.env.GMAIL_APP_PASSWORD
+          pass: cleanAppPassword
         }
       });
 
