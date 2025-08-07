@@ -74,13 +74,13 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  // Calculate metrics with safe number conversion
+  // Calculate metrics with safe number conversion and correct field names
   const totalInvoiced = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
   const totalPaid = balances.reduce((sum, b) => sum + Number(b.totalPaid || 0), 0);
-  const totalRemaining = balances.reduce((sum, b) => sum + Number(b.remainingAmount || 0), 0);
+  const totalRemaining = balances.reduce((sum, b) => sum + Number(b.outstandingBalance || 0), 0);
   const activeCompanies = new Set(balances.map(b => b.companyName)).size;
   const averagePayment = payments.length > 0 ? totalPaid / payments.length : 0;
-  const overdueBalances = balances.filter(b => b.status === 'pending' && Number(b.remainingAmount || 0) > 1).length;
+  const overdueBalances = balances.filter(b => b.paymentStatus === 'pending' && Number(b.outstandingBalance || 0) > 1).length;
 
   // Prepare chart data
   const companyPerformanceData = balances.reduce((acc: any[], balance) => {
@@ -88,7 +88,7 @@ export default function AnalyticsDashboard() {
     if (existing) {
       existing.invoiced += Number(balance.totalInvoiced || 0);
       existing.paid += Number(balance.totalPaid || 0);
-      existing.remaining += Number(balance.remainingAmount || 0);
+      existing.remaining += Number(balance.outstandingBalance || 0);
     } else {
       acc.push({
         company: balance.companyName.length > 15 
@@ -96,7 +96,7 @@ export default function AnalyticsDashboard() {
           : balance.companyName,
         invoiced: Number(balance.totalInvoiced || 0),
         paid: Number(balance.totalPaid || 0),
-        remaining: Number(balance.remainingAmount || 0)
+        remaining: Number(balance.outstandingBalance || 0)
       });
     }
     return acc;

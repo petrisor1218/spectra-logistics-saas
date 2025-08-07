@@ -9,23 +9,23 @@ interface StatusCardsProps {
 
 export function StatusCards({ processedData, selectedWeek }: StatusCardsProps) {
   // Fetch company balances for outstanding amounts
-  const { data: companyBalances = [] } = useQuery({
+  const { data: companyBalances = [] } = useQuery<any[]>({
     queryKey: ["/api/company-balances"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Fetch all payments for total count
-  const { data: allPayments = [] } = useQuery({
+  const { data: allPayments = [] } = useQuery<any[]>({
     queryKey: ["/api/payments"],
   });
 
-  // Calculate outstanding balances (pending and partial payments)
+  // Calculate outstanding balances using outstandingBalance field and correct status check
   const outstandingBalances = companyBalances.filter((balance: any) => 
-    balance.status === 'pending' || balance.status === 'partial'
+    balance.paymentStatus === 'pending' || balance.paymentStatus === 'partial'
   );
   
   const totalOutstanding = outstandingBalances.reduce((acc: number, balance: any) => 
-    acc + parseFloat(balance.outstandingAmount || 0), 0
+    acc + parseFloat(balance.outstandingBalance || 0), 0
   );
 
   // Calculate stats from processed data (if available)
@@ -58,7 +58,7 @@ export function StatusCards({ processedData, selectedWeek }: StatusCardsProps) {
     },
     {
       title: "Companii Active",
-      value: companyBalances.length || 0,
+      value: companyBalances?.length || 0,
       subtitle: "În sistem",
       icon: Users,
       color: "gradient-primary",
