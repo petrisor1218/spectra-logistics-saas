@@ -20,6 +20,119 @@ export interface EmailData {
 
 export class EmailService {
   private static fromEmail = 'azlogistic8@gmail.com'; // Verified sender
+
+  // Static method to generate HTML for transport orders (for free email service)
+  static generateTransportOrderHTML(orderData: any): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .header { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; }
+            .order-details { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; }
+            .footer { background: #e9ecef; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; }
+            .important { color: #dc3545; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🚛 Transport Pro - Comandă de Transport</h1>
+          </div>
+          
+          <div class="content">
+            <h2>Comandă #${orderData.orderNumber}</h2>
+            <p>Stimate partenere <strong>${orderData.companyName}</strong>,</p>
+            
+            <p>Vă transmitem în atașament comanda de transport cu următoarele detalii:</p>
+            
+            <div class="order-details">
+              <p><strong>Numărul comenzii:</strong> ${orderData.orderNumber}</p>
+              <p><strong>Data generării:</strong> ${new Date().toLocaleDateString('ro-RO')}</p>
+              <p><strong>Compania:</strong> ${orderData.companyName}</p>
+              <p><strong>Perioada:</strong> ${orderData.weekLabel || 'Nu este specificată'}</p>
+            </div>
+            
+            <p>Vă rugăm să verificați documentul PDF atașat pentru detaliile complete ale comenzii.</p>
+            
+            <p class="important">⚠️ Important: Verificați toate informațiile și contactați-ne imediat pentru orice modificări necesare.</p>
+            
+            <p>Mulțumim pentru colaborarea dumneavoastră!</p>
+          </div>
+          
+          <div class="footer">
+            <p>Transport Pro - Sistem de Management Logistic</p>
+            <p>Email generat automat pe ${new Date().toLocaleDateString('ro-RO')} la ${new Date().toLocaleTimeString('ro-RO')}</p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  // Static method to generate HTML for weekly reports (for free email service)
+  static generateWeeklyReportHTML(companyName: string, weekLabel: string, reportData: any): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; }
+            .report-summary { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; }
+            .metrics { display: flex; justify-content: space-between; flex-wrap: wrap; }
+            .metric { background: white; padding: 10px; border-radius: 5px; text-align: center; margin: 5px; flex: 1; min-width: 150px; }
+            .footer { background: #e9ecef; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; }
+            .amount { color: #28a745; font-weight: bold; font-size: 18px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>📊 Transport Pro - Raport Săptămânal</h1>
+          </div>
+          
+          <div class="content">
+            <h2>Raport pentru ${companyName}</h2>
+            <p><strong>Perioada:</strong> ${weekLabel}</p>
+            
+            <div class="report-summary">
+              <h3>Rezumat Financiar</h3>
+              <div class="metrics">
+                <div class="metric">
+                  <h4>Total Facturat</h4>
+                  <div class="amount">€${reportData.totalInvoiced || '0.00'}</div>
+                </div>
+                <div class="metric">
+                  <h4>Total Plătit</h4>
+                  <div class="amount">€${reportData.totalPaid || '0.00'}</div>
+                </div>
+                <div class="metric">
+                  <h4>Restanțe</h4>
+                  <div class="amount">€${reportData.outstandingBalance || '0.00'}</div>
+                </div>
+                <div class="metric">
+                  <h4>Comision</h4>
+                  <div class="amount">€${reportData.commission || '0.00'}</div>
+                </div>
+              </div>
+            </div>
+            
+            <p>Raportul detaliat cu toate tranzacțiile și statisticile se află în documentul PDF atașat.</p>
+            
+            <p>Mulțumim pentru încrederea acordată!</p>
+          </div>
+          
+          <div class="footer">
+            <p>Transport Pro - Sistem de Management Logistic</p>
+            <p>Raport generat automat pe ${new Date().toLocaleDateString('ro-RO')} la ${new Date().toLocaleTimeString('ro-RO')}</p>
+          </div>
+        </body>
+      </html>
+    `;
+  }
   
   static async sendEmail(emailData: EmailData): Promise<boolean> {
     try {

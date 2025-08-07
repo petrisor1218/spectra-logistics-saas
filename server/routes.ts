@@ -7,6 +7,7 @@ import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import Stripe from "stripe";
 import { EmailService } from "./emailService";
+import { FreeEmailService } from './freeEmailService';
 
 let stripe: Stripe | null = null;
 
@@ -837,11 +838,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required fields for email" });
       }
 
-      const success = await EmailService.sendTransportOrder(
-        companyEmail,
-        orderData,
-        pdfContent
-      );
+      const success = await FreeEmailService.sendEmail({
+        to: companyEmail,
+        subject: `Comandă Transport #${orderData.orderNumber} - ${orderData.companyName}`,
+        html: EmailService.generateTransportOrderHTML(orderData),
+        attachments: [{
+          filename: `Comanda_Transport_${orderData.companyName}_${orderData.orderNumber}.pdf`,
+          content: pdfContent,
+          contentType: 'application/pdf'
+        }]
+      });
 
       if (success) {
         // Update order status to 'sent'
@@ -872,13 +878,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required fields for weekly report" });
       }
 
-      const success = await EmailService.sendWeeklyReport(
-        companyEmail,
-        companyName,
-        weekLabel,
-        reportData,
-        pdfContent
-      );
+      const success = await FreeEmailService.sendEmail({
+        to: companyEmail,
+        subject: `Raport Săptămânal - ${companyName} (${weekLabel})`,
+        html: EmailService.generateWeeklyReportHTML(companyName, weekLabel, reportData),
+        attachments: [{
+          filename: `Raport_${companyName}_${weekLabel.replace(/\s/g, '_')}.pdf`,
+          content: pdfContent,
+          contentType: 'application/pdf'
+        }]
+      });
 
       if (success) {
         res.json({ success: true, message: "Weekly report sent successfully" });

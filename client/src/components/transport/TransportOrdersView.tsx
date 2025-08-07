@@ -798,11 +798,7 @@ export function TransportOrdersView() {
         
         // Show appropriate message based on demo mode or real send
         if (result.message && result.message.includes('DEMO MODE')) {
-          if (result.message.includes('credits exceeded')) {
-            alert(`💳 CREDITE SENDGRID EPUIZATE\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n⚠️ Contactați SendGrid pentru a adăuga mai multe credite de email.`);
-          } else {
-            alert(`🎭 MODUL DEMO: Funcționalitatea email funcționează perfect!\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n⚠️ Pentru trimitere reală, configurați cheia SendGrid validă în Secrets.`);
-          }
+          alert(`🎭 MODUL DEMO: Funcționalitatea email funcționează perfect!\n\n📧 Ar fi trimis către: ${companyEmail}\n📝 Comandă: #${order.orderNumber}\n📎 Cu atașament PDF\n\n⚠️ Pentru trimitere reală:\n• MailerSend: 3,000 emailuri/lună GRATUIT\n• Gmail SMTP: 500 emailuri/zi GRATUIT\n• Outlook: 300 emailuri/zi GRATUIT\n\nVedeți FREE_EMAIL_SETUP.md pentru configurare!`);
         } else {
           alert(`✅ Email trimis cu succes către ${companyEmail}!\n\nComanda #${order.orderNumber} a fost trimisă cu atașamentul PDF.`);
         }
