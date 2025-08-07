@@ -12,6 +12,8 @@ import Pricing from "@/pages/pricing";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
 import AdminDashboard from "@/pages/admin-dashboard";
+import Analytics from "@/pages/analytics";
+import Backup from "@/pages/backup";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -45,6 +47,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/backup" component={Backup} />
       <Route path="/pricing" component={Pricing} />
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
