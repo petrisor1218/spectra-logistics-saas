@@ -16,11 +16,17 @@ const formatCurrency = (amount: number): string => {
 };
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw } from "lucide-react";
+import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import type { CompanyBalance } from "@shared/schema";
 
 interface PaymentModalProps {
+  balance: CompanyBalance;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+interface DeletePaymentModalProps {
   balance: CompanyBalance;
   isOpen: boolean;
   onClose: () => void;
@@ -148,9 +154,127 @@ function getStatusBadge(status: string) {
   }
 }
 
+function DeletePaymentModal({ balance, isOpen, onClose }: DeletePaymentModalProps) {
+  const [deleteAmount, setDeleteAmount] = useState("");
+  const { toast } = useToast();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      const response = await fetch(`/api/company-balances/payment/${encodeURIComponent(balance.companyName)}/${encodeURIComponent(balance.weekLabel)}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentAmount: amount
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete payment');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Plată ștearsă",
+        description: data.message || `Plată de ${formatCurrency(parseFloat(deleteAmount))} ștearsă cu succes.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/company-balances'] });
+      onClose();
+      setDeleteAmount("");
+    },
+    onError: (error) => {
+      toast({
+        title: "Eroare la ștergerea plății",
+        description: "Nu s-a putut șterge plata. Încercați din nou.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(deleteAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Sumă invalidă",
+        description: "Introduceți o sumă validă.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const currentPaid = parseFloat(balance.totalPaid || '0');
+    if (amount > currentPaid) {
+      toast({
+        title: "Sumă prea mare",
+        description: `Nu puteți șterge mai mult de ${formatCurrency(currentPaid)} (suma plătită).`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    deleteMutation.mutate(amount);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            Ștergere Plată
+          </DialogTitle>
+          <DialogDescription>
+            Ștergeți o plată pentru {balance.companyName} - {balance.weekLabel}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="deleteAmount" className="text-right">
+                Suma de șters
+              </Label>
+              <Input
+                id="deleteAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                max={parseFloat(balance.totalPaid || '0')}
+                value={deleteAmount}
+                onChange={(e) => setDeleteAmount(e.target.value)}
+                className="col-span-3"
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Suma plătită total: {formatCurrency(parseFloat(balance.totalPaid || '0'))}
+            </div>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <div className="text-sm text-red-600 dark:text-red-400">
+                ⚠️ Această acțiune va reduce suma plătită și va recalcula balanța restantă.
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Anulare
+            </Button>
+            <Button type="submit" variant="destructive" disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? "Se șterge..." : "Șterge plata"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function CompanyBalancesView() {
   const [selectedBalance, setSelectedBalance] = useState<CompanyBalance | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: balances = [], isLoading } = useQuery({
@@ -241,6 +365,11 @@ export default function CompanyBalancesView() {
   const handlePaymentClick = (balance: CompanyBalance) => {
     setSelectedBalance(balance);
     setIsPaymentModalOpen(true);
+  };
+
+  const handleDeleteClick = (balance: CompanyBalance) => {
+    setSelectedBalance(balance);
+    setIsDeleteModalOpen(true);
   };
 
   if (isLoading) {
@@ -394,17 +523,29 @@ export default function CompanyBalancesView() {
                           </div>
                           {getStatusBadge(balance.paymentStatus || 'pending')}
                         </div>
-                        {parseFloat(balance.outstandingBalance || '0') > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handlePaymentClick(balance)}
-                            className="ml-2"
-                          >
-                            <CreditCard className="h-4 w-4 mr-1" />
-                            Înregistrează plată
-                          </Button>
-                        )}
+                        <div className="flex gap-2">
+                          {parseFloat(balance.outstandingBalance || '0') > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePaymentClick(balance)}
+                            >
+                              <CreditCard className="h-4 w-4 mr-1" />
+                              Înregistrează plată
+                            </Button>
+                          )}
+                          {parseFloat(balance.totalPaid || '0') > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteClick(balance)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Șterge plată
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -432,14 +573,24 @@ export default function CompanyBalancesView() {
 
       {/* Payment Modal */}
       {selectedBalance && (
-        <PaymentModal
-          balance={selectedBalance}
-          isOpen={isPaymentModalOpen}
-          onClose={() => {
-            setIsPaymentModalOpen(false);
-            setSelectedBalance(null);
-          }}
-        />
+        <>
+          <PaymentModal
+            balance={selectedBalance}
+            isOpen={isPaymentModalOpen}
+            onClose={() => {
+              setIsPaymentModalOpen(false);
+              setSelectedBalance(null);
+            }}
+          />
+          <DeletePaymentModal
+            balance={selectedBalance}
+            isOpen={isDeleteModalOpen}
+            onClose={() => {
+              setIsDeleteModalOpen(false);
+              setSelectedBalance(null);
+            }}
+          />
+        </>
       )}
     </div>
   );

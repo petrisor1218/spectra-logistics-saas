@@ -550,6 +550,48 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteCompanyBalancePayment(companyName: string, weekLabel: string, paymentAmount: number): Promise<CompanyBalance> {
+    const existing = await this.getCompanyBalanceByWeek(companyName, weekLabel);
+    if (!existing) {
+      throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
+    }
+
+    const currentTotalPaid = parseFloat(existing.totalPaid || '0');
+    const newTotalPaid = Math.max(0, currentTotalPaid - paymentAmount);
+    const totalInvoiced = parseFloat(existing.totalInvoiced || '0');
+    let newOutstandingBalance = totalInvoiced - newTotalPaid;
+    
+    // Recalculate status based on new balance
+    let newStatus: 'pending' | 'partial' | 'paid' = 'pending';
+    if (newTotalPaid === 0) {
+      newStatus = 'pending';
+    } else if (newTotalPaid >= totalInvoiced || Math.abs(newOutstandingBalance) < 1) {
+      newStatus = 'paid';
+      if (Math.abs(newOutstandingBalance) < 1) {
+        newOutstandingBalance = 0;
+      }
+    } else {
+      newStatus = 'partial';
+    }
+
+    console.log(`💰 Plată ștearsă: ${companyName} - ${weekLabel}`);
+    console.log(`   Plătit înainte: ${currentTotalPaid} EUR → după: ${newTotalPaid} EUR`);
+    console.log(`   Status: ${newStatus}, Restant: ${newOutstandingBalance} EUR`);
+
+    const [updated] = await db
+      .update(companyBalances)
+      .set({
+        totalPaid: newTotalPaid.toString(),
+        outstandingBalance: newOutstandingBalance.toString(),
+        paymentStatus: newStatus,
+        lastUpdated: new Date()
+      })
+      .where(eq(companyBalances.id, existing.id))
+      .returning();
+    
+    return updated;
+  }
+
   // Generate company balances from weekly processing data and payments
   async generateCompanyBalancesFromCalendarData(): Promise<CompanyBalance[]> {
     try {

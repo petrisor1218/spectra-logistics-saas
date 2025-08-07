@@ -870,6 +870,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete payment endpoint
+  app.delete("/api/company-balances/payment/:companyName/:weekLabel", async (req, res) => {
+    try {
+      const { companyName, weekLabel } = req.params;
+      const { paymentAmount } = req.body;
+      
+      console.log(`🗑️ Ștergere plată: ${companyName} - ${weekLabel} - ${paymentAmount} EUR`);
+      
+      const balance = await storage.deleteCompanyBalancePayment(companyName, weekLabel, paymentAmount);
+      res.json({ 
+        success: true, 
+        message: `Plată de ${paymentAmount} EUR ștearsă cu succes`,
+        balance: balance
+      });
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      res.status(500).json({ message: "Failed to delete payment" });
+    }
+  });
+
   // Stripe subscription routes
   app.post("/api/create-subscription", async (req, res) => {
     try {
