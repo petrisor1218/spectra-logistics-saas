@@ -49,7 +49,7 @@ export class EmailService {
           console.log('✅ Demo email "sent" successfully');
         }, 1000);
         
-        return true; // Return success for demo
+        return 'demo'; // Return demo flag for frontend
       }
       
       return false;
