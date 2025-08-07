@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
@@ -18,12 +18,14 @@ import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import PaymentHistoryView from "@/components/payment/PaymentHistoryView";
+import SmallAmountAlertsModal from "@/components/transport/SmallAmountAlertsModal";
 import { useTransportData } from "@/hooks/useTransportData";
 import { useAuth } from "@/hooks/useAuth";
 import { SimpleLogin } from "@/components/auth/SimpleLogin";
 
 export default function Home() {
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
+  const [showSmallAmountAlertsModal, setShowSmallAmountAlertsModal] = useState(false);
   const { isAuthenticated, isLoading, login } = useAuth();
   
   // Show login screen if not authenticated
@@ -61,6 +63,7 @@ export default function Home() {
     invoice7FileRef,
     invoice30FileRef,
     uploadedFiles,
+    smallAmountAlerts,
     
     // Actions
     setActiveTab,
@@ -178,6 +181,20 @@ export default function Home() {
                 <Shield size={16} />
                 <span>Backup</span>
               </motion.button>
+              
+              {/* Small Amount Alerts Button - Only show when there are alerts */}
+              {smallAmountAlerts && smallAmountAlerts.length > 0 && (
+                <motion.button
+                  onClick={() => setShowSmallAmountAlertsModal(true)}
+                  className="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 border border-yellow-500/30 animate-pulse"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title={`${smallAmountAlerts.length} VRID-uri cu sume mici detectate - Click pentru detalii`}
+                >
+                  <AlertTriangle size={16} />
+                  <span>Alerte Sume Mici ({smallAmountAlerts.length})</span>
+                </motion.button>
+              )}
             </div>
           </motion.div>
 
@@ -555,6 +572,13 @@ export default function Home() {
           <Upload className="text-white" size={24} />
         </motion.button>
       </motion.div>
+
+      {/* Small Amount Alerts Modal */}
+      <SmallAmountAlertsModal
+        alerts={smallAmountAlerts}
+        isOpen={showSmallAmountAlertsModal}
+        onClose={() => setShowSmallAmountAlertsModal(false)}
+      />
     </div>
   );
 }

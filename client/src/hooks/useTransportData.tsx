@@ -226,6 +226,7 @@ export function useTransportData() {
   };
 
   // State for pending driver mappings
+  const [smallAmountAlerts, setSmallAmountAlerts] = useState<Array<{vrid: string, amount: number, company: string, invoiceType: string}>>([]);
   const [pendingMappings, setPendingMappings] = useState<Array<{
     driverName: string;
     suggestedCompany: string;
@@ -649,12 +650,15 @@ export function useTransportData() {
 
     setLoading(true);
     
+    // Reset small amount alerts at start of processing
+    setSmallAmountAlerts([]);
+    
     // Load fresh driver data before processing
     await loadDriversFromDatabase();
     
     const results: any = {};
     const unmatchedVrids: string[] = []; // Track unmatched VRIDs for historical search
-    const smallAmountAlerts: Array<{vrid: string, amount: number, company: string, invoiceType: string}> = []; // Track small amounts ≤10 EUR
+    const currentAlerts: Array<{vrid: string, amount: number, company: string, invoiceType: string}> = []; // Track small amounts ≤10 EUR
 
     try {
       const processInvoice = (invoiceData: any[], invoiceType: string) => {
@@ -693,12 +697,13 @@ export function useTransportData() {
 
           // ⚠️ DETECTARE SUME MICI - Alert pentru sume ≤10 EUR
           if (amount <= 10) {
-            smallAmountAlerts.push({
+            const alert = {
               vrid: vrid,
               amount: amount,
               company: company,
               invoiceType: invoiceType === '7_days' ? '7 zile' : '30 zile'
-            });
+            };
+            currentAlerts.push(alert);
             console.log(`⚠️ SUMĂ MICĂ DETECTATĂ: VRID ${vrid} - €${amount.toFixed(2)} (${company} - ${invoiceType === '7_days' ? '7 zile' : '30 zile'})`);
           }
 
@@ -847,16 +852,14 @@ export function useTransportData() {
     } catch (error: any) {
       alert('Eroare la procesarea datelor: ' + error.message);
     } finally {
-      // 🚨 AFIȘARE ALERTE PENTRU SUME MICI ≤10 EUR
-      if (smallAmountAlerts.length > 0) {
-        const alertMessage = `⚠️ ATENȚIE! Am găsit ${smallAmountAlerts.length} VRID-uri cu sume foarte mici (≤10 EUR):\n\n` +
-          smallAmountAlerts.map((alert, index) => 
-            `${index + 1}. VRID: ${alert.vrid}\n   • Sumă: €${alert.amount.toFixed(2)}\n   • Companie: ${alert.company}\n   • Tip: ${alert.invoiceType}`
-          ).join('\n\n') +
-          '\n\n🔍 Verificați aceste VRID-uri pentru posibile erori sau cursuri incomplete!';
+      // 🚨 SALVARE ALERTE PENTRU SUME MICI ≤10 EUR ÎN STATE
+      if (currentAlerts.length > 0) {
+        setSmallAmountAlerts(currentAlerts);
+        console.log('🚨 RAPORT SUME MICI:', currentAlerts);
         
+        // Opțional: afișare alertă simplă pentru notificare
+        const alertMessage = `⚠️ ATENȚIE! Am găsit ${currentAlerts.length} VRID-uri cu sume foarte mici (≤10 EUR). Verificați lista detaliată în secțiunea de alerte.`;
         alert(alertMessage);
-        console.log('🚨 RAPORT SUME MICI:', smallAmountAlerts);
       }
       
       setLoading(false);
@@ -1256,6 +1259,7 @@ export function useTransportData() {
     invoice7FileRef,
     invoice30FileRef,
     uploadedFiles,
+    smallAmountAlerts,
     
     // Actions
     setActiveTab,
