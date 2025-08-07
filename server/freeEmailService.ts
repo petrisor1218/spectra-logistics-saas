@@ -57,17 +57,18 @@ export class FreeEmailService {
         return false;
       }
 
-      // Use the original App Password format
-      const appPassword = 'nsah lqts pbso xrkr'.replace(/\s/g, '');
+      // Use the Gmail App Password
+      const appPassword = 'nsahltqspbsoxrkr'; // Removed spaces
       
       const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false,
         auth: {
-          user: process.env.GMAIL_USER,
+          user: 'fastexpressrl@gmail.com',
           pass: appPassword
-        }
+        },
+        debug: true
       });
 
       const attachments = emailData.attachments?.map(att => ({
@@ -134,21 +135,33 @@ export class FreeEmailService {
 
   // Try multiple free services in order
   static async sendEmail(emailData: EmailData): Promise<boolean | string> {
-    // Try Brevo SMTP first (REAL emails - 300/day FREE)
-    const brevoSuccess = await this.sendViaBrevo(emailData);
-    if (brevoSuccess) return true;
+    // Try Gmail first (real emails with App Password)
+    try {
+      const gmailSuccess = await this.sendViaGmail(emailData);
+      if (gmailSuccess) return true;
+    } catch (error) {
+      console.log('Gmail failed, trying next service...');
+    }
 
-    // Try Gmail (real emails)
-    const gmailSuccess = await this.sendViaGmail(emailData);
-    if (gmailSuccess) return true;
+    // Try Brevo SMTP (if configured properly)
+    try {
+      const brevoSuccess = await this.sendViaBrevo(emailData);
+      if (brevoSuccess) return true;
+    } catch (error) {
+      console.log('Brevo failed, trying next service...');
+    }
+
+    // Try Ethereal for testing (ALWAYS works for demo)
+    try {
+      const etherealSuccess = await this.sendViaEthereal(emailData);
+      if (etherealSuccess) return 'demo';
+    } catch (error) {
+      console.log('Ethereal failed, trying next service...');
+    }
 
     // Try Outlook as backup (real emails) 
     const outlookSuccess = await this.sendViaOutlook(emailData);
     if (outlookSuccess) return true;
-
-    // Try Ethereal for testing (preview only)
-    const etherealSuccess = await this.sendViaEthereal(emailData);
-    if (etherealSuccess) return true;
 
     // Try MailerSend (needs domain verification)
     const mailerSendSuccess = await this.sendViaMailerSend(emailData);
@@ -211,15 +224,25 @@ export class FreeEmailService {
   // Brevo SMTP - 300 emails/day FREE, sends REAL emails
   static async sendViaBrevo(emailData: EmailData): Promise<boolean> {
     try {
+      console.log('🔧 Testing Brevo SMTP connection...');
+      console.log(`📧 Sending to: ${emailData.to}`);
+      console.log(`📝 Subject: ${emailData.subject}`);
+      console.log(`📎 Attachments: ${emailData.attachments?.length || 0}`);
+      
       const transporter = nodemailer.createTransport({
         host: 'smtp-relay.brevo.com',
         port: 587,
         secure: false,
         auth: {
           user: '9436e8001@smtp-brevo.com',
-          pass: process.env.BREVO_API_KEY
-        }
+          pass: process.env.BREVO_API_KEY || 'dummy'
+        },
+        debug: true
       });
+
+      // Test the connection first
+      await transporter.verify();
+      console.log('✅ Brevo SMTP connection verified!');
 
       const attachments = emailData.attachments?.map(att => ({
         filename: att.filename,
@@ -239,8 +262,11 @@ export class FreeEmailService {
       console.log(`📬 Delivered to: ${emailData.to}`);
       return true;
       
-    } catch (error) {
-      console.error('❌ Brevo SMTP error:', error);
+    } catch (error: any) {
+      console.error('❌ Brevo SMTP error details:');
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
+      console.error('Full error:', error);
       return false;
     }
   }
