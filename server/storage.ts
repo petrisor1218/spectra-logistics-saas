@@ -519,6 +519,17 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
+    // IMPORTANT: Save the payment in the payments table so it persists through synchronization
+    const paymentData: InsertPayment = {
+      companyName: companyName,
+      weekLabel: weekLabel,
+      amount: paidAmount.toString(),
+      description: `Plată manuală adăugată prin bilanțe`
+    };
+
+    await db.insert(payments).values(paymentData);
+    console.log(`💾 Plată salvată în tabelul payments: ${companyName} - ${weekLabel} - ${paidAmount} EUR`);
+
     const newTotalPaid = parseFloat(existing.totalPaid || '0') + paidAmount;
     const totalInvoiced = parseFloat(existing.totalInvoiced || '0');
     let newOutstandingBalance = totalInvoiced - newTotalPaid;
