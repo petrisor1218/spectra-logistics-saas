@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Email Transport Pro</title>
+</head>
+<body>
+    <h2>🧪 Test Email Direct</h2>
+    <form id="testForm">
+        <label for="email">Introduceți emailul dvs. pentru test:</label><br>
+        <input type="email" id="email" required placeholder="exemplu@gmail.com" style="width: 300px; padding: 8px; margin: 10px 0;"><br>
+        <button type="submit" style="background: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer;">Trimite Email Test</button>
+    </form>
+    
+    <div id="result" style="margin-top: 20px; padding: 10px; display: none;"></div>
+    
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '📧 Se trimite emailul...';
+            resultDiv.style.backgroundColor = '#fff3cd';
+            
+            try {
+                const response = await fetch('/api/test-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ testEmail: email })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `✅ Email trimis cu succes la ${email}! Verificați inbox-ul sau spam-ul.`;
+                    resultDiv.style.backgroundColor = '#d4edda';
+                } else {
+                    resultDiv.innerHTML = `❌ Eroare: ${result.message}`;
+                    resultDiv.style.backgroundColor = '#f8d7da';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Eroare de conexiune: ${error.message}`;
+                resultDiv.style.backgroundColor = '#f8d7da';
+            }
+        });
+    </script>
+</body>
+</html>

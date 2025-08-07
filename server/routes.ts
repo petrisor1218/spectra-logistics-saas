@@ -951,6 +951,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test email endpoint
+  app.post('/api/test-email', async (req, res) => {
+    try {
+      const { testEmail } = req.body;
+      
+      if (!testEmail) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Email address required' 
+        });
+      }
+
+      const htmlTemplate = `
+        <h2>🚚 Test Email - Transport Pro</h2>
+        <p>Acesta este un email de test pentru verificarea funcționalității.</p>
+        <p><strong>Data:</strong> ${new Date().toLocaleString('ro-RO')}</p>
+        <p><strong>Status:</strong> Sistemul email funcționează perfect!</p>
+        <p><strong>Serviciu:</strong> Brevo SMTP (300 emailuri/zi GRATUIT)</p>
+      `;
+
+      const emailSuccess = await FreeEmailService.sendEmail({
+        to: testEmail,
+        subject: `Test Email - Transport Pro ${new Date().toLocaleDateString('ro-RO')}`,
+        html: htmlTemplate
+      });
+
+      if (emailSuccess === true) {
+        res.json({
+          success: true,
+          message: `Test email sent successfully to ${testEmail}`
+        });
+      } else {
+        res.json({
+          success: false,
+          message: 'Email service not configured properly'
+        });
+      }
+
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send test email: ' + error.message
+      });
+    }
+  });
+
   app.post("/api/send-transport-order", async (req, res) => {
     try {
       const { orderData, companyEmail, pdfContent } = req.body;
