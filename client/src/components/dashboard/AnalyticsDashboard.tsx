@@ -167,11 +167,12 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  // Calculate monthly data for yearly analysis
+  // Calculate monthly data for analysis
   const monthlyData = weeklyInvoicedData.reduce((acc: any[], week: any) => {
     const weekDate = new Date(week.processingDate);
     const monthKey = `${weekDate.getFullYear()}-${String(weekDate.getMonth() + 1).padStart(2, '0')}`;
-    const monthName = weekDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
+    const monthName = weekDate.toLocaleDateString('ro-RO', { month: 'long' });
+    const fullMonthName = weekDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
     
     const existing = acc.find(item => item.monthKey === monthKey);
     if (existing) {
@@ -180,7 +181,8 @@ export default function AnalyticsDashboard() {
     } else {
       acc.push({
         monthKey,
-        monthName,
+        monthName, // Just month name (e.g., "ianuarie")
+        fullMonthName, // Full name with year (e.g., "ianuarie 2024")
         totalInvoiced: week.totalInvoiced,
         weekCount: 1,
         date: weekDate
@@ -189,59 +191,10 @@ export default function AnalyticsDashboard() {
     return acc;
   }, []).sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
 
-  // Calculate quarterly data
-  const quarterlyData = monthlyData.reduce((acc: any[], month: any) => {
-    const date = month.date;
-    const quarter = Math.ceil((date.getMonth() + 1) / 3);
-    const quarterKey = `${date.getFullYear()}-Q${quarter}`;
-    const quarterName = `Trimestrul ${quarter} ${date.getFullYear()}`;
-    
-    const existing = acc.find(item => item.quarterKey === quarterKey);
-    if (existing) {
-      existing.totalInvoiced += month.totalInvoiced;
-      existing.monthCount += 1;
-    } else {
-      acc.push({
-        quarterKey,
-        quarterName,
-        totalInvoiced: month.totalInvoiced,
-        monthCount: 1,
-        date
-      });
-    }
-    return acc;
-  }, []);
-
-  // Generate forecast for next year based on trends
-  const currentYear = new Date().getFullYear();
-  const currentYearData = monthlyData.filter(month => month.date.getFullYear() === currentYear);
-  const previousYearData = monthlyData.filter(month => month.date.getFullYear() === currentYear - 1);
-  
-  // Calculate yearly growth rate
-  const currentYearTotal = currentYearData.reduce((sum, month) => sum + month.totalInvoiced, 0);
-  const previousYearTotal = previousYearData.reduce((sum, month) => sum + month.totalInvoiced, 0);
-  const yearlyGrowthRate = previousYearTotal > 0 ? ((currentYearTotal - previousYearTotal) / previousYearTotal) * 100 : 0;
-  
-  // Generate next year forecast
-  const nextYearForecast = monthlyData.slice(-12).map((month: any, index: number) => {
-    const nextYearDate = new Date(month.date);
-    nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
-    
-    // Apply growth trend with seasonal adjustments
-    const seasonalMultiplier = 1 + (Math.sin((index * Math.PI) / 6) * 0.1); // Seasonal variation
-    const forecastAmount = month.totalInvoiced * (1 + yearlyGrowthRate / 100) * seasonalMultiplier;
-    
-    return {
-      monthKey: `${nextYearDate.getFullYear()}-${String(nextYearDate.getMonth() + 1).padStart(2, '0')}`,
-      monthName: nextYearDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' }),
-      totalInvoiced: forecastAmount,
-      isForecast: true,
-      date: nextYearDate
-    };
-  });
-
-  // Combine actual data with forecast for charts
-  const yearlyChartData = [...monthlyData, ...nextYearForecast].slice(-24); // Last 12 months + next 12 months
+  // Find best and worst months
+  const sortedMonths = [...monthlyData].sort((a, b) => b.totalInvoiced - a.totalInvoiced);
+  const bestMonth = sortedMonths[0];
+  const worstMonth = sortedMonths[sortedMonths.length - 1];
 
   // Payment trend data (last 30 days simulation)
   const paymentTrendData = payments
@@ -390,107 +343,137 @@ export default function AnalyticsDashboard() {
         </motion.div>
       </div>
 
-      {/* Yearly Analytics Section */}
+      {/* Monthly Analysis - Best Months */}
       {monthlyData.length > 0 && (
-        <>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                  Evoluție Anuală și Prognoză {currentYear + 1}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Analiză pe 12 luni + prognoză pentru anul următor (Creștere anuală: {yearlyGrowthRate.toFixed(1)}%)
-                </p>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={yearlyChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="monthName" 
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                      fontSize={12}
-                    />
-                    <YAxis formatter={(value: number) => `€${(value / 1000).toFixed(0)}k`} />
-                    <Tooltip 
-                      formatter={(value: number, name: string) => [
-                        `€${value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}`,
-                        name === 'totalInvoiced' ? 'Facturat' : 'Prognoză'
-                      ]}
-                      labelFormatter={(label: string) => `Luna: ${label}`}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="totalInvoiced" 
-                      stroke="#3b82f6" 
-                      strokeWidth={3}
-                      dot={(props: any) => {
-                        const { payload } = props;
-                        return (
-                          <circle 
-                            {...props} 
-                            fill={payload.isForecast ? '#10b981' : '#3b82f6'}
-                            stroke={payload.isForecast ? '#10b981' : '#3b82f6'}
-                            strokeWidth={2}
-                            r={payload.isForecast ? 6 : 4}
-                          />
-                        );
-                      }}
-                      strokeDasharray={(dataPoint: any) => dataPoint?.isForecast ? '5 5' : '0'}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-                
-                {/* Yearly Summary Stats */}
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-600">€{currentYearTotal.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</div>
-                    <div className="text-sm text-muted-foreground">{currentYear} Total</div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-green-600" />
+                Analiză Lunară - Care sunt Lunile cele mai Bune?
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Identifică lunile cu cele mai mari facturi pentru planificare strategică
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="fullMonthName" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    fontSize={12}
+                  />
+                  <YAxis formatter={(value: number) => `€${(value / 1000).toFixed(0)}k`} />
+                  <Tooltip 
+                    formatter={(value: number) => [
+                      `€${value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}`,
+                      'Total Facturat'
+                    ]}
+                    labelFormatter={(label: string) => `Luna: ${label}`}
+                  />
+                  <Bar 
+                    dataKey="totalInvoiced" 
+                    radius={[4, 4, 0, 0]}
+                    fill={(entry: any) => {
+                      // Different colors for best and worst months
+                      if (entry.totalInvoiced === bestMonth?.totalInvoiced) return '#10b981'; // Green for best
+                      if (entry.totalInvoiced === worstMonth?.totalInvoiced) return '#ef4444'; // Red for worst
+                      return '#3b82f6'; // Blue for others
+                    }}
+                  >
+                    {monthlyData.map((entry: any, index: number) => {
+                      let fillColor = '#3b82f6'; // Default blue
+                      if (entry.totalInvoiced === bestMonth?.totalInvoiced) fillColor = '#10b981'; // Green for best
+                      if (entry.totalInvoiced === worstMonth?.totalInvoiced) fillColor = '#ef4444'; // Red for worst
+                      return <Cell key={`cell-${index}`} fill={fillColor} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              
+              {/* Best and Worst Months Highlights */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center border-2 border-green-200 dark:border-green-800">
+                  <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">🏆 LUNA CEA MAI BUNĂ</div>
+                  <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                    {bestMonth?.fullMonthName || 'N/A'}
                   </div>
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">{yearlyGrowthRate > 0 ? '+' : ''}{yearlyGrowthRate.toFixed(1)}%</div>
-                    <div className="text-sm text-muted-foreground">Creștere Anuală</div>
-                  </div>
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-600">€{nextYearForecast.reduce((sum, month) => sum + month.totalInvoiced, 0).toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</div>
-                    <div className="text-sm text-muted-foreground">Prognoză {currentYear + 1}</div>
-                  </div>
-                  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-orange-600">€{(currentYearTotal / 12).toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</div>
-                    <div className="text-sm text-muted-foreground">Media Lunară</div>
+                  <div className="text-2xl font-bold text-green-600 mt-2">
+                    €{bestMonth?.totalInvoiced.toLocaleString('ro-RO', { minimumFractionDigits: 0 }) || '0'}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Quarterly Analysis */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-indigo-600" />
-                  Analiză Trimestrială
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={quarterlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="quarterName" />
-                    <YAxis formatter={(value: number) => `€${(value / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(value: number) => [`€${value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}`, 'Total Trimestrial']} />
-                    <Bar dataKey="totalInvoiced" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center">
+                  <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">📊 MEDIA LUNARĂ</div>
+                  <div className="text-lg font-medium text-muted-foreground">
+                    Pe {monthlyData.length} luni
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600 mt-2">
+                    €{(monthlyData.reduce((sum: number, month: any) => sum + month.totalInvoiced, 0) / monthlyData.length || 0)
+                      .toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
+                  </div>
+                </div>
+                
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-center border-2 border-red-200 dark:border-red-800">
+                  <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">📉 LUNA CEA MAI SLABĂ</div>
+                  <div className="text-xl font-bold text-red-700 dark:text-red-300">
+                    {worstMonth?.fullMonthName || 'N/A'}
+                  </div>
+                  <div className="text-2xl font-bold text-red-600 mt-2">
+                    €{worstMonth?.totalInvoiced.toLocaleString('ro-RO', { minimumFractionDigits: 0 }) || '0'}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Top 5 Best Months Table */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  Top 5 Luni cu Cele Mai Mari Facturi
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-3 font-medium text-muted-foreground">Poziție</th>
+                        <th className="text-left p-3 font-medium text-muted-foreground">Luna</th>
+                        <th className="text-right p-3 font-medium text-muted-foreground">Sumă Facturată</th>
+                        <th className="text-center p-3 font-medium text-muted-foreground">Rating</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedMonths.slice(0, 5).map((month: any, index: number) => {
+                        const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+                        const colors = ['text-yellow-600', 'text-gray-500', 'text-amber-600', 'text-blue-600', 'text-purple-600'];
+                        
+                        return (
+                          <tr key={month.monthKey} className={`border-b hover:bg-muted/50 transition-colors ${
+                            index === 0 ? 'bg-green-50 dark:bg-green-900/20' : ''
+                          }`}>
+                            <td className="p-3 font-bold text-xl">{medals[index]}</td>
+                            <td className="p-3 font-medium">{month.fullMonthName}</td>
+                            <td className="p-3 text-right font-mono text-lg">
+                              €{month.totalInvoiced.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`font-bold ${colors[index]}`}>
+                                {index === 0 ? 'EXCELENT' : index === 1 ? 'FOARTE BUN' : index === 2 ? 'BUN' : 'OK'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* Charts Section */}
