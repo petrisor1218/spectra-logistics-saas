@@ -1052,7 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subject: `Comandă Transport #${orderData.orderNumber} - ${orderData.companyName}`,
         html: EmailService.generateTransportOrderHTML(orderData),
         attachments: [{
-          filename: `Comanda_Transport_${orderData.companyName}_${orderData.orderNumber}.pdf`,
+          filename: `Comanda_Transport_${orderData.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${orderData.orderNumber}.pdf`,
           content: pdfContent,
           contentType: 'application/pdf'
         }]
