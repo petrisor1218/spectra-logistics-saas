@@ -74,6 +74,15 @@ export default function AnalyticsDashboard() {
     }
   });
 
+  const { data: weeklyProcessingData = [], isLoading: weeklyLoading } = useQuery({
+    queryKey: ['/api/weekly-processing'],
+    queryFn: async () => {
+      const response = await fetch('/api/weekly-processing');
+      if (!response.ok) throw new Error('Failed to fetch weekly processing');
+      return response.json();
+    }
+  });
+
   // Calculate metrics with safe number conversion and correct field names
   const totalInvoiced = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
   const totalPaid = balances.reduce((sum, b) => sum + Number(b.totalPaid || 0), 0);
@@ -109,6 +118,54 @@ export default function AnalyticsDashboard() {
     value: item.invoiced,
     color: pieColors[index % pieColors.length]
   }));
+
+  // Calculate weekly invoiced amounts for trending analysis
+  const weeklyInvoicedData = weeklyProcessingData
+    .map((week: any) => {
+      if (!week.processedData) return null;
+      
+      let totalWeekInvoiced = 0;
+      const processedData = week.processedData as any;
+      
+      // Sum up all companies' invoiced amounts for this week
+      Object.keys(processedData).forEach(companyName => {
+        if (companyName === 'Unmatched' || companyName === 'Totals') return;
+        
+        const companyData = processedData[companyName];
+        if (companyData && (companyData.Total_7_days || companyData.Total_30_days)) {
+          const total7Days = parseFloat(companyData.Total_7_days) || 0;
+          const total30Days = parseFloat(companyData.Total_30_days) || 0;
+          const totalCommission = parseFloat(companyData.Total_comision) || 0;
+          
+          // Total invoiced excluding commission
+          const totalInvoiced = total7Days + total30Days - totalCommission;
+          totalWeekInvoiced += totalInvoiced;
+        }
+      });
+      
+      return {
+        weekLabel: week.weekLabel,
+        totalInvoiced: totalWeekInvoiced,
+        processingDate: week.processingDate,
+        // Calculate trend compared to previous week
+        trend: 0 // Will be calculated below
+      };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => new Date(a.processingDate).getTime() - new Date(b.processingDate).getTime());
+  
+  // Calculate trends (percentage change from previous week)
+  weeklyInvoicedData.forEach((week: any, index: number) => {
+    if (index > 0) {
+      const previousWeek = weeklyInvoicedData[index - 1] as any;
+      const currentAmount = week.totalInvoiced;
+      const previousAmount = previousWeek.totalInvoiced;
+      
+      if (previousAmount > 0) {
+        week.trend = ((currentAmount - previousAmount) / previousAmount) * 100;
+      }
+    }
+  });
 
   // Payment trend data (last 30 days simulation)
   const paymentTrendData = payments
@@ -153,7 +210,7 @@ export default function AnalyticsDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  if (balancesLoading || paymentsLoading) {
+  if (balancesLoading || paymentsLoading || weeklyLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -333,9 +390,115 @@ export default function AnalyticsDashboard() {
         </motion.div>
       )}
 
+      {/* Weekly Invoiced Amounts Table */}
+      {weeklyInvoicedData.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+                Sume Facturate pe Săptămână
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Urmărește tendințele facturării săptămânale pentru a identifica scăderi
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium text-muted-foreground">Săptămână</th>
+                      <th className="text-right p-3 font-medium text-muted-foreground">Sumă Facturată</th>
+                      <th className="text-right p-3 font-medium text-muted-foreground">Tendință</th>
+                      <th className="text-right p-3 font-medium text-muted-foreground">Schimbare</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {weeklyInvoicedData
+                      .slice(-8) // Show last 8 weeks
+                      .reverse() // Most recent first
+                      .map((week: any, index: number) => {
+                        const isIncreasing = week.trend > 0;
+                        const isDecreasing = week.trend < 0;
+                        const trendColor = isIncreasing ? 'text-green-600' : isDecreasing ? 'text-red-600' : 'text-muted-foreground';
+                        const trendIcon = isIncreasing ? '↗️' : isDecreasing ? '↘️' : '→';
+                        
+                        return (
+                          <tr key={week.weekLabel} className={`border-b hover:bg-muted/50 transition-colors ${
+                            index === 0 ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                          }`}>
+                            <td className="p-3 font-medium">
+                              {week.weekLabel}
+                              {index === 0 && (
+                                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full">
+                                  Cea mai recentă
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right font-mono text-lg">
+                              €{week.totalInvoiced.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="p-3 text-right">
+                              <span className={`text-2xl ${trendColor}`}>
+                                {trendIcon}
+                              </span>
+                            </td>
+                            <td className={`p-3 text-right font-medium ${trendColor}`}>
+                              {week.trend !== 0 ? (
+                                <>
+                                  {week.trend > 0 ? '+' : ''}{week.trend.toFixed(1)}%
+                                  {isDecreasing && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      Scădere detecată!
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground">Prima săptămână</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Summary Statistics */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground">Media Săptămânală</div>
+                  <div className="text-xl font-bold text-blue-600">
+                    €{(weeklyInvoicedData.reduce((sum: number, week: any) => sum + week.totalInvoiced, 0) / weeklyInvoicedData.length || 0)
+                      .toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground">Cea mai mare săptămână</div>
+                  <div className="text-xl font-bold text-green-600">
+                    €{Math.max(...weeklyInvoicedData.map((w: any) => w.totalInvoiced))
+                      .toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground">Cea mai mică săptămână</div>
+                  <div className="text-xl font-bold text-orange-600">
+                    €{Math.min(...weeklyInvoicedData.map((w: any) => w.totalInvoiced))
+                      .toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Status Alerts */}
       {overdueBalances > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
           <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
             <CardHeader>
               <CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2">
