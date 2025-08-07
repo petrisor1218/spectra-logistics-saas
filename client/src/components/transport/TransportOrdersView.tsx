@@ -510,7 +510,8 @@ export function TransportOrdersView() {
     
     doc.setFont('helvetica', 'bold');
     doc.text('A Z LOGISTIC EOOD', 20, condY + 45);
-    doc.text('azlogistic8@gmail.com', 20, condY + 55);
+    doc.text('CIF: BG206507560 | Email: azlogistic8@gmail.com', 20, condY + 55);
+    doc.text('Adresa: Town of Ruse, Stefan Karadja str. nr. 10, RUSE, Bulgaria', 20, condY + 65);
     
     const pageHeight2 = doc.internal.pageSize.height;
     doc.text('Pagina 2 din 2', 105, pageHeight2 - 20, { align: 'center' });
@@ -578,7 +579,8 @@ export function TransportOrdersView() {
       doc.setTextColor(100, 116, 139);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('azlogistic8@gmail.com', 20, 28);
+      doc.text('CIF: BG206507560 | Email: azlogistic8@gmail.com', 20, 28);
+      doc.text('Adresa: Town of Ruse, Stefan Karadja str. nr. 10, RUSE, Bulgaria', 20, 32);
       
       // Order information box (top right)
       doc.setFillColor(249, 250, 251);
