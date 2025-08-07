@@ -17,9 +17,10 @@ export class FreeEmailService {
       const transporter = nodemailer.createTransport({
         host: 'smtp.mailersend.net',
         port: 587,
+        secure: false,
         auth: {
           user: 'MS_' + process.env.MAILERSEND_API_KEY,
-          pass: 'MS_' + process.env.MAILERSEND_API_KEY
+          pass: process.env.MAILERSEND_API_KEY
         }
       });
 
@@ -128,17 +129,17 @@ export class FreeEmailService {
 
   // Try multiple free services in order
   static async sendEmail(emailData: EmailData): Promise<boolean | string> {
-    // Try MailerSend first (best option - 3,000/month free)
-    const mailerSendSuccess = await this.sendViaMailerSend(emailData);
-    if (mailerSendSuccess) return true;
-
-    // Try Gmail as fallback
+    // Try Gmail first (easiest to configure)
     const gmailSuccess = await this.sendViaGmail(emailData);
     if (gmailSuccess) return true;
 
-    // Try Outlook as last resort
+    // Try Outlook as fallback
     const outlookSuccess = await this.sendViaOutlook(emailData);
     if (outlookSuccess) return true;
+
+    // Try MailerSend (needs domain verification)
+    const mailerSendSuccess = await this.sendViaMailerSend(emailData);
+    if (mailerSendSuccess) return true;
 
     // All failed - demo mode
     console.log('🎭 DEMO MODE: No free email service configured');
