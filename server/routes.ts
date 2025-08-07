@@ -977,17 +977,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         html: htmlTemplate
       });
 
-      if (emailSuccess === true) {
+      if (emailSuccess === 'brevo_real') {
         res.json({
           success: true,
-          message: `REAL email sent successfully to ${testEmail}`,
-          type: 'real'
+          message: `REAL email sent via Brevo SMTP to ${testEmail}. Check Brevo dashboard for delivery status.`,
+          type: 'brevo'
         });
       } else if (emailSuccess === 'ethereal_preview') {
         res.json({
           success: true,
           message: `Email PREVIEW generated successfully. Check server logs for preview URL!`,
           type: 'preview'
+        });
+      } else if (emailSuccess === true) {
+        res.json({
+          success: true,
+          message: `REAL email sent successfully to ${testEmail}`,
+          type: 'real'
         });
       } else {
         res.json({
