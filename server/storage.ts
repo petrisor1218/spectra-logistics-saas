@@ -556,8 +556,39 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
-    const currentTotalPaid = parseFloat(existing.totalPaid || '0');
-    const newTotalPaid = Math.max(0, currentTotalPaid - paymentAmount);
+    // First, find and delete the corresponding payment from the payments table
+    const paymentToDelete = await db
+      .select()
+      .from(payments)
+      .where(
+        and(
+          eq(payments.companyName, companyName),
+          eq(payments.weekLabel, weekLabel),
+          eq(payments.amount, paymentAmount.toString())
+        )
+      )
+      .limit(1);
+
+    if (paymentToDelete.length > 0) {
+      await db
+        .delete(payments)
+        .where(eq(payments.id, paymentToDelete[0].id));
+      
+      console.log(`🗑️ Plata de ${paymentAmount} EUR ștearsă din tabelul payments`);
+    }
+
+    // Now recalculate the balance based on remaining payments
+    const remainingPayments = await db
+      .select()
+      .from(payments)
+      .where(
+        and(
+          eq(payments.companyName, companyName),
+          eq(payments.weekLabel, weekLabel)
+        )
+      );
+
+    const newTotalPaid = remainingPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
     const totalInvoiced = parseFloat(existing.totalInvoiced || '0');
     let newOutstandingBalance = totalInvoiced - newTotalPaid;
     
@@ -574,8 +605,8 @@ export class DatabaseStorage implements IStorage {
       newStatus = 'partial';
     }
 
-    console.log(`💰 Plată ștearsă: ${companyName} - ${weekLabel}`);
-    console.log(`   Plătit înainte: ${currentTotalPaid} EUR → după: ${newTotalPaid} EUR`);
+    console.log(`💰 Plată ștearsă complet: ${companyName} - ${weekLabel}`);
+    console.log(`   Plătit înainte: ${parseFloat(existing.totalPaid || '0')} EUR → după: ${newTotalPaid} EUR`);
     console.log(`   Status: ${newStatus}, Restant: ${newOutstandingBalance} EUR`);
 
     const [updated] = await db
