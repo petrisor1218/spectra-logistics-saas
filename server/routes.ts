@@ -963,16 +963,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/send-weekly-report", async (req, res) => {
     try {
+      console.log('📧 Weekly report request received:', {
+        body: req.body ? 'Present' : 'Missing',
+        companyName: req.body?.companyName,
+        companyEmail: req.body?.companyEmail,
+        weekLabel: req.body?.weekLabel,
+        reportData: req.body?.reportData ? 'Present' : 'Missing',
+        pdfContent: req.body?.pdfContent ? `${req.body.pdfContent.length} chars` : 'Missing'
+      });
+      
       const { companyEmail, companyName, weekLabel, reportData, pdfContent } = req.body;
       
       if (!companyEmail || !companyName || !weekLabel || !reportData || !pdfContent) {
+        console.log('❌ Missing required fields:', { companyEmail: !!companyEmail, companyName: !!companyName, weekLabel: !!weekLabel, reportData: !!reportData, pdfContent: !!pdfContent });
         return res.status(400).json({ error: "Missing required fields for weekly report" });
       }
 
+      console.log('📝 Generating HTML template...');
+      const htmlTemplate = `
+        <h2>🚚 Raport Săptămânal - ${companyName}</h2>
+        <p><strong>Perioada:</strong> ${weekLabel}</p>
+        <p>Găsiți în atașament raportul complet pentru această perioadă.</p>
+        <p>Cu respect,<br>Echipa Transport Pro</p>
+      `;
+      
+      console.log('📧 Sending weekly report via Brevo...');
       const success = await FreeEmailService.sendEmail({
         to: companyEmail,
         subject: `Raport Săptămânal - ${companyName} (${weekLabel})`,
-        html: EmailService.generateWeeklyReportHTML(companyName, weekLabel, reportData),
+        html: htmlTemplate,
         attachments: [{
           filename: `Raport_${companyName}_${weekLabel.replace(/\s/g, '_')}.pdf`,
           content: pdfContent,
@@ -986,8 +1005,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ error: "Failed to send weekly report" });
       }
     } catch (error) {
-      console.error("Error sending weekly report email:", error);
-      res.status(500).json({ error: "Failed to send weekly report" });
+      console.error("❌ DETAILED weekly report error:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        error: error
+      });
+      res.status(500).json({ error: `Failed to send weekly report: ${error.message}` });
     }
   });
 
