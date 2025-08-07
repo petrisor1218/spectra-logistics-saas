@@ -135,28 +135,23 @@ export class FreeEmailService {
 
   // Try multiple free services in order
   static async sendEmail(emailData: EmailData): Promise<boolean | string> {
-    // Try Gmail first (real emails with App Password)
-    try {
-      const gmailSuccess = await this.sendViaGmail(emailData);
-      if (gmailSuccess) return true;
-    } catch (error) {
-      console.log('Gmail failed, trying next service...');
-    }
+    // SKIP BREVO TEMPORARILY - testing other services
+    console.log('🚫 SKIPPING BREVO temporarily for debugging');
 
-    // Try Brevo SMTP (if configured properly)
-    try {
-      const brevoSuccess = await this.sendViaBrevo(emailData);
-      if (brevoSuccess) return true;
-    } catch (error) {
-      console.log('Brevo failed, trying next service...');
-    }
-
-    // Try Ethereal for testing (ALWAYS works for demo)
+    // Try Ethereal FIRST for debugging - always works and gives preview
     try {
       const etherealSuccess = await this.sendViaEthereal(emailData);
-      if (etherealSuccess) return 'demo';
+      if (etherealSuccess) return 'ethereal_preview';
     } catch (error) {
       console.log('Ethereal failed, trying next service...');
+    }
+
+    // Try Gmail (real emails with App Password)
+    try {
+      const gmailSuccess = await this.sendViaGmail(emailData);
+      if (gmailSuccess) return 'gmail_real';
+    } catch (error) {
+      console.log('Gmail failed, trying next service...');
     }
 
     // Try Outlook as backup (real emails) 

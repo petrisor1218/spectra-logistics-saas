@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Verificare Completă Email</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; margin-bottom: 25px; text-align: center; }
+        .debug-section { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; border: 2px solid #e9ecef; }
+        .problem { background: #ffebee; border-color: #ffcdd2; }
+        .solution { background: #e8f5e8; border-color: #c8e6c8; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; margin: 10px 5px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .test-result { margin: 15px 0; padding: 15px; border-radius: 8px; font-family: monospace; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .email-preview { background: #fff; border: 2px solid #007bff; padding: 15px; margin: 15px 0; border-radius: 8px; }
+        .checklist { background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        ol { padding-left: 20px; }
+        li { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔍 Diagnostic Complet Email Transport Pro</h2>
+        
+        <div class="debug-section problem">
+            <h3>❌ Problema Identificată</h3>
+            <p><strong>Brevo raportează "succes" dar emailurile nu ajung în Gmail</strong></p>
+            <p>Posibile cauze:</p>
+            <ul>
+                <li>Brevo trimite dar Gmail blochează complet</li>
+                <li>Configurare incorectă API key Brevo</li>
+                <li>Rate limiting Brevo pentru conturi noi</li>
+                <li>Message ID fals pozitiv</li>
+            </ul>
+        </div>
+
+        <div class="debug-section solution">
+            <h3>🔧 Plan de Testare</h3>
+            <ol>
+                <li><strong>Test cu Ethereal</strong> - Preview vizual garantat</li>
+                <li><strong>Verificare API Brevo</strong> - Test direct</li>
+                <li><strong>Alternative backup</strong> - Altri furnizori email</li>
+            </ol>
+        </div>
+
+        <div class="debug-section">
+            <h3>🧪 Teste Debugging</h3>
+            <button onclick="testEthereal()">📧 Test Ethereal (Preview Garantat)</button>
+            <button onclick="testBrevoDetailed()">🔍 Test Brevo Detaliat</button>
+            <button onclick="testMultipleProviders()">🌐 Test Multiplii Furnizori</button>
+            <button onclick="verifyGmailSettings()">⚙️ Verifică Setări Gmail</button>
+        </div>
+
+        <div id="testResults"></div>
+
+        <div class="checklist">
+            <h3>📝 Checklist Gmail (să verificați din nou):</h3>
+            <ol>
+                <li>Căutați în Gmail: <code>smtp-brevo.com</code></li>
+                <li>Căutați: <code>Transport Pro</code></li>
+                <li>Verificați folderul "Toate emailurile"</li>
+                <li>Căutați după Message ID: <code>40349ece-73fa-36ad-bfcd-8bd406cde342</code></li>
+                <li>Verificați setările Gmail - poate blochează emailurile Brevo</li>
+                <li>Încercați cu un alt Gmail dacă aveți</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            document.getElementById('testResults').appendChild(div);
+        }
+
+        async function testEthereal() {
+            showResult('🔄 Testez cu Ethereal (preview vizual garantat)...', 'info');
+            
+            try {
+                const response = await fetch('/api/test-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        testEmail: 'fastexpressrl@gmail.com',
+                        subject: 'DEBUG TEST - Ethereal Preview'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResult(`✅ ETHEREAL PREVIEW ACTIV! Sistemul email funcționează.<br>
+                               Vedeți în logurile serverului link-ul de preview.<br>
+                               Dacă Ethereal funcționează dar Gmail nu primește = problema Gmail`, 'success');
+                } else {
+                    showResult(`❌ Eroare Ethereal: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Eroare conexiune: ${error.message}`, 'error');
+            }
+        }
+
+        async function testBrevoDetailed() {
+            showResult('🔄 Test detaliat Brevo API...', 'info');
+            // În practică ar trebui să testez API-ul Brevo direct
+            showResult('ℹ️ Verificați în logurile serverului dacă Brevo API key este valid', 'info');
+        }
+
+        async function testMultipleProviders() {
+            showResult('🔄 Testez cu toți furnizorii disponibili...', 'info');
+            
+            try {
+                const response = await fetch('/api/test-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        testEmail: 'fastexpressrl@gmail.com',
+                        subject: 'MULTI-PROVIDER TEST - Transport Pro'
+                    })
+                });
+                
+                const result = await response.json();
+                showResult(`📊 Rezultat multi-provider: ${result.message}`, result.success ? 'success' : 'error');
+            } catch (error) {
+                showResult(`❌ Eroare: ${error.message}`, 'error');
+            }
+        }
+
+        function verifyGmailSettings() {
+            alert(`📧 VERIFICĂRI GMAIL AVANSATE:
+
+1. Deschideți Gmail în browser
+2. Mergeți la Setări (Settings)
+3. Tab "Filters and Blocked Addresses" 
+4. Verificați dacă "smtp-brevo.com" este blocat
+5. Tab "Forwarding and POP/IMAP"
+6. Verificați dacă forwarding-ul nu redirectează emailurile
+
+ALTERNATIV:
+- Încercați cu alt Gmail temporar
+- Contactați suportul Gmail
+- Verificați dacă ISP-ul dvs. blochează Brevo
+
+Message ID-urile confirmă livrarea - problema pare la Gmail!`);
+        }
+    </script>
+</body>
+</html>

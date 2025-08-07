@@ -980,7 +980,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (emailSuccess === true) {
         res.json({
           success: true,
-          message: `Test email sent successfully to ${testEmail}`
+          message: `REAL email sent successfully to ${testEmail}`,
+          type: 'real'
+        });
+      } else if (emailSuccess === 'ethereal_preview') {
+        res.json({
+          success: true,
+          message: `Email PREVIEW generated successfully. Check server logs for preview URL!`,
+          type: 'preview'
         });
       } else {
         res.json({
