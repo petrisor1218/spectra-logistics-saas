@@ -780,10 +780,15 @@ export function TransportOrdersView() {
             : o
         ));
         
-        // Clear success indicator after 3 seconds
-        setTimeout(() => setEmailSent(null), 3000);
+        // Show success message
+        alert(`✅ Email trimis cu succes către ${companyEmail}!\n\nComanda #${order.orderNumber} a fost trimisă cu atașamentul PDF.`);
+        
+        // Clear success indicator after 5 seconds
+        setTimeout(() => setEmailSent(null), 5000);
       } else {
-        console.error('Failed to send email');
+        const errorData = await response.json();
+        console.error('Failed to send email:', errorData);
+        alert('❌ Eroare la trimiterea emailului. Verificați configurarea SendGrid.');
       }
     } catch (error) {
       console.error('Error sending email:', error);
