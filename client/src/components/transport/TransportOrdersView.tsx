@@ -770,6 +770,56 @@ export function TransportOrdersView() {
       doc.setFont('helvetica', 'normal');
       doc.text('Intocmit de: [Completati Nume]', 20, notesY + 10);
       
+      // Add second page with conditions (same as in main generatePDF function)
+      doc.addPage();
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Transportator: ${order.companyName}`, 20, 20);
+      doc.text('Conditii generale:', 20, 35);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Dupa confirmarea comenzii, transportatorul se angajeaza sa respecte urmatoarele:', 20, 50);
+      
+      // Conditions text
+      const conditions = [
+        '1. Transportul se va efectua cu asigurare CMR valida aferenta vehiculului transportatorului mentionat.',
+        'In cazul transportului cu asigurare CMR invalida, transportatorul isi asuma toate daunele, iar',
+        'administratorul companiei este solidar responsabil cu bunurile personale. ATENTIE! - Inspectia',
+        'cantitatii si calitatii marfii se face de catre soferul transportatorului la locul de incarcare.',
+        'Daca la descarcare marfa ajunge deteriorata sau lipsa, transportatorul este obligat sa plateasca',
+        'despagubiri pentru daune + 200 euro imagine A Z LOGISTIC EOOD in termen de 10 zile.',
+        '',
+        '2. Pentru incarcare, masina trebuie sa fie prezenta cu toate echipamentele necesare, cum ar fi',
+        'chingi (24 bucati) care sa reziste la o tensiune de 500 DAN (STF = 500DAN) fara prindere,',
+        'covoare antiderapante (4 bucati per palet), coltare (48 bucati), prelata in stare buna.',
+        'Daca la incarcare se constata ca chingile sunt sub standard, diferenta pana la 24 de chingi',
+        'va fi suportata de transportator.',
+        '',
+        '3. Transportatorul este direct responsabil de plasarea axelor si integritatea incarcaturii in',
+        'timpul transportului. Orice problema cu semnalele de greutate in timpul incarcarii,',
+        'A Z LOGISTIC EOOD nu este responsabila pentru consecintele suplimentare comenzii.',
+        '',
+        '4. Transportatorul este responsabil pentru rezervele de livrare inregistrate in CMR.',
+        'Chiar daca CMR nu are rezerve, dar destinatarul revine in 5 zile cu obiectii privind',
+        'marfurile livrate, transportatorul este obligat sa plateasca daune materiale/dobanzi in',
+        'termen de 10 zile.'
+      ];
+      
+      let condY = 65;
+      conditions.forEach(condition => {
+        doc.text(condition, 20, condY);
+        condY += 7;
+      });
+      
+      // Second page footer
+      doc.text('Intocmit de:', 20, condY + 20);
+      doc.text('[Completati Nume]', 20, condY + 30);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('A Z LOGISTIC EOOD', 20, condY + 45);
+      
       // Get PDF as base64 string for email - safe method for large PDFs
       const pdfArrayBuffer = doc.output('arraybuffer');
       const uint8Array = new Uint8Array(pdfArrayBuffer);
