@@ -215,7 +215,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllWeeklyProcessing(): Promise<WeeklyProcessing[]> {
-    return await db.select().from(weeklyProcessing).orderBy(desc(weeklyProcessing.processingDate));
+    return await db.select().from(weeklyProcessing).orderBy(weeklyProcessing.processingDate);
   }
 
   async updateWeeklyProcessing(weekLabel: string, data: Partial<InsertWeeklyProcessing>): Promise<WeeklyProcessing> {
@@ -229,11 +229,11 @@ export class DatabaseStorage implements IStorage {
 
   // Payment methods
   async getPaymentsByWeek(weekLabel: string): Promise<Payment[]> {
-    return await db.select().from(payments).where(eq(payments.weekLabel, weekLabel)).orderBy(desc(payments.paymentDate));
+    return await db.select().from(payments).where(eq(payments.weekLabel, weekLabel)).orderBy(payments.paymentDate);
   }
 
   async getAllPayments(): Promise<Payment[]> {
-    return await db.select().from(payments).orderBy(desc(payments.paymentDate));
+    return await db.select().from(payments).orderBy(payments.paymentDate);
   }
 
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
@@ -440,24 +440,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // User authentication methods
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
-  }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
-  }
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
@@ -474,7 +457,8 @@ export class DatabaseStorage implements IStorage {
   
   // Company balance methods
   async getCompanyBalances(): Promise<CompanyBalance[]> {
-    return await db.select().from(companyBalances).orderBy(desc(companyBalances.lastUpdated));
+    // Order by creation date for consistent chronological ordering
+    return await db.select().from(companyBalances).orderBy(companyBalances.createdAt);
   }
 
   async getCompanyBalanceByWeek(companyName: string, weekLabel: string): Promise<CompanyBalance | undefined> {
@@ -520,8 +504,8 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
-    const newTotalPaid = parseFloat(existing.totalPaid) + paidAmount;
-    const totalInvoiced = parseFloat(existing.totalInvoiced);
+    const newTotalPaid = parseFloat(existing.totalPaid || '0') + paidAmount;
+    const totalInvoiced = parseFloat(existing.totalInvoiced || '0');
     let newOutstandingBalance = totalInvoiced - newTotalPaid;
     
     // If difference is less than 1 EUR, consider it paid and set balance to 0

@@ -84,14 +84,34 @@ export function WeeklyHistorySection({
 
   const weekOptions = getWeekOptions();
   
-  // Simple sorting based on user preference
+  // Parse Romanian date format for proper chronological sorting
+  const parseRomanianWeekDate = (weekLabel: string): Date => {
+    const startDateStr = weekLabel.split(' - ')[0];
+    const monthMap: Record<string, number> = {
+      'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
+      'iul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'noi': 10, 'dec': 11
+    };
+    
+    const parts = startDateStr.split(' ');
+    const day = parseInt(parts[0]);
+    const monthStr = parts[1].replace('.', '');
+    const month = monthMap[monthStr] ?? 0;
+    const year = 2025; // Assuming current year
+    
+    return new Date(year, month, day);
+  };
+
+  // Chronological sorting based on user preference using proper date parsing
   const availableWeeks = Object.keys(historicalData).sort((a, b) => {
+    const dateA = parseRomanianWeekDate(a);
+    const dateB = parseRomanianWeekDate(b);
+    
     if (sortOrder === 'recent') {
-      // Recent first: reverse alphabetical order works for "DD mmm. - DD mmm." format
-      return b.localeCompare(a);
+      // Recent first: newer dates first
+      return dateB.getTime() - dateA.getTime();
     } else {
-      // Oldest first: normal alphabetical order
-      return a.localeCompare(b);
+      // Oldest first: older dates first
+      return dateA.getTime() - dateB.getTime();
     }
   });
 
