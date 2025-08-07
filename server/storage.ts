@@ -407,13 +407,13 @@ export class DatabaseStorage implements IStorage {
     invoice30Data: any[], 
     processedData: any
   ): Promise<WeeklyProcessing> {
-    // Save weekly processing data (without raw file content for now, until DB schema is updated)
+    // Save weekly processing data with processed results
     const weeklyData: InsertWeeklyProcessing = {
       weekLabel,
       tripDataCount: tripData.length,
       invoice7Count: invoice7Data.length,
       invoice30Count: invoice30Data.length,
-      processedData
+      processedData: processedData || null // Ensure processedData is saved
     };
 
     const [processing] = await db

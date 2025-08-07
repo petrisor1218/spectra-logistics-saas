@@ -422,7 +422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           weekLabel,
           tripData,
           invoice7Data,
-          invoice30Data
+          invoice30Data,
+          data // Add the processed data parameter
         );
         res.json(savedProcessing);
       } else {
