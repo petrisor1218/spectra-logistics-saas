@@ -18,9 +18,28 @@ import { PendingDriverMappings } from "@/components/processing/PendingDriverMapp
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import PaymentHistoryView from "@/components/payment/PaymentHistoryView";
 import { useTransportData } from "@/hooks/useTransportData";
+import { useAuth } from "@/hooks/useAuth";
+import { SimpleLogin } from "@/components/auth/SimpleLogin";
 
 export default function Home() {
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
+  const { isAuthenticated, isLoading, login } = useAuth();
+  
+  // Show login screen if not authenticated
+  if (!isLoading && !isAuthenticated) {
+    return <SimpleLogin onLoginSuccess={login} />;
+  }
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-600 dark:text-gray-300">Se încarcă...</p>
+        </div>
+      </div>
+    );
+  }
   
   const {
     // State

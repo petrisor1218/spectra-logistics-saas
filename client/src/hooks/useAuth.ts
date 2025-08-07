@@ -48,11 +48,17 @@ export function useAuth() {
     logoutMutation.mutate();
   };
 
+  const login = (userData: any) => {
+    // Update the query cache with user data
+    queryClient.setQueryData(['/api', 'auth', 'user'], userData);
+  };
+
   return {
     user,
     isLoading,
     isAuthenticated: !!user && !error,
     logout,
+    login,
     isLoggingOut: logoutMutation.isPending,
   };
 }
