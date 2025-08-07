@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Email - Transport Pro</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; display: none; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h2>🔧 Debug Email System</h2>
+    <p>Testați trimiterea emailurilor cu adresa dvs. reală:</p>
+    
+    <form id="debugForm">
+        <div class="form-group">
+            <label for="email">Adresa dvs. de email:</label>
+            <input type="email" id="email" required placeholder="exemplu@gmail.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="subject">Subiect (opțional):</label>
+            <input type="text" id="subject" placeholder="Test Email Transport Pro">
+        </div>
+        
+        <button type="submit">🚀 Trimite Test Email</button>
+        <button type="button" id="updateCompany">📝 Actualizează Fast Express Email</button>
+    </form>
+    
+    <div id="result" class="result"></div>
+    
+    <script>
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+
+        document.getElementById('debugForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const subject = document.getElementById('subject').value || 'Test Email Transport Pro';
+            
+            showResult('📧 Se trimite emailul de test...', 'info');
+            
+            try {
+                const response = await fetch('/api/test-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ testEmail: email, subject })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResult(`✅ Email trimis cu succes la <strong>${email}</strong>!<br>
+                               📬 Verificați inbox-ul sau folderul spam.<br>
+                               🕐 Emailul poate ajunge în 1-2 minute.`, 'success');
+                } else {
+                    showResult(`❌ Eroare: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Eroare de conexiune: ${error.message}`, 'error');
+            }
+        });
+
+        document.getElementById('updateCompany').addEventListener('click', async function() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                showResult('⚠️ Introduceți mai întâi adresa de email!', 'error');
+                return;
+            }
+            
+            showResult('🔄 Se actualizează adresa pentru Fast Express...', 'info');
+            
+            try {
+                const response = await fetch('/api/update-company-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyName: 'Fast & Express S.R.L.', newEmail: email })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResult(`✅ Email actualizat pentru Fast Express: <strong>${email}</strong><br>
+                               🔄 Acum toate comenzile se vor trimite la această adresă!`, 'success');
+                } else {
+                    showResult(`❌ Eroare la actualizare: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Eroare: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -762,6 +762,14 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  async updateCompanyEmail(companyName: string, newEmail: string): Promise<void> {
+    await db
+      .update(companies)
+      .set({ contact: newEmail })
+      .where(eq(companies.name, companyName));
+    console.log(`📧 Updated email for ${companyName} to ${newEmail}`);
+  }
 }
 
 export const storage = new DatabaseStorage();

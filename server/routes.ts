@@ -998,6 +998,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update company email endpoint
+  app.post('/api/update-company-email', async (req, res) => {
+    try {
+      const { companyName, newEmail } = req.body;
+      
+      if (!companyName || !newEmail) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Company name and email required' 
+        });
+      }
+
+      await storage.updateCompanyEmail(companyName, newEmail);
+      
+      res.json({
+        success: true,
+        message: `Email updated for ${companyName} to ${newEmail}`
+      });
+
+    } catch (error) {
+      console.error('Error updating company email:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update company email: ' + error.message
+      });
+    }
+  });
+
   app.post("/api/send-transport-order", async (req, res) => {
     try {
       const { orderData, companyEmail, pdfContent } = req.body;
