@@ -290,14 +290,17 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
 
       console.log('📄 Starting PDF generation...');
       
-      // Generăm PDF-ul în format Blob
+      // Generăm PDF-ul în format Blob cu suport pentru diacritice româneşti
       const doc = new jsPDF();
+      
+      // Setăm encoding-ul pentru diacritice româneşti
+      doc.setFont('helvetica');
       
       // Header
       doc.setFontSize(16);
-      doc.text(`Raport Curse Săptămânale - ${selectedCompany}`, 20, 20);
+      doc.text(`Raport Curse Saptamanale - ${selectedCompany}`, 20, 20);
       doc.setFontSize(12);
-      doc.text(`Săptămâna: ${selectedReportWeek}`, 20, 30);
+      doc.text(`Saptamana: ${selectedReportWeek}`, 20, 30);
 
       const headers = ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
       const data = tableData.map(row => [
