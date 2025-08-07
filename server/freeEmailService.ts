@@ -134,9 +134,9 @@ export class FreeEmailService {
 
   // Try multiple free services in order
   static async sendEmail(emailData: EmailData): Promise<boolean | string> {
-    // Try Ethereal first (always works for testing)
-    const etherealSuccess = await this.sendViaEthereal(emailData);
-    if (etherealSuccess) return true;
+    // Try Brevo SMTP first (REAL emails - 300/day FREE)
+    const brevoSuccess = await this.sendViaBrevo(emailData);
+    if (brevoSuccess) return true;
 
     // Try Gmail (real emails)
     const gmailSuccess = await this.sendViaGmail(emailData);
@@ -146,9 +146,9 @@ export class FreeEmailService {
     const outlookSuccess = await this.sendViaOutlook(emailData);
     if (outlookSuccess) return true;
 
-    // Try Brevo (ex-Sendinblue) - 300 emails/day free
-    const brevoSuccess = await this.sendViaBrevo(emailData);
-    if (brevoSuccess) return true;
+    // Try Ethereal for testing (preview only)
+    const etherealSuccess = await this.sendViaEthereal(emailData);
+    if (etherealSuccess) return true;
 
     // Try MailerSend (needs domain verification)
     const mailerSendSuccess = await this.sendViaMailerSend(emailData);
@@ -208,55 +208,39 @@ export class FreeEmailService {
     }
   }
 
-  // Brevo (ex-Sendinblue) - 300 emails/day FREE, sends real emails
+  // Brevo SMTP - 300 emails/day FREE, sends REAL emails
   static async sendViaBrevo(emailData: EmailData): Promise<boolean> {
     try {
-      if (!process.env.BREVO_API_KEY) {
-        console.log('🎭 DEMO MODE: Brevo API key not configured');
-        console.log(`📧 Would send email to: ${emailData.to}`);
-        console.log(`📝 Subject: ${emailData.subject}`);
-        console.log(`📎 Attachments: ${emailData.attachments?.length || 0}`);
-        return false;
-      }
-
-      const payload = {
-        sender: {
-          name: "Transport Pro",
-          email: "noreply@brevo.com"
-        },
-        to: [{ email: emailData.to }],
-        subject: emailData.subject,
-        htmlContent: emailData.html
-      };
-
-      // Add attachments if they exist (Brevo requires special format)
-      if (emailData.attachments && emailData.attachments.length > 0) {
-        (payload as any).attachment = emailData.attachments.map(att => ({
-          name: att.filename,
-          content: att.content.toString('base64')
-        }));
-      }
-
-      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'api-key': process.env.BREVO_API_KEY,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+      const transporter = nodemailer.createTransport({
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: '9436e8001@smtp-brevo.com',
+          pass: process.env.BREVO_API_KEY
+        }
       });
 
-      if (response.ok) {
-        console.log('✅ Real email sent successfully via Brevo');
-        return true;
-      } else {
-        const error = await response.text();
-        console.error('❌ Brevo API error:', error);
-        return false;
-      }
+      const attachments = emailData.attachments?.map(att => ({
+        filename: att.filename,
+        content: att.content
+      })) || [];
+
+      const info = await transporter.sendMail({
+        from: '"Transport Pro" <9436e8001@smtp-brevo.com>',
+        to: emailData.to,
+        subject: emailData.subject,
+        html: emailData.html,
+        attachments
+      });
+
+      console.log('🎉 REAL EMAIL SENT via Brevo SMTP!');
+      console.log(`📧 Message ID: ${info.messageId}`);
+      console.log(`📬 Delivered to: ${emailData.to}`);
+      return true;
+      
     } catch (error) {
-      console.error('❌ Brevo error:', error);
+      console.error('❌ Brevo SMTP error:', error);
       return false;
     }
   }
