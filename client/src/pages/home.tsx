@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3 } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield } from "lucide-react";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
 import { FileUploadSection } from "@/components/transport/FileUploadSection";
@@ -129,6 +129,33 @@ export default function Home() {
                   </motion.button>
                 );
               })}
+              
+              {/* Separator */}
+              <div className="w-px bg-gray-600 h-10 mx-2"></div>
+              
+              {/* Analytics Dashboard Button */}
+              <motion.button
+                onClick={() => window.location.href = '/analytics'}
+                className="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 border border-blue-500/30"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Deschide Dashboard Analytics"
+              >
+                <BarChart3 size={16} />
+                <span>Analytics</span>
+              </motion.button>
+              
+              {/* Backup & Security Button */}
+              <motion.button
+                onClick={() => window.location.href = '/backup'}
+                className="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 border border-green-500/30"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Deschide Backup & Security"
+              >
+                <Shield size={16} />
+                <span>Backup</span>
+              </motion.button>
             </div>
           </motion.div>
 

@@ -987,6 +987,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Backup routes
+  app.post('/api/backup', async (req, res) => {
+    try {
+      const { backupManager } = await import('./backup');
+      const filePath = await backupManager.createBackup('manual');
+      res.json({ 
+        success: true, 
+        message: 'Backup created successfully',
+        filePath 
+      });
+    } catch (error: any) {
+      console.error('Backup error:', error);
+      res.status(500).json({ 
+        error: 'Failed to create backup',
+        message: error.message 
+      });
+    }
+  });
+
+  app.get('/api/backup/history', async (req, res) => {
+    try {
+      const { backupManager } = await import('./backup');
+      const history = await backupManager.getBackupHistory();
+      res.json(history);
+    } catch (error: any) {
+      console.error('Backup history error:', error);
+      res.status(500).json({ 
+        error: 'Failed to get backup history',
+        message: error.message 
+      });
+    }
+  });
+
+  // Initialize backup system after a delay
+  const initializeBackup = async () => {
+    try {
+      const { backupManager } = await import('./backup');
+      await backupManager.scheduleAutomaticBackup();
+      console.log('✅ Automatic backup system initialized - daily at 02:00 AM');
+    } catch (error) {
+      console.error('Failed to initialize backup system:', error);
+    }
+  };
+  
+  setTimeout(initializeBackup, 2000);
+
   const httpServer = createServer(app);
 
   return httpServer;

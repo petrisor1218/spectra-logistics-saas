@@ -1,210 +1,205 @@
-import { db } from "./db";
-import { storage } from "./storage";
-import fs from 'fs';
-import path from 'path';
-import { format } from 'date-fns';
+import * as fs from 'fs';
+import * as path from 'path';
+import { db } from './db';
+import { 
+  users, 
+  companies, 
+  drivers, 
+  weeklyProcessing, 
+  payments, 
+  paymentHistory,
+  companyBalances 
+} from '@shared/schema';
 
-interface BackupData {
+export interface BackupEntry {
+  filename: string;
   timestamp: string;
-  version: string;
-  tables: {
-    users: any[];
-    companies: any[];
-    drivers: any[];
-    weeklyProcessing: any[];
-    payments: any[];
-    paymentHistory: any[];
-    companyBalances: any[];
-  };
-  metadata: {
-    totalRecords: number;
-    backupSize: string;
-    createdBy: string;
-  };
+  createdAt: string;
+  size: string;
+  records: number;
+  createdBy: string;
+  error?: string;
 }
 
-export class BackupManager {
-  private backupDir = './backups';
+class BackupManager {
+  private backupDir = path.join(process.cwd(), 'backups');
+  private maxBackups = 10;
 
   constructor() {
-    // Create backup directory if it doesn't exist
+    this.ensureBackupDir();
+  }
+
+  private ensureBackupDir() {
     if (!fs.existsSync(this.backupDir)) {
       fs.mkdirSync(this.backupDir, { recursive: true });
     }
   }
 
-  async createBackup(userId?: string): Promise<string> {
+  async createBackup(createdBy: string = 'system'): Promise<string> {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `backup-${timestamp}.json`;
+    const filepath = path.join(this.backupDir, filename);
+
     try {
-      const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
-      const filename = `backup_${timestamp}.json`;
-      const filepath = path.join(this.backupDir, filename);
-
-      console.log(`Creating backup: ${filename}`);
-
-      // Fetch all data from database
+      // Collect all data from tables
       const [
-        users,
-        companies, 
-        drivers,
-        weeklyProcessing,
-        payments,
-        paymentHistory,
-        companyBalances
+        usersData,
+        companiesData, 
+        driversData,
+        weeklyProcessingData,
+        paymentsData,
+        paymentHistoryData,
+        companyBalancesData
       ] = await Promise.all([
-        storage.getAllUsers ? storage.getAllUsers() : [],
-        storage.getAllCompanies(),
-        storage.getAllDrivers(),
-        storage.getAllWeeklyProcessing(),
-        storage.getAllPayments(),
-        storage.getPaymentHistory(),
-        storage.getCompanyBalances ? storage.getCompanyBalances() : []
+        db.select().from(users),
+        db.select().from(companies),
+        db.select().from(drivers),
+        db.select().from(weeklyProcessing),
+        db.select().from(payments),
+        db.select().from(paymentHistory),
+        db.select().from(companyBalances)
       ]);
 
-      const backupData: BackupData = {
-        timestamp,
-        version: '1.0.0',
-        tables: {
-          users: users || [],
-          companies: companies || [],
-          drivers: drivers || [],
-          weeklyProcessing: weeklyProcessing || [],
-          payments: payments || [],
-          paymentHistory: paymentHistory || [],
-          companyBalances: companyBalances || []
-        },
+      const backupData = {
         metadata: {
-          totalRecords: (users?.length || 0) + (companies?.length || 0) + 
-                       (drivers?.length || 0) + (weeklyProcessing?.length || 0) +
-                       (payments?.length || 0) + (paymentHistory?.length || 0) +
-                       (companyBalances?.length || 0),
-          backupSize: '0MB', // Will be calculated after file creation
-          createdBy: userId || 'system'
+          created_at: new Date().toISOString(),
+          created_by: createdBy,
+          version: '1.0'
+        },
+        data: {
+          users: usersData,
+          companies: companiesData,
+          drivers: driversData,
+          weekly_processing: weeklyProcessingData,
+          payments: paymentsData,
+          payment_history: paymentHistoryData,
+          company_balances: companyBalancesData
         }
       };
 
-      // Write backup to file
-      const backupJson = JSON.stringify(backupData, null, 2);
-      fs.writeFileSync(filepath, backupJson, 'utf8');
+      // Calculate total records
+      const totalRecords = Object.values(backupData.data).reduce((sum, table) => sum + table.length, 0);
 
-      // Calculate file size
+      // Write backup file
+      fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2));
+
+      // Get file size
       const stats = fs.statSync(filepath);
-      const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
-      
-      // Update metadata with actual size
-      backupData.metadata.backupSize = `${fileSizeInMB}MB`;
-      fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2), 'utf8');
+      const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
 
-      console.log(`Backup created successfully: ${filename} (${fileSizeInMB}MB)`);
-      
-      // Clean old backups (keep last 10)
-      await this.cleanOldBackups();
+      // Clean up old backups
+      await this.cleanupOldBackups();
 
+      console.log(`Backup created: ${filename} (${sizeMB}MB, ${totalRecords} records)`);
       return filepath;
-    } catch (error) {
-      console.error('Backup creation failed:', error);
-      throw new Error(`Backup failed: ${error}`);
+
+    } catch (error: any) {
+      console.error('Backup failed:', error);
+      throw new Error(`Backup failed: ${error.message}`);
     }
   }
 
-  async getBackupHistory(): Promise<any[]> {
+  async getBackupHistory(): Promise<BackupEntry[]> {
     try {
-      const files = fs.readdirSync(this.backupDir)
-        .filter(file => file.startsWith('backup_') && file.endsWith('.json'))
-        .sort((a, b) => b.localeCompare(a)); // Most recent first
+      if (!fs.existsSync(this.backupDir)) {
+        return [];
+      }
 
-      const backups = files.map(filename => {
-        const filepath = path.join(this.backupDir, filename);
-        const stats = fs.statSync(filepath);
-        
+      const files = fs.readdirSync(this.backupDir)
+        .filter(file => file.startsWith('backup-') && file.endsWith('.json'))
+        .sort()
+        .reverse();
+
+      const backupEntries: BackupEntry[] = [];
+
+      for (const file of files) {
+        const filepath = path.join(this.backupDir, file);
         try {
-          const backupData = JSON.parse(fs.readFileSync(filepath, 'utf8'));
-          return {
-            filename,
-            timestamp: backupData.timestamp,
-            size: backupData.metadata?.backupSize || `${(stats.size / (1024 * 1024)).toFixed(2)}MB`,
-            records: backupData.metadata?.totalRecords || 0,
-            createdBy: backupData.metadata?.createdBy || 'unknown',
-            createdAt: stats.birthtime
-          };
-        } catch (parseError) {
-          return {
-            filename,
-            timestamp: filename.replace('backup_', '').replace('.json', ''),
-            size: `${(stats.size / (1024 * 1024)).toFixed(2)}MB`,
+          const stats = fs.statSync(filepath);
+          const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+          
+          // Read backup metadata
+          const backupContent = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+          const totalRecords = Object.values(backupContent.data || {}).reduce((sum: number, table: any) => sum + (table?.length || 0), 0);
+
+          backupEntries.push({
+            filename: file,
+            timestamp: file.replace('backup-', '').replace('.json', ''),
+            createdAt: stats.mtime.toISOString(),
+            size: `${sizeMB} MB`,
+            records: totalRecords,
+            createdBy: backupContent.metadata?.created_by || 'unknown'
+          });
+        } catch (error) {
+          // If we can't read a backup file, include it with error info
+          backupEntries.push({
+            filename: file,
+            timestamp: file.replace('backup-', '').replace('.json', ''),
+            createdAt: fs.statSync(filepath).mtime.toISOString(),
+            size: '0 MB',
             records: 0,
             createdBy: 'unknown',
-            createdAt: stats.birthtime,
-            error: 'Failed to parse backup data'
-          };
+            error: 'Cannot read backup file'
+          });
         }
-      });
+      }
 
-      return backups;
-    } catch (error) {
-      console.error('Failed to get backup history:', error);
+      return backupEntries;
+    } catch (error: any) {
+      console.error('Error getting backup history:', error);
       return [];
     }
   }
 
-  async restoreBackup(filename: string): Promise<boolean> {
-    try {
-      const filepath = path.join(this.backupDir, filename);
-      
-      if (!fs.existsSync(filepath)) {
-        throw new Error(`Backup file not found: ${filename}`);
-      }
-
-      const backupData: BackupData = JSON.parse(fs.readFileSync(filepath, 'utf8'));
-      
-      console.log(`Restoring backup: ${filename}`);
-      console.log(`Records to restore: ${backupData.metadata.totalRecords}`);
-
-      // Note: This is a simplified restore. In production, you'd want more sophisticated restore logic
-      // that handles foreign key constraints, data validation, etc.
-      
-      console.log('Backup restore completed successfully');
-      return true;
-    } catch (error) {
-      console.error('Backup restore failed:', error);
-      throw new Error(`Restore failed: ${error}`);
-    }
-  }
-
-  private async cleanOldBackups(): Promise<void> {
+  private async cleanupOldBackups() {
     try {
       const files = fs.readdirSync(this.backupDir)
-        .filter(file => file.startsWith('backup_') && file.endsWith('.json'))
-        .sort((a, b) => b.localeCompare(a)); // Most recent first
+        .filter(file => file.startsWith('backup-') && file.endsWith('.json'))
+        .map(file => ({
+          name: file,
+          path: path.join(this.backupDir, file),
+          mtime: fs.statSync(path.join(this.backupDir, file)).mtime
+        }))
+        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 
-      // Keep only the last 10 backups
-      const filesToDelete = files.slice(10);
+      // Keep only the most recent backups
+      const filesToDelete = files.slice(this.maxBackups);
       
       for (const file of filesToDelete) {
-        const filepath = path.join(this.backupDir, file);
-        fs.unlinkSync(filepath);
-        console.log(`Deleted old backup: ${file}`);
+        fs.unlinkSync(file.path);
+        console.log(`Deleted old backup: ${file.name}`);
       }
     } catch (error) {
-      console.error('Failed to clean old backups:', error);
+      console.error('Error cleaning up old backups:', error);
     }
   }
 
-  async scheduleAutomaticBackup(): Promise<void> {
-    // Create daily backup at 2 AM
-    const createDailyBackup = async () => {
-      try {
-        await this.createBackup('automatic-daily');
-        console.log('Daily automatic backup completed');
-      } catch (error) {
-        console.error('Daily backup failed:', error);
-      }
-    };
+  async scheduleAutomaticBackup() {
+    // Schedule daily backup at 2:00 AM
+    const now = new Date();
+    const scheduledTime = new Date();
+    scheduledTime.setHours(2, 0, 0, 0);
 
-    // Schedule backup every 24 hours
-    setInterval(createDailyBackup, 24 * 60 * 60 * 1000);
+    // If it's already past 2:00 AM today, schedule for tomorrow
+    if (now.getTime() > scheduledTime.getTime()) {
+      scheduledTime.setDate(scheduledTime.getDate() + 1);
+    }
+
+    const msUntilBackup = scheduledTime.getTime() - now.getTime();
     
-    // Create initial backup on startup
-    setTimeout(createDailyBackup, 5000); // Wait 5 seconds after startup
+    console.log(`Next automatic backup scheduled for: ${scheduledTime.toLocaleString()}`);
+
+    setTimeout(async () => {
+      try {
+        await this.createBackup('automatic');
+        console.log('Automatic backup completed successfully');
+      } catch (error) {
+        console.error('Automatic backup failed:', error);
+      }
+
+      // Schedule the next backup (24 hours later)
+      setTimeout(() => this.scheduleAutomaticBackup(), 24 * 60 * 60 * 1000);
+    }, msUntilBackup);
   }
 }
 
