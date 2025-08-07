@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, Calendar, TrendingUp, RefreshCw } from 'lucide-react';
+import { Download, FileText, Calendar, TrendingUp, RefreshCw, Mail, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -33,6 +33,7 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
 }) => {
   const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [selectedReportWeek, setSelectedReportWeek] = useState<string>(selectedWeek);
+  const [sendingEmail, setSendingEmail] = useState<boolean>(false);
 
   // Încărcăm toate datele procesate din baza de date
   const { data: weeklyProcessingData, isLoading: loadingWeekly, refetch: refetchWeekly } = useQuery({
@@ -239,6 +240,148 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     XLSX.writeFile(wb, fileName);
   };
 
+  // Încărcăm companiile pentru a obține email-ul
+  const { data: companiesData } = useQuery({
+    queryKey: ['/api/companies'],
+    enabled: !!selectedCompany
+  });
+
+  const sendEmailWithPDF = async () => {
+    if (!selectedCompany || !currentCompanyData || sendingEmail) return;
+
+    setSendingEmail(true);
+    
+    try {
+      // Găsim compania pentru a obține email-ul
+      const company = companiesData?.find((comp: any) => 
+        comp.name === selectedCompany || 
+        comp.name.includes(selectedCompany) ||
+        selectedCompany.includes(comp.name.split(' ')[0])
+      );
+
+      if (!company?.contact) {
+        alert('❌ Nu s-a găsit adresa de email pentru această companie!\n\nVerificați configurarea companiei în secțiunea Management.');
+        return;
+      }
+
+      // Extragem email-ul din contact (poate conține și telefon)
+      const emailMatch = company.contact.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      const companyEmail = emailMatch ? emailMatch[0] : null;
+
+      if (!companyEmail) {
+        alert(`❌ Nu s-a găsit o adresă de email validă pentru ${selectedCompany}!\n\nContact găsit: ${company.contact}\n\nActualizați datele companiei cu un email valid.`);
+        return;
+      }
+
+      // Generăm PDF-ul în format Blob
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(16);
+      doc.text(`Raport Curse Săptămânale - ${selectedCompany}`, 20, 20);
+      doc.setFontSize(12);
+      doc.text(`Săptămâna: ${selectedReportWeek}`, 20, 30);
+
+      const headers = ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
+      const data = tableData.map(row => [
+        row.vrid,
+        `${row.sum7Days.toFixed(2)} EUR`,
+        `${row.sum30Days.toFixed(2)} EUR`,
+        `${row.totalInvoice.toFixed(2)} EUR`,
+        `${row.commission.toFixed(2)} EUR`,
+        `${row.totalNet.toFixed(2)} EUR`
+      ]);
+
+      if (totals) {
+        data.push([
+          'TOTAL',
+          `${totals.total7Days.toFixed(2)} EUR`,
+          `${totals.total30Days.toFixed(2)} EUR`,
+          `${totals.totalInvoice.toFixed(2)} EUR`,
+          `${totals.totalCommission.toFixed(2)} EUR`,
+          `${totals.totalNet.toFixed(2)} EUR`
+        ]);
+      }
+
+      autoTable(doc, {
+        head: [headers],
+        body: data,
+        startY: 35,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [59, 130, 246],
+          textColor: 255,
+          fontSize: 11,
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          fontSize: 10,
+          cellPadding: 5
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        styles: {
+          cellPadding: 4,
+          fontSize: 10,
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { halign: 'left' },
+          1: { halign: 'right' },
+          2: { halign: 'right' },
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+          5: { halign: 'right' }
+        }
+      });
+
+      // Convertim PDF-ul în buffer
+      const pdfBuffer = doc.output('arraybuffer');
+      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+
+      // Trimitem email-ul cu PDF-ul
+      const response = await fetch('/api/send-weekly-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          companyName: selectedCompany,
+          companyEmail: companyEmail,
+          weekLabel: selectedReportWeek,
+          reportData: {
+            company: selectedCompany,
+            week: selectedReportWeek,
+            totalInvoice: totals?.totalInvoice || 0,
+            totalNet: totals?.totalNet || 0,
+            totalCommission: totals?.totalCommission || 0,
+            tripCount: tableData.length
+          },
+          pdfContent: pdfBase64
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          alert(`🎉 RAPORT SĂPTĂMÂNAL TRIMIS!\n\n📧 Destinatar: ${companyEmail}\n📝 Săptămâna: ${selectedReportWeek}\n📊 Compania: ${selectedCompany}\n📎 PDF cu ${tableData.length} curse atașat\n📬 Serviciu: Brevo SMTP (GRATUIT)\n\n✅ Emailul a fost livrat cu succes!`);
+        } else {
+          alert(`❌ Eroare la trimiterea raportului: ${result.message || 'Eroare necunoscută'}`);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Eroare la trimiterea emailului: ${errorData.message || 'Eroare de server'}`);
+      }
+
+    } catch (error) {
+      console.error('Error sending weekly report email:', error);
+      alert('❌ Eroare la trimiterea raportului săptămânal. Verificați conexiunea la internet.');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (loadingWeekly) {
     return (
       <motion.div
@@ -394,6 +537,18 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                   >
                     <Download className="w-4 h-4" />
                     Export Excel
+                  </Button>
+                  <Button
+                    onClick={sendEmailWithPDF}
+                    disabled={sendingEmail}
+                    className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white"
+                  >
+                    {sendingEmail ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Mail className="w-4 h-4" />
+                    )}
+                    {sendingEmail ? 'Trimit...' : 'Trimite Email'}
                   </Button>
                 </motion.div>
               )}

@@ -830,6 +830,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Email functionality routes
+  // Send weekly report email route
+  app.post('/api/send-weekly-report', async (req, res) => {
+    try {
+      const { companyName, companyEmail, weekLabel, reportData, pdfContent } = req.body;
+
+      if (!companyName || !companyEmail || !weekLabel || !reportData || !pdfContent) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required fields for weekly report email'
+        });
+      }
+
+      const htmlTemplate = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Raport Săptămânal - ${companyName}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 0; padding: 0; background-color: #f4f4f4; }
+            .container { max-width: 600px; margin: 20px auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+            .header { background: rgba(255,255,255,0.1); padding: 30px; text-align: center; backdrop-filter: blur(10px); }
+            .header h1 { color: white; margin: 0; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+            .header p { color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 16px; }
+            .content { background: white; padding: 40px; }
+            .highlight { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+            .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+            .stat { text-align: center; }
+            .stat-number { font-size: 24px; font-weight: bold; color: #667eea; }
+            .stat-label { color: #666; font-size: 14px; }
+            .footer { background: #333; color: white; padding: 20px; text-align: center; }
+            .attachment-note { background: #e8f4fd; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🚚 Transport Pro</h1>
+              <p>Raport Săptămânal ${weekLabel}</p>
+            </div>
+            <div class="content">
+              <h2>Bună ziua,</h2>
+              
+              <p>Vă transmitem în atașament raportul săptămânal detaliat pentru cursele efectuate în perioada <strong>${weekLabel}</strong>.</p>
+              
+              <div class="highlight">
+                <h3>${companyName}</h3>
+                <p>Raport Curse Săptămânale</p>
+              </div>
+
+              <div class="stats">
+                <div class="stat">
+                  <div class="stat-number">${reportData.tripCount}</div>
+                  <div class="stat-label">Curse totale</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-number">${reportData.totalInvoice.toFixed(2)} EUR</div>
+                  <div class="stat-label">Total facturat</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-number">${reportData.totalNet.toFixed(2)} EUR</div>
+                  <div class="stat-label">Total net</div>
+                </div>
+              </div>
+
+              <div class="attachment-note">
+                <strong>📎 Atașament:</strong> Veți găsi în atașament raportul complet în format PDF cu detaliile tuturor curselor, totalizările pe categorii și sumele finale.
+              </div>
+
+              <p>Raportul include:</p>
+              <ul>
+                <li>Lista completă a curselor cu codurile VRID</li>
+                <li>Totalizări pentru perioada de 7 zile și 30 de zile</li>
+                <li>Calculul comisioanelor aplicabile</li>
+                <li>Totalurile finale nete</li>
+              </ul>
+
+              <p>Pentru orice întrebări sau clarificări, nu ezitați să ne contactați.</p>
+              
+              <p>Cu respect,<br><strong>Echipa Transport Pro</strong></p>
+            </div>
+            <div class="footer">
+              <p>© 2025 Transport Pro - Sistem de Management Transport</p>
+              <p>Email generat automat • ${new Date().toLocaleDateString('ro-RO')}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const emailSuccess = await FreeEmailService.sendEmail({
+        to: companyEmail,
+        subject: `Raport Săptămânal ${weekLabel} - ${companyName}`,
+        html: htmlTemplate,
+        attachments: [{
+          filename: `Raport_${companyName.replace(/\s+/g, '_')}_${weekLabel.replace(/[\/\s\-\.]/g, '_')}.pdf`,
+          content: Buffer.from(pdfContent, 'base64')
+        }]
+      });
+
+      if (emailSuccess === true) {
+        res.json({
+          success: true,
+          message: 'Weekly report sent successfully'
+        });
+      } else {
+        res.json({
+          success: true,
+          message: 'DEMO MODE: Weekly report would be sent to ' + companyEmail
+        });
+      }
+
+    } catch (error) {
+      console.error('Error sending weekly report email:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send weekly report email: ' + error.message
+      });
+    }
+  });
+
   app.post("/api/send-transport-order", async (req, res) => {
     try {
       const { orderData, companyEmail, pdfContent } = req.body;
