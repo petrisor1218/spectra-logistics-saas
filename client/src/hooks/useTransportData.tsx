@@ -884,6 +884,22 @@ export function useTransportData() {
             [currentWeek]: []
           }));
         }
+        
+        // IMPORTANT: Auto-sync company balances after payment
+        try {
+          console.log('🔄 Auto-sincronizare bilanțuri după adăugarea plății...');
+          const syncResponse = await fetch('/api/company-balances/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          if (syncResponse.ok) {
+            console.log('✅ Bilanțurile au fost sincronizate automat');
+          }
+        } catch (syncError) {
+          console.warn('⚠️ Eroare la sincronizarea automată a bilanțurilor:', syncError);
+        }
       } else {
         throw new Error('Failed to save payment');
       }
@@ -907,6 +923,22 @@ export function useTransportData() {
             ...prev,
             [payment.company]: Math.max(0, (prev[payment.company] || 0) - payment.amount)
           }));
+          
+          // IMPORTANT: Auto-sync company balances after payment deletion
+          try {
+            console.log('🔄 Auto-sincronizare bilanțuri după ștergerea plății...');
+            const syncResponse = await fetch('/api/company-balances/generate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+            if (syncResponse.ok) {
+              console.log('✅ Bilanțurile au fost sincronizate automat după ștergere');
+            }
+          } catch (syncError) {
+            console.warn('⚠️ Eroare la sincronizarea automată a bilanțurilor după ștergere:', syncError);
+          }
         }
       } else {
         throw new Error('Failed to delete payment');
