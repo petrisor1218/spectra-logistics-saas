@@ -79,11 +79,6 @@ export default function LoginPage() {
               Autentificare în sistemul de plăți transport
             </CardDescription>
             
-            {/* Credențiale pentru testare rapidă */}
-            <div className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 p-2 rounded space-y-1">
-              <div><strong>Admin:</strong> petrisor / Olanda99&</div>
-              <div><strong>Demo:</strong> admin / admin123</div>
-            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">

@@ -120,20 +120,6 @@ export function SimpleLogin({ onLoginSuccess }: SimpleLoginProps) {
                 {isLoading ? 'Se conectează...' : 'Conectare'}
               </Button>
 
-              <div className="text-center text-sm text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
-                <p className="font-medium">Credențiale Test:</p>
-                <p>Utilizator: <code className="bg-muted px-1 rounded">Fastexpress</code></p>
-                <p>Parolă: <code className="bg-muted px-1 rounded">Olanda99</code></p>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setCredentials({ username: 'Fastexpress', password: 'Olanda99' })}
-                    className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                  >
-                    Completează automat
-                  </button>
-                </div>
-              </div>
             </form>
           </CardContent>
         </Card>

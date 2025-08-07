@@ -20,22 +20,11 @@ if (process.env.STRIPE_SECRET_KEY) {
   console.warn('STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
 }
 
-// Create default user if it doesn't exist
-async function createDefaultUser() {
-  try {
-    const existingUser = await storage.getUserByUsername('Fastexpress');
-    if (!existingUser) {
-      const hashedPassword = await bcrypt.hash('Olanda99', 10);
-      await storage.createUser({
-        username: 'Fastexpress',
-        password: hashedPassword
-      });
-      console.log('Default user created successfully');
-    }
-  } catch (error) {
-    console.error('Error creating default user:', error);
-  }
-}
+// SECURITY: Default user creation disabled for security reasons
+// If you need to create users, do it manually through proper admin interface
+// async function createDefaultUser() {
+//   // This function was disabled for security - no hardcoded credentials
+// }
 
 // Seed initial companies and drivers
 async function seedDatabase() {
@@ -210,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   // Seed database on startup
-  await createDefaultUser();
+  // await createDefaultUser(); // Disabled for security
   await seedDatabase();
 
   // Authentication routes
