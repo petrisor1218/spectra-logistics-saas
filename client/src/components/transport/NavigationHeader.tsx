@@ -1,13 +1,15 @@
 import { motion } from "framer-motion";
-import { Truck, Bell, LogOut, User, Shield } from "lucide-react";
+import { Truck, Bell, LogOut, User, Shield, BarChart3, Database } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 export function NavigationHeader() {
   const { theme, toggleTheme } = useTheme();
   const { user, logout, isLoggingOut } = useAuth();
+  const [location, setLocation] = useLocation();
 
   return (
     <motion.header 
@@ -50,12 +52,31 @@ export function NavigationHeader() {
               <span className="text-sm text-gray-400">☀️</span>
             </div>
             
+            {/* Analytics Button */}
+            <Button
+              onClick={() => setLocation('/analytics')}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+              size="sm"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analytics
+            </Button>
+
+            {/* Backup Button */}
+            <Button
+              onClick={() => setLocation('/backup')}
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+              size="sm"
+            >
+              <Database className="w-4 h-4 mr-2" />
+              Backup
+            </Button>
+
+            <div className="w-px h-6 bg-white/20"></div>
+
             {/* Admin Dashboard Button */}
             <Button
-              onClick={() => {
-                console.log('Navigating to admin dashboard...');
-                window.location.href = '/admin';
-              }}
+              onClick={() => setLocation('/admin')}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               size="sm"
             >
