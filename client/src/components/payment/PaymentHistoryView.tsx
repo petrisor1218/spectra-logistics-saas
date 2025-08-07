@@ -145,8 +145,10 @@ export default function PaymentHistoryView() {
       }
       return response.json();
     },
-    refetchInterval: 30000,
+    refetchInterval: 5000, // Refresh more frequently
   }) as { data: Payment[], isLoading: boolean };
+  
+  console.log('💳 Payments loaded:', payments.length, 'payments');
 
   // Fetch weekly processing data to get 7-day and 30-day details
   const { data: weeklyData = [] } = useQuery({
