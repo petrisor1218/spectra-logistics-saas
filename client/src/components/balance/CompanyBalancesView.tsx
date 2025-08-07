@@ -59,7 +59,10 @@ function PaymentModal({ balance, isOpen, onClose }: PaymentModalProps) {
         title: "Plată înregistrată",
         description: `Plata de ${formatCurrency(parseFloat(paidAmount))} a fost înregistrată cu succes.`,
       });
+      // Invalidate all relevant queries to update StatusCards and other components
       queryClient.invalidateQueries({ queryKey: ['/api/company-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/payments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/weekly-processing'] });
       onClose();
       setPaidAmount("");
     },
@@ -179,7 +182,10 @@ function DeletePaymentModal({ balance, isOpen, onClose }: DeletePaymentModalProp
         title: "Plată ștearsă",
         description: data.message || `Plată de ${formatCurrency(parseFloat(deleteAmount))} ștearsă cu succes.`,
       });
+      // Invalidate all relevant queries to update StatusCards and other components
       queryClient.invalidateQueries({ queryKey: ['/api/company-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/payments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/weekly-processing'] });
       onClose();
       setDeleteAmount("");
     },
@@ -350,7 +356,10 @@ export default function CompanyBalancesView() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all relevant queries after balance regeneration
       queryClient.invalidateQueries({ queryKey: ['/api/company-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/payments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/weekly-processing'] });
       toast({
         title: "Succes",
         description: "Bilanțurile au fost regenerate din datele calendarul și plăților",
