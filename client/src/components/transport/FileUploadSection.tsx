@@ -128,7 +128,7 @@ export function FileUploadSection({
               />
             </motion.div>
             
-            {section.data && (
+            {uploadedFiles[section.type] && uploadedFiles[section.type].length > 0 && (
               <motion.div 
                 className="mt-4"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -136,19 +136,12 @@ export function FileUploadSection({
                 transition={{ delay: 0.3 }}
               >
                 <div className="space-y-1">
-                  {uploadedFiles[section.type] && uploadedFiles[section.type].length > 0 ? (
-                    uploadedFiles[section.type].map((fileName, index) => (
-                      <div key={index} className="flex items-center text-green-400">
-                        <CheckCircle size={16} className="mr-2" />
-                        <span className="text-sm">{fileName}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex items-center text-green-400">
+                  {uploadedFiles[section.type].map((fileName, index) => (
+                    <div key={index} className="flex items-center text-green-400">
                       <CheckCircle size={16} className="mr-2" />
-                      <span className="text-sm">{section.fileName} uploaded</span>
+                      <span className="text-sm">{fileName}</span>
                     </div>
-                  )}
+                  ))}
                 </div>
               </motion.div>
             )}
