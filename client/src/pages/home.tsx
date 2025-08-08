@@ -19,6 +19,9 @@ import { PendingDriverMappings } from "@/components/processing/PendingDriverMapp
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import PaymentHistoryView from "@/components/payment/PaymentHistoryView";
 import SmallAmountAlertsModal from "@/components/transport/SmallAmountAlertsModal";
+import { TruckHero } from "@/components/transport/TruckHero";
+import { TruckEmptyState } from "@/components/transport/TruckEmptyState";
+import { TruckBackground } from "@/components/transport/TruckBackground";
 import { useTransportData } from "@/hooks/useTransportData";
 import { useAuth } from "@/hooks/useAuth";
 import { SimpleLogin } from "@/components/auth/SimpleLogin";
@@ -114,13 +117,17 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen text-white" style={{
+    <div className="min-h-screen text-white relative" style={{
       background: 'linear-gradient(135deg, hsl(240, 21%, 9%) 0%, hsl(240, 19%, 13%) 50%, hsl(240, 17%, 16%) 100%)'
     }}>
+      <TruckBackground />
       <NavigationHeader />
       
       <main className="pt-24 pb-8">
         <div className="container mx-auto px-6">
+          {/* Hero Section with Truck Graphics */}
+          <TruckHero />
+          
           {/* Status Overview Cards */}
           <StatusCards 
             processedData={processedData}
@@ -409,15 +416,13 @@ export default function Home() {
                 )}
 
                 {Object.keys(processedData).length === 0 && (
-                  <motion.div 
-                    className="text-center text-gray-400 py-16"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <Calculator size={64} className="mx-auto mb-4 opacity-50" />
-                    <p className="text-lg mb-2">Nu există date procesate</p>
-                    <p className="text-sm">Încărcați fișierele și procesați datele pentru a vedea calculele</p>
-                  </motion.div>
+                  <TruckEmptyState
+                    icon={Calculator}
+                    title="Nu există date procesate"
+                    description="Încărcați fișierele și procesați datele pentru a vedea calculele și comenzile de transport."
+                    actionText="Mergi la Încărcare Fișiere"
+                    onAction={() => setActiveTab('upload')}
+                  />
                 )}
               </div>
             )}
