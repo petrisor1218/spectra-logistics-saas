@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { Building, DollarSign, Check, Clock, Plus, Trash2, Truck, Send } from "lucide-react";
+import { Building, DollarSign, Check, Clock, Plus, Trash2, Truck, Send, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaymentModal } from "./PaymentModal";
 import { TransportOrderModal } from "./TransportOrderModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ResultsDisplayProps {
   processedData: any;
@@ -24,6 +24,36 @@ export function ResultsDisplay({
   getRemainingPayment,
   selectedWeek
 }: ResultsDisplayProps) {
+  // State pentru comenzile existente
+  const [existingOrders, setExistingOrders] = useState<{[key: string]: boolean}>({});
+  
+  // Încarcă comenzile existente pentru săptămâna selectată
+  useEffect(() => {
+    const loadExistingOrders = async () => {
+      if (!selectedWeek) return;
+      
+      try {
+        const response = await fetch(`/api/transport-orders?weekLabel=${encodeURIComponent(selectedWeek)}`);
+        if (response.ok) {
+          const orders = await response.json();
+          const ordersByCompany: {[key: string]: boolean} = {};
+          orders.forEach((order: any) => {
+            ordersByCompany[order.companyName] = true;
+          });
+          setExistingOrders(ordersByCompany);
+        }
+      } catch (error) {
+        console.error('Eroare la încărcarea comenzilor existente:', error);
+      }
+    };
+    
+    loadExistingOrders();
+  }, [selectedWeek]);
+  
+  // Funcție pentru verificarea dacă o companie are deja o comandă
+  const hasExistingOrder = (company: string) => {
+    return existingOrders[company] || false;
+  };
   // 🔄 REDISTRIBUIRE AUTOMATĂ A VRID-URILOR UNMATCHED LA COMPANII CORECTE
   const redistributedData = { ...processedData };
   
@@ -122,16 +152,23 @@ export function ResultsDisplay({
                       >
                         Plătește
                       </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => openTransportOrderModal(company)}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium border-2 border-blue-400"
-                        title="Generează comandă de transport"
-                      >
-                        <Truck className="w-4 h-4" />
-                        <span className="ml-1 text-xs">Comandă</span>
-                      </motion.button>
+                      {hasExistingOrder(company) ? (
+                        <div className="px-3 py-2 bg-green-600/20 border-2 border-green-500/30 rounded-lg text-green-400 text-sm font-medium flex items-center space-x-1" title="Comandă deja generată">
+                          <CheckCircle className="w-4 h-4" />
+                          <span className="text-xs">Comandă există</span>
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => openTransportOrderModal(company)}
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-medium border-2 border-blue-400"
+                          title="Generează comandă de transport"
+                        >
+                          <Truck className="w-4 h-4" />
+                          <span className="ml-1 text-xs">Comandă</span>
+                        </motion.button>
+                      )}
                     </div>
                   </div>
                 </div>
