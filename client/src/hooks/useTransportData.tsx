@@ -88,6 +88,7 @@ export function useTransportData() {
   const [invoice30Data, setInvoice30Data] = useState<any>(null);
   const [uploadedFiles, setUploadedFiles] = useState<{[key: string]: string[]}>({ trip: [], invoice7: [], invoice30: [] });
   const [processedData, setProcessedData] = useState<any>({});
+  const [savedProcessedData, setSavedProcessedData] = useState<any>({}); // Data saved to database
   const [payments, setPayments] = useState<any>({});
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [weeklyPaymentHistory, setWeeklyPaymentHistory] = useState<any>({});
@@ -1089,6 +1090,8 @@ export function useTransportData() {
 
       if (response.ok) {
         console.log(`💾 Date salvate manual cu istoric complet pentru ${selectedWeek}`);
+        // Update saved data to match current processed data
+        setSavedProcessedData({...processedData});
         alert('Datele au fost salvate cu succes în baza de date cu istoric permanent!');
       } else {
         throw new Error('Failed to save processed data');
@@ -1122,7 +1125,9 @@ export function useTransportData() {
         const data = await response.json();
         if (data) {
           console.log('Loaded processed data for week:', data.processedData);
+          // Set both processed data (for calculations) and saved data (for payments tab)
           setProcessedData(data.processedData || {});
+          setSavedProcessedData(data.processedData || {}); // Store saved data separately
           setSelectedWeek(weekLabel);
           setProcessingWeek(weekLabel);
           // Also load existing payments for this week
@@ -1246,6 +1251,7 @@ export function useTransportData() {
     invoice7Data,
     invoice30Data,
     processedData,
+    savedProcessedData,
     payments,
     paymentHistory,
     weeklyPaymentHistory,

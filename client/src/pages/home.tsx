@@ -52,6 +52,7 @@ export default function Home() {
     invoice7Data,
     invoice30Data,
     processedData,
+    savedProcessedData,
     payments,
     paymentHistory,
     weeklyPaymentHistory,
@@ -458,7 +459,7 @@ export default function Home() {
                 </motion.div>
 
                 <ResultsDisplay
-                  processedData={processedData}
+                  processedData={savedProcessedData}
                   payments={payments}
                   paymentHistory={paymentHistory}
                   recordPayment={recordPayment}
