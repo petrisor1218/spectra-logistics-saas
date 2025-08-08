@@ -103,14 +103,11 @@ function SubscribeForm({ planId }: { planId: string }) {
 
     try {
       // Create subscription with tenant info
-      const subscriptionResponse = await apiRequest('/api/create-subscription', {
-        method: 'POST',
-        body: JSON.stringify({
-          planId,
-          trialDays: plan.trialDays,
-          // Include tenant information
-          ...tenantInfo
-        }),
+      const subscriptionResponse = await apiRequest('POST', '/api/create-subscription', {
+        planId,
+        trialDays: plan.trialDays,
+        // Include tenant information
+        ...tenantInfo
       });
 
       const subscriptionData = await subscriptionResponse.json();
