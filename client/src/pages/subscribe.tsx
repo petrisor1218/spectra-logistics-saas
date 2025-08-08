@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ArrowLeft, Clock, Crown, Star, Shield, Building } from 'lucide-react';
 import { Label } from "@/components/ui/label";
