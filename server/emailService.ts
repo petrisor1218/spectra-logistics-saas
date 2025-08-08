@@ -343,9 +343,40 @@ export class EmailService {
   static async sendPaymentNotification(
     companyEmail: string,
     companyName: string,
-    paymentData: any
+    paymentData: any,
+    remainingBalances?: Array<{weekLabel: string, remainingAmount: number, totalInvoiced: number}>
   ): Promise<boolean> {
-    const subject = `Notificare Plată - ${companyName} - €${paymentData.amount}`;
+    const subject = `Plată Confirmată - ${companyName} - €${paymentData.amount} - Sold Actualizat`;
+    
+    // Generate balance summary if provided
+    let balancesSummary = '';
+    if (remainingBalances && remainingBalances.length > 0) {
+      const totalRemaining = remainingBalances.reduce((sum, b) => sum + b.remainingAmount, 0);
+      
+      balancesSummary = `
+        <div class="balances-section">
+          <h3>📊 Sold actualizat pe săptămâni</h3>
+          <div class="balance-summary">
+            <p><strong>Total de încasat:</strong> <span class="total-remaining">€${totalRemaining.toFixed(2)}</span></p>
+          </div>
+          <div class="balances-list">
+            ${remainingBalances.map(balance => `
+              <div class="balance-item ${balance.remainingAmount === 0 ? 'paid' : balance.remainingAmount < 0 ? 'overpaid' : 'pending'}">
+                <div class="week-label">${balance.weekLabel}</div>
+                <div class="balance-amounts">
+                  <span class="invoiced">Facturat: €${balance.totalInvoiced.toFixed(2)}</span>
+                  <span class="remaining ${balance.remainingAmount === 0 ? 'zero' : balance.remainingAmount < 0 ? 'negative' : 'positive'}">
+                    ${balance.remainingAmount === 0 ? '✅ Plătit complet' : 
+                      balance.remainingAmount < 0 ? `💰 Surplus: €${Math.abs(balance.remainingAmount).toFixed(2)}` : 
+                      `⏳ Rest: €${balance.remainingAmount.toFixed(2)}`}
+                  </span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
     
     const html = `
       <!DOCTYPE html>
@@ -353,40 +384,62 @@ export class EmailService {
         <head>
           <meta charset="utf-8">
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .header { background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white; padding: 20px; text-align: center; }
-            .content { padding: 20px; }
-            .payment-details { background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #17a2b8; }
-            .footer { background: #e9ecef; padding: 15px; text-align: center; font-size: 12px; color: #6c757d; }
-            .amount { color: #17a2b8; font-weight: bold; font-size: 24px; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
+            .container { max-width: 700px; margin: 0 auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px 20px; text-align: center; }
+            .content { padding: 30px; }
+            .payment-details { background: #d4edda; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #28a745; }
+            .balances-section { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #e9ecef; }
+            .balance-item { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; border-left: 4px solid #6c757d; }
+            .balance-item.paid { border-left-color: #28a745; background: #f8fff9; }
+            .balance-item.overpaid { border-left-color: #17a2b8; background: #f0fdff; }
+            .balance-item.pending { border-left-color: #ffc107; background: #fffcf0; }
+            .week-label { font-weight: bold; color: #495057; margin-bottom: 5px; }
+            .balance-amounts { display: flex; justify-content: space-between; align-items: center; }
+            .invoiced { color: #6c757d; font-size: 14px; }
+            .remaining.zero { color: #28a745; font-weight: bold; }
+            .remaining.negative { color: #17a2b8; font-weight: bold; }
+            .remaining.positive { color: #ffc107; font-weight: bold; }
+            .footer { background: #e9ecef; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
+            .amount { color: #28a745; font-weight: bold; font-size: 28px; }
+            .total-remaining { color: #ffc107; font-weight: bold; font-size: 20px; }
+            .balance-summary { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>💰 Transport Pro - Plată Înregistrată</h1>
-          </div>
-          
-          <div class="content">
-            <h2>Plată confirmată pentru ${companyName}</h2>
-            
-            <div class="payment-details">
-              <h3>Detalii Plată</h3>
-              <p><strong>Suma:</strong> <span class="amount">€${paymentData.amount}</span></p>
-              <p><strong>Data plății:</strong> ${new Date(paymentData.paymentDate).toLocaleDateString('ro-RO')}</p>
-              <p><strong>Perioada:</strong> ${paymentData.weekLabel}</p>
-              ${paymentData.notes ? `<p><strong>Observații:</strong> ${paymentData.notes}</p>` : ''}
+          <div class="container">
+            <div class="header">
+              <h1>💰 Plată Confirmată</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Transport Pro - Sistem Management</p>
             </div>
             
-            <p>Plata a fost înregistrată cu succes în sistemul nostru. Soldul dumneavoastră a fost actualizat corespunzător.</p>
+            <div class="content">
+              <h2>Stimate ${companyName},</h2>
+              
+              <p>Vă confirmăm că plata dumneavoastră a fost înregistrată cu succes în sistemul nostru!</p>
+              
+              <div class="payment-details">
+                <h3>💳 Detalii Plată</h3>
+                <p><strong>Suma plătită:</strong> <span class="amount">€${paymentData.amount}</span></p>
+                <p><strong>Data plății:</strong> ${new Date(paymentData.paymentDate).toLocaleDateString('ro-RO')}</p>
+                <p><strong>Perioada:</strong> ${paymentData.weekLabel}</p>
+                ${paymentData.notes ? `<p><strong>Observații:</strong> ${paymentData.notes}</p>` : ''}
+              </div>
+              
+              ${balancesSummary}
+              
+              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffeaa7;">
+                <p style="margin: 0; color: #856404;">📞 <strong>Pentru întrebări:</strong> Nu mai este nevoie să ne contactați pentru a afla soldul - informațiile sunt actualizate în timp real mai sus!</p>
+              </div>
+              
+              <p>Mulțumim pentru colaborarea continuă și pentru promptitudinea la plăți!</p>
+            </div>
             
-            <p>Pentru orice întrebări legate de această plată, nu ezitați să ne contactați.</p>
-            
-            <p>Mulțumim!</p>
-          </div>
-          
-          <div class="footer">
-            <p>Transport Pro - Sistem de Management Logistic</p>
-            <p>Notificare generată automat pe ${new Date().toLocaleDateString('ro-RO')}</p>
+            <div class="footer">
+              <p>🚛 Transport Pro - Sistem de Management Logistic</p>
+              <p>Email generat automat pe ${new Date().toLocaleDateString('ro-RO')} la ${new Date().toLocaleTimeString('ro-RO')}</p>
+              <p style="margin-top: 10px; font-style: italic;">Acest email este trimis automat când o plată este înregistrată în sistem</p>
+            </div>
           </div>
         </body>
       </html>

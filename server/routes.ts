@@ -331,6 +331,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         previousData: null,
       });
       
+      // Automatically send payment notification email
+      try {
+        // Get company information
+        const companies = await storage.getAllCompanies();
+        const company = companies.find(c => c.name === payment.companyName);
+        
+        if (company && company.contact && company.contact.includes('@')) {
+          // Extract email from contact field
+          const emailMatch = company.contact.match(/[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}/);
+          if (emailMatch) {
+            const companyEmail = emailMatch[0];
+            
+            // Calculate remaining balances for all weeks for this company
+            const balances = await storage.getCompanyBalances();
+            const companyBalances = balances
+              .filter(b => b.companyName === payment.companyName && parseFloat(b.outstandingBalance) !== 0)
+              .map(b => ({
+                weekLabel: b.weekLabel,
+                remainingAmount: parseFloat(b.outstandingBalance),
+                totalInvoiced: parseFloat(b.totalInvoiced)
+              }))
+              .sort((a, b) => b.weekLabel.localeCompare(a.weekLabel)); // Sort by week, newest first
+            
+            // Send email using the free email service (more reliable)
+            await FreeEmailService.sendPaymentNotificationEmail({
+              to: companyEmail,
+              companyName: payment.companyName,
+              paymentData: {
+                amount: parseFloat(payment.amount),
+                paymentDate: payment.paymentDate?.toISOString() || new Date().toISOString(),
+                weekLabel: payment.weekLabel,
+                notes: payment.description || undefined
+              },
+              remainingBalances: companyBalances
+            });
+            
+            console.log(`✅ Payment notification sent to ${companyEmail} for ${payment.companyName}`);
+          }
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send payment notification email:', emailError);
+        // Don't fail the payment creation if email fails
+      }
+      
       res.json(payment);
     } catch (error) {
       res.status(500).json({ error: "Failed to create payment" });
