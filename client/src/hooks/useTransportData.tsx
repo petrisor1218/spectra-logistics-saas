@@ -617,7 +617,11 @@ export function useTransportData() {
       } else if (type === 'invoice30') {
         // Înlocuiește datele existente în loc să le acumuleze
         setInvoice30Data(data);
-        setUploadedFiles(prev => ({ ...prev, invoice30: [file.name] }));
+        // Păstrează lista de fișiere pentru afișare (ca să știe utilizatorul ce a încărcat)
+        setUploadedFiles(prev => ({ 
+          ...prev, 
+          invoice30: [...prev.invoice30, file.name] 
+        }));
       }
       
     } catch (error: any) {
