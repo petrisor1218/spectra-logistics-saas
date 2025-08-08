@@ -615,8 +615,15 @@ export function useTransportData() {
         setInvoice7Data(data);
         setUploadedFiles(prev => ({ ...prev, invoice7: [file.name] }));
       } else if (type === 'invoice30') {
-        // Înlocuiește datele existente în loc să le acumuleze
-        setInvoice30Data(data);
+        // Pentru facturile de 30 zile, combină datele din toate fișierele încărcate
+        setInvoice30Data((prevData: any) => {
+          if (prevData && prevData.length > 0) {
+            // Combină cu datele existente dacă sunt mai multe fișiere selectate
+            console.log(`🔄 Combinând ${prevData.length} înregistrări existente cu ${data.length} noi înregistrări`);
+            return [...prevData, ...data];
+          }
+          return data;
+        });
         // Păstrează lista de fișiere pentru afișare (ca să știe utilizatorul ce a încărcat)
         setUploadedFiles(prev => ({ 
           ...prev, 

@@ -101,16 +101,29 @@ export function FileUploadSection({
               onClick={() => section.ref.current?.click()}
             >
               <CloudUpload className="mx-auto text-3xl text-gray-400 mb-4" size={48} />
-              <p className="text-gray-300 mb-2">Drag & drop sau click pentru upload</p>
+              <p className="text-gray-300 mb-2">
+                {section.type === 'invoice30' 
+                  ? 'Selectează mai multe fișiere deodată (Ctrl+Click)'
+                  : 'Drag & drop sau click pentru upload'
+                }
+              </p>
               <p className="text-gray-500 text-sm">{section.accept.replace(',', ', ')} files</p>
               <input
                 ref={section.ref}
                 type="file"
                 className="hidden"
                 accept={section.accept}
+                multiple={section.type === 'invoice30'}
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file, section.type);
+                  if (section.type === 'invoice30' && e.target.files) {
+                    // Pentru facturile 30 zile, permitem selecția multiplă
+                    Array.from(e.target.files).forEach(file => {
+                      handleFileUpload(file, section.type);
+                    });
+                  } else {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file, section.type);
+                  }
                 }}
               />
             </motion.div>
