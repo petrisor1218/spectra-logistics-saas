@@ -1,0 +1,52 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="truckGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22C55E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16A34A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="wheelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1F2937;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+  
+  <!-- Truck Body -->
+  <rect x="12" y="26" width="24" height="12" rx="2" fill="url(#truckGradient)"/>
+  
+  <!-- Truck Cabin -->
+  <rect x="36" y="22" width="16" height="16" rx="2" fill="url(#truckGradient)"/>
+  
+  <!-- Windows -->
+  <rect x="38" y="24" width="5" height="4" rx="1" fill="#E0F2FE" opacity="0.9"/>
+  <rect x="45" y="24" width="5" height="4" rx="1" fill="#E0F2FE" opacity="0.9"/>
+  
+  <!-- Front Grille -->
+  <rect x="52" y="28" width="3" height="8" rx="1" fill="#1F2937"/>
+  <line x1="53.5" y1="30" x2="53.5" y2="34" stroke="#9CA3AF" stroke-width="0.5"/>
+  
+  <!-- Wheels -->
+  <circle cx="20" cy="42" r="4" fill="url(#wheelGradient)"/>
+  <circle cx="44" cy="42" r="4" fill="url(#wheelGradient)"/>
+  
+  <!-- Wheel Centers -->
+  <circle cx="20" cy="42" r="2" fill="#000000"/>
+  <circle cx="44" cy="42" r="2" fill="#000000"/>
+  
+  <!-- Wheel Rims -->
+  <circle cx="20" cy="42" r="1.2" fill="#6B7280"/>
+  <circle cx="44" cy="42" r="1.2" fill="#6B7280"/>
+  
+  <!-- Headlights -->
+  <circle cx="55" cy="26" r="1.5" fill="#FEF3C7"/>
+  <circle cx="55" cy="36" r="1.5" fill="#FEF3C7"/>
+  
+  <!-- Side Details -->
+  <rect x="14" y="28" width="20" height="1" fill="#16A34A" opacity="0.8"/>
+  <rect x="14" y="34" width="20" height="1" fill="#16A34A" opacity="0.8"/>
+  
+  <!-- Transport Logo -->
+  <text x="32" y="52" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle" fill="#16A34A">T</text>
+</svg>
