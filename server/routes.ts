@@ -8,6 +8,7 @@ import connectPg from 'connect-pg-simple';
 import Stripe from "stripe";
 import { EmailService } from "./emailService";
 import { FreeEmailService } from './freeEmailService';
+import { getSecondaryUsers, getSecondaryProjects, getSecondaryTasks, getSecondaryStats } from './secondary-db-routes';
 
 let stripe: Stripe | null = null;
 
@@ -1354,6 +1355,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Secondary database routes
+  app.get('/api/secondary/users', getSecondaryUsers);
+  app.get('/api/secondary/projects', getSecondaryProjects);
+  app.get('/api/secondary/tasks', getSecondaryTasks);
+  app.get('/api/secondary/stats', getSecondaryStats);
 
   // Initialize backup system after a delay
   const initializeBackup = async () => {
