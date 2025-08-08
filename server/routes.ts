@@ -473,6 +473,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual payment email endpoint for testing
+  app.post("/api/manual-payment-email", async (req, res) => {
+    try {
+      const { to, companyName, paymentData, remainingBalances } = req.body;
+      
+      console.log(`📧 Manual email test for ${companyName} to ${to}`);
+      
+      // Send email using the free email service
+      await FreeEmailService.sendPaymentNotificationEmail({
+        to,
+        companyName,
+        paymentData,
+        remainingBalances: remainingBalances || []
+      });
+      
+      res.json({ 
+        success: true, 
+        message: `Manual email sent to ${to}`,
+        companyName,
+        paymentAmount: paymentData.amount
+      });
+      
+    } catch (error) {
+      console.error('❌ Failed to send manual payment email:', error);
+      res.status(500).json({ 
+        error: "Failed to send manual email",
+        details: error.message
+      });
+    }
+  });
+
   // Payment history routes
   app.get("/api/payment-history", async (req, res) => {
     try {
