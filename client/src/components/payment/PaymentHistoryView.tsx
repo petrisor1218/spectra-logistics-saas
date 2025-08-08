@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Calendar, CreditCard, Search, Filter, Download, Trash2, AlertTriangle } from "lucide-react";
+import { Calendar, CreditCard, Search, Filter, Download, Trash2, AlertTriangle, FileText } from "lucide-react";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { motion } from "framer-motion";
 import type { Payment } from "@shared/schema";
 import {
@@ -245,6 +247,152 @@ export default function PaymentHistoryView() {
     link.click();
   };
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Logo și antet
+    doc.setFontSize(20);
+    doc.setTextColor(40, 40, 40);
+    doc.text('SISTEMA TRANSPORT', 20, 25);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Istoric Plăți - Situația Completă', 20, 35);
+    
+    doc.setFontSize(10);
+    doc.text(`Generat: ${new Date().toLocaleDateString('ro-RO')} ${new Date().toLocaleTimeString('ro-RO')}`, 20, 45);
+    
+    // Linie separatoare
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 50, 190, 50);
+    
+    let yPosition = 65;
+    
+    // Sumar general
+    doc.setFontSize(12);
+    doc.setTextColor(40, 40, 40);
+    doc.text('SUMAR GENERAL', 20, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Total plăți înregistrate: ${filteredPayments.length}`, 20, yPosition);
+    yPosition += 6;
+    doc.text(`Valoare totală: ${formatCurrency(totalAmount)}`, 20, yPosition);
+    yPosition += 6;
+    doc.text(`Companii active: ${Object.keys(totalByCompany).length}`, 20, yPosition);
+    yPosition += 15;
+    
+    // Sumar pe companii
+    doc.setFontSize(12);
+    doc.setTextColor(40, 40, 40);
+    doc.text('SUMAR PE COMPANII', 20, yPosition);
+    yPosition += 10;
+    
+    const companyData = Object.entries(totalByCompany).map(([company, total]) => [
+      company,
+      formatCurrency(total)
+    ]);
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Companie', 'Total Plătit']],
+      body: companyData,
+      theme: 'striped',
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      styles: { fontSize: 9, halign: 'left' },
+      columnStyles: {
+        1: { halign: 'right', fontStyle: 'bold' }
+      }
+    });
+    
+    yPosition = (doc as any).lastAutoTable.finalY + 20;
+    
+    // Verificare dacă avem loc pentru următoarea secțiune
+    if (yPosition > pageHeight - 60) {
+      doc.addPage();
+      yPosition = 25;
+    }
+    
+    // Detaliatul plăților pe săptămâni
+    doc.setFontSize(12);
+    doc.setTextColor(40, 40, 40);
+    doc.text('DETALIU PLĂȚI PE SĂPTĂMÂNI', 20, yPosition);
+    yPosition += 10;
+    
+    // Grupăm plățile pentru tabel
+    const paymentData = filteredPayments.map(payment => {
+      const weekDetails = getWeeklyDetails(payment.weekLabel, payment.companyName);
+      const remainingAmount = weekDetails ? weekDetails.totalToPay - parseFloat(payment.amount) : 0;
+      
+      return [
+        formatDate(payment.paymentDate),
+        payment.companyName,
+        payment.weekLabel,
+        formatCurrency(parseFloat(payment.amount)),
+        weekDetails ? formatCurrency(weekDetails.totalToPay) : 'N/A',
+        formatCurrency(Math.max(0, remainingAmount)),
+        payment.description || '-'
+      ];
+    });
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Data Plată', 'Companie', 'Săptămâna', 'Suma Plătită', 'Total de Plătit', 'Rest de Plătit', 'Descriere']],
+      body: paymentData,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [52, 152, 219], 
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: 'bold'
+      },
+      styles: { 
+        fontSize: 8, 
+        halign: 'left',
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 22 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 25 },
+        3: { halign: 'right', fontStyle: 'bold', cellWidth: 20 },
+        4: { halign: 'right', cellWidth: 20 },
+        5: { halign: 'right', cellWidth: 20 },
+        6: { cellWidth: 35 }
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: 10, right: 10 }
+    });
+    
+    // Footer pe fiecare pagină
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      
+      // Linie footer
+      doc.setLineWidth(0.3);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, pageHeight - 20, 190, pageHeight - 20);
+      
+      // Text footer
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Sistema Transport - Management Plăți', 20, pageHeight - 12);
+      doc.text(`Pagina ${i} din ${pageCount}`, 190 - 30, pageHeight - 12);
+    }
+    
+    // Salvare PDF
+    doc.save(`istoric_plati_${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    toast({
+      title: "PDF generat cu succes",
+      description: `Istoricul plăților a fost salvat ca PDF (${filteredPayments.length} plăți incluse)`,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -261,6 +409,10 @@ export default function PaymentHistoryView() {
           <p className="text-muted-foreground">Toate plățile înregistrate în sistem</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={generatePDF} className="flex items-center gap-2 bg-red-600 hover:bg-red-700">
+            <FileText className="h-4 w-4" />
+            Export PDF
+          </Button>
           <Button onClick={exportToCSV} variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Export CSV

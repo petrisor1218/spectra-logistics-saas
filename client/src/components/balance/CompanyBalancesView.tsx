@@ -16,7 +16,9 @@ const formatCurrency = (amount: number): string => {
 };
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
+import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw, Trash2, AlertTriangle, FileText } from "lucide-react";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { motion } from "framer-motion";
 import type { CompanyBalance } from "@shared/schema";
 
@@ -384,6 +386,195 @@ export default function CompanyBalancesView() {
     setIsDeleteModalOpen(true);
   };
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Logo și antet
+    doc.setFontSize(20);
+    doc.setTextColor(40, 40, 40);
+    doc.text('SISTEMA TRANSPORT', 20, 25);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Bilanțuri Companii - Situația Restanțelor', 20, 35);
+    
+    doc.setFontSize(10);
+    doc.text(`Generat: ${new Date().toLocaleDateString('ro-RO')} ${new Date().toLocaleTimeString('ro-RO')}`, 20, 45);
+    
+    // Linie separatoare
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, 50, 190, 50);
+    
+    let yPosition = 65;
+    
+    // Sumar general
+    doc.setFontSize(12);
+    doc.setTextColor(40, 40, 40);
+    doc.text('SUMAR GENERAL', 20, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Total facturat: ${formatCurrency(totalInvoiced)}`, 20, yPosition);
+    yPosition += 6;
+    doc.text(`Total încasat: ${formatCurrency(totalPaid)}`, 20, yPosition);
+    yPosition += 6;
+    doc.text(`De încasat: ${formatCurrency(totalOutstanding)}`, 20, yPosition);
+    yPosition += 6;
+    doc.text(`Companii cu restanțe: ${Object.entries(balancesByCompany).filter(([_, balances]) => balances.some(b => parseFloat(b.outstandingBalance || '0') > 0)).length}`, 20, yPosition);
+    yPosition += 15;
+    
+    // Sumar pe companii - doar cele cu restanțe
+    const companiesWithOutstanding = Object.entries(balancesByCompany)
+      .map(([companyName, companyBalances]) => {
+        const companyTotalOutstanding = companyBalances.reduce((sum, balance) => 
+          sum + parseFloat(balance.outstandingBalance || '0'), 0);
+        const companyTotalInvoiced = companyBalances.reduce((sum, balance) => 
+          sum + parseFloat(balance.totalInvoiced || '0'), 0);
+        const companyTotalPaid = companyBalances.reduce((sum, balance) => 
+          sum + parseFloat(balance.totalPaid || '0'), 0);
+        
+        return {
+          companyName,
+          totalOutstanding: companyTotalOutstanding,
+          totalInvoiced: companyTotalInvoiced,
+          totalPaid: companyTotalPaid,
+          weeksCount: companyBalances.length
+        };
+      })
+      .filter(company => company.totalOutstanding > 0)
+      .sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+    
+    if (companiesWithOutstanding.length > 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(40, 40, 40);
+      doc.text('COMPANII CU RESTANȚE', 20, yPosition);
+      yPosition += 10;
+      
+      const companyData = companiesWithOutstanding.map(company => [
+        company.companyName,
+        company.weeksCount.toString(),
+        formatCurrency(company.totalInvoiced),
+        formatCurrency(company.totalPaid),
+        formatCurrency(company.totalOutstanding)
+      ]);
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Companie', 'Săpt.', 'Total Facturat', 'Total Plătit', 'De Încasat']],
+        body: companyData,
+        theme: 'striped',
+        headStyles: { fillColor: [220, 53, 69], textColor: 255 },
+        styles: { fontSize: 9, halign: 'left' },
+        columnStyles: {
+          1: { halign: 'center' },
+          2: { halign: 'right' },
+          3: { halign: 'right' },
+          4: { halign: 'right', fontStyle: 'bold', textColor: [220, 53, 69] }
+        }
+      });
+      
+      yPosition = (doc as any).lastAutoTable.finalY + 20;
+    }
+    
+    // Verificare dacă avem loc pentru următoarea secțiune
+    if (yPosition > pageHeight - 60) {
+      doc.addPage();
+      yPosition = 25;
+    }
+    
+    // Detaliul complet - toate bilanțurile
+    doc.setFontSize(12);
+    doc.setTextColor(40, 40, 40);
+    doc.text('DETALIU COMPLET - TOATE BILANȚURILE', 20, yPosition);
+    yPosition += 10;
+    
+    // Creăm datele pentru tabelul detaliat
+    const detailData: string[][] = [];
+    Object.entries(balancesByCompany).forEach(([companyName, companyBalances]) => {
+      companyBalances.forEach(balance => {
+        const status = balance.paymentStatus === 'paid' ? '✓ Plătit' : 
+                      balance.paymentStatus === 'partial' ? '⚡ Parțial' : '⏳ Neplătit';
+        
+        detailData.push([
+          companyName,
+          balance.weekLabel,
+          formatCurrency(parseFloat(balance.totalInvoiced || '0')),
+          formatCurrency(parseFloat(balance.totalPaid || '0')),
+          formatCurrency(parseFloat(balance.outstandingBalance || '0')),
+          status
+        ]);
+      });
+    });
+    
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['Companie', 'Săptămâna', 'Facturat', 'Plătit', 'Restant', 'Status']],
+      body: detailData,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [52, 152, 219], 
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: 'bold'
+      },
+      styles: { 
+        fontSize: 8, 
+        halign: 'left',
+        cellPadding: 3
+      },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 35 },
+        2: { halign: 'right', cellWidth: 25 },
+        3: { halign: 'right', cellWidth: 25 },
+        4: { halign: 'right', fontStyle: 'bold', cellWidth: 25 },
+        5: { halign: 'center', cellWidth: 22 }
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: 10, right: 10 },
+      // Colorare condițională pentru rânduri
+      didParseCell: function (data) {
+        if (data.column.index === 4) { // Coloana "Restant"
+          const amount = parseFloat(data.cell.text[0].replace(/[^\d.-]/g, ''));
+          if (amount > 0) {
+            data.cell.styles.textColor = [220, 53, 69]; // Roșu pentru restanțe
+            data.cell.styles.fontStyle = 'bold';
+          } else {
+            data.cell.styles.textColor = [40, 167, 69]; // Verde pentru zero
+          }
+        }
+      }
+    });
+    
+    // Footer pe fiecare pagină
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      
+      // Linie footer
+      doc.setLineWidth(0.3);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, pageHeight - 20, 190, pageHeight - 20);
+      
+      // Text footer
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Sistema Transport - Bilanțuri Companii', 20, pageHeight - 12);
+      doc.text(`Pagina ${i} din ${pageCount}`, 190 - 30, pageHeight - 12);
+    }
+    
+    // Salvare PDF
+    doc.save(`bilante_companii_${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    toast({
+      title: "PDF generat cu succes",
+      description: `Bilanțurile companiilor au fost salvate ca PDF (${Object.keys(balancesByCompany).length} companii incluse)`,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -454,24 +645,34 @@ export default function CompanyBalancesView() {
       {/* Header with Generate Button */}
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Bilanțuri pe Companii</h3>
-        <Button
-          onClick={() => generateBalances.mutate()}
-          disabled={generateBalances.isPending}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-          size="sm"
-        >
-          {generateBalances.isPending ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Generez...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Sincronizează cu Calendarul
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={generatePDF}
+            className="bg-red-600 hover:bg-red-700 text-white"
+            size="sm"
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
+          <Button
+            onClick={() => generateBalances.mutate()}
+            disabled={generateBalances.isPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            size="sm"
+          >
+            {generateBalances.isPending ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Generez...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sincronizează cu Calendarul
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Company Balances */}

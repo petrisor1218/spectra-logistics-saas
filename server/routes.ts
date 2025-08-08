@@ -335,7 +335,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Get company information
         const companies = await storage.getAllCompanies();
-        const company = companies.find(c => c.name === payment.companyName);
+        
+        // Create a company name mapping to handle variations
+        const getCompanyByPaymentName = (paymentCompanyName: string) => {
+          // Direct match first
+          let company = companies.find(c => c.name === paymentCompanyName);
+          if (company) return company;
+          
+          // Handle common name variations
+          const nameMap: Record<string, string[]> = {
+            "Fast & Express S.R.L.": ["Fast Express", "Fast & Express"],
+            "De Cargo Sped S.R.L.": ["DE Cargo Speed", "De Cargo Speed"],
+            "Stef Trans S.R.L.": ["Stef Trans"],
+            "Daniel Ontheroad S.R.L.": ["Daniel Ontheroad"],
+            "Toma SRL": ["Toma", "Toma SRL"],
+            "Bis General": ["Bis General"]
+          };
+          
+          // Find company by checking all variations
+          for (const [dbName, variations] of Object.entries(nameMap)) {
+            if (variations.includes(paymentCompanyName)) {
+              company = companies.find(c => c.name === dbName);
+              if (company) {
+                console.log(`📧 Company name mapped: "${paymentCompanyName}" → "${dbName}"`);
+                return company;
+              }
+            }
+          }
+          
+          // Fallback: partial matching
+          company = companies.find(c => 
+            c.name.toLowerCase().includes(paymentCompanyName.toLowerCase()) ||
+            paymentCompanyName.toLowerCase().includes(c.name.toLowerCase())
+          );
+          
+          if (company) {
+            console.log(`📧 Company found via partial match: "${paymentCompanyName}" → "${company.name}"`);
+          } else {
+            console.log(`⚠️ No company found for payment name: "${paymentCompanyName}"`);
+          }
+          
+          return company;
+        };
+        
+        const company = getCompanyByPaymentName(payment.companyName);
         
         if (company && company.contact && company.contact.includes('@')) {
           // Extract email from contact field
