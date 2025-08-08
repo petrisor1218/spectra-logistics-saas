@@ -11,7 +11,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
   role: varchar("role", { length: 20 }).notNull().default("subscriber"), // admin, subscriber
-  tenantId: varchar("tenant_id", { length: 100 }).unique(), // UUID pentru baza de date separată
+  tenantId: integer("tenant_id").notNull().default(1), // Integer pentru multi-tenancy eficient
   companyName: varchar("company_name", { length: 200 }), // Numele companiei utilizatorului
   // Stripe fields for subscription management
   stripeCustomerId: varchar("stripe_customer_id", { length: 100 }),
@@ -35,7 +35,7 @@ export const companies = pgTable("companies", {
   county: varchar("county", { length: 100 }),
   country: varchar("country", { length: 100 }).default("Romania"),
   contact: text("contact"),
-  tenantId: varchar("tenant_id", { length: 100 }), // Pentru multi-tenancy
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -46,6 +46,7 @@ export const drivers = pgTable("drivers", {
   nameVariants: jsonb("name_variants"),
   phone: varchar("phone", { length: 20 }).default(""),
   email: varchar("email", { length: 100 }).default(""),
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -61,6 +62,7 @@ export const weeklyProcessing = pgTable("weekly_processing", {
   tripData: jsonb("trip_data"), // Raw TRIP file content
   invoice7Data: jsonb("invoice7_data"), // Raw 7-day invoice content  
   invoice30Data: jsonb("invoice30_data"), // Raw 30-day invoice content
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
 });
 
 // New table for historical VRID tracking
@@ -72,6 +74,7 @@ export const historicalTrips = pgTable("historical_trips", {
   tripDate: timestamp("trip_date"),
   route: varchar("route", { length: 200 }),
   rawTripData: jsonb("raw_trip_data"), // Full trip record
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -83,6 +86,7 @@ export const payments = pgTable("payments", {
   paymentDate: timestamp("payment_date").defaultNow(),
   weekLabel: varchar("week_label", { length: 100 }).notNull(),
   paymentType: varchar("payment_type", { length: 50 }).default("partial"), // 'partial' or 'full'
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
 });
 
 // New table for company balances tracking
@@ -95,6 +99,7 @@ export const companyBalances = pgTable("company_balances", {
   outstandingBalance: decimal("outstanding_balance", { precision: 10, scale: 2 }).notNull(), // Amount still owed
   paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // 'pending', 'partial', 'paid'
   lastUpdated: timestamp("last_updated").defaultNow(),
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -103,6 +108,7 @@ export const paymentHistory = pgTable("payment_history", {
   paymentId: integer("payment_id").references(() => payments.id), // Nullable for deleted payments
   action: varchar("action", { length: 50 }).notNull(), // 'created', 'updated', 'deleted'
   previousData: jsonb("previous_data"),
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -116,6 +122,7 @@ export const transportOrders = pgTable("transport_orders", {
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   route: varchar("route", { length: 200 }).default("DE-BE-NL"),
   status: varchar("status", { length: 50 }).default("draft"), // 'draft', 'sent', 'confirmed'
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -123,6 +130,7 @@ export const transportOrders = pgTable("transport_orders", {
 export const orderSequence = pgTable("order_sequence", {
   id: serial("id").primaryKey(),
   currentNumber: integer("current_number").notNull().default(1554), // Start from 1554
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   lastUpdated: timestamp("last_updated").defaultNow()
 });
 

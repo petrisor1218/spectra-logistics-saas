@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { tenantStorage } from "./storage-tenant";
+import { tenantMiddleware, requireTenantAuth } from "./middleware/tenant";
 import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema } from "@shared/schema";
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
@@ -199,6 +201,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
+  // Apply tenant middleware to all API routes
+  app.use('/api', tenantMiddleware);
+
   // Seed database on startup
   // await createDefaultUser(); // Disabled for security
   await seedDatabase();
@@ -255,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company routes
+  // Legacy company routes (backward compatibility - tenant 1)
   app.get("/api/companies", async (req, res) => {
     try {
       const companies = await storage.getAllCompanies();
@@ -265,7 +270,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver routes
+  // Multi-tenant company routes
+  app.get("/api/tenant/:tenantId/companies", requireTenantAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const companies = await tenantStorage.getAllCompanies(tenantId);
+      res.json(companies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch companies" });
+    }
+  });
+
+  // Legacy driver routes (backward compatibility - tenant 1)
   app.get("/api/drivers", async (req, res) => {
     try {
       const drivers = await storage.getAllDrivers();
@@ -275,11 +291,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Weekly processing routes
+  // Multi-tenant driver routes
+  app.get("/api/tenant/:tenantId/drivers", requireTenantAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const drivers = await tenantStorage.getAllDrivers(tenantId);
+      res.json(drivers);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch drivers" });
+    }
+  });
+
+  // Legacy weekly processing routes (backward compatibility - tenant 1)
   app.get("/api/processing/:weekLabel", async (req, res) => {
     try {
       const { weekLabel } = req.params;
       const processing = await storage.getWeeklyProcessing(weekLabel);
+      res.json(processing || null);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch processing data" });
+    }
+  });
+
+  // Multi-tenant weekly processing routes
+  app.get("/api/tenant/:tenantId/processing/:weekLabel", requireTenantAuth, async (req: any, res) => {
+    try {
+      const { weekLabel } = req.params;
+      const tenantId = req.tenantId;
+      const processing = await tenantStorage.getWeeklyProcessing(weekLabel, tenantId);
       res.json(processing || null);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch processing data" });
@@ -303,7 +342,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment routes
+  // Multi-tenant processing routes
+  app.post("/api/tenant/:tenantId/processing", requireTenantAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const validatedData = insertWeeklyProcessingSchema.parse(req.body);
+      const existing = await tenantStorage.getWeeklyProcessing(validatedData.weekLabel, tenantId);
+      
+      if (existing) {
+        const updated = await tenantStorage.updateWeeklyProcessing(validatedData.weekLabel, validatedData, tenantId);
+        res.json(updated);
+      } else {
+        const created = await tenantStorage.createWeeklyProcessing(validatedData, tenantId);
+        res.json(created);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to save processing data" });
+    }
+  });
+
+  // Legacy payment routes (backward compatibility - tenant 1)
   app.get("/api/payments", async (req, res) => {
     try {
       const { weekLabel } = req.query;
@@ -313,6 +371,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(payments);
       } else {
         const payments = await storage.getAllPayments();
+        res.json(payments);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch payments" });
+    }
+  });
+
+  // Multi-tenant payment routes
+  app.get("/api/tenant/:tenantId/payments", requireTenantAuth, async (req: any, res) => {
+    try {
+      const { weekLabel } = req.query;
+      const tenantId = req.tenantId;
+      
+      if (weekLabel) {
+        const payments = await tenantStorage.getPaymentsByWeek(weekLabel as string, tenantId);
+        res.json(payments);
+      } else {
+        const payments = await tenantStorage.getAllPayments(tenantId);
         res.json(payments);
       }
     } catch (error) {
@@ -1361,6 +1437,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/secondary/projects', getSecondaryProjects);
   app.get('/api/secondary/tasks', getSecondaryTasks);
   app.get('/api/secondary/stats', getSecondaryStats);
+
+  // Multi-tenant system status endpoint
+  app.get('/api/tenant/status', async (req, res) => {
+    try {
+      res.json({
+        success: true,
+        message: 'Multi-tenant system is operational',
+        features: [
+          'Schema-based tenant isolation',
+          'Tenant-aware API routes', 
+          'Automatic tenant ID extraction',
+          'Backward compatibility with legacy routes'
+        ]
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get system status' });
+    }
+  });
+
+  // Multi-tenant company balance routes
+  app.get("/api/tenant/:tenantId/company-balances", requireTenantAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const balances = await tenantStorage.getCompanyBalances(tenantId);
+      res.json(balances);
+    } catch (error) {
+      console.error("Error fetching company balances for tenant:", error);
+      res.status(500).json({ error: "Failed to fetch company balances" });
+    }
+  });
+
+  // Multi-tenant payments creation
+  app.post("/api/tenant/:tenantId/payments", requireTenantAuth, async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const validatedData = insertPaymentSchema.parse(req.body);
+      const payment = await tenantStorage.createPayment(validatedData, tenantId);
+      
+      // Create history record
+      await tenantStorage.createPaymentHistoryRecord({
+        paymentId: payment.id,
+        action: "created", 
+        previousData: null,
+      }, tenantId);
+      
+      res.json(payment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create payment" });
+    }
+  });
+
+  // Tenant creation endpoint (for admin use)
+  app.post('/api/admin/tenants', async (req, res) => {
+    try {
+      const { tenantId, name } = req.body;
+      
+      if (!tenantId || !name) {
+        return res.status(400).json({ error: 'Tenant ID and name are required' });
+      }
+      
+      // Initialize order sequence for new tenant
+      await tenantStorage.initializeOrderSequence(tenantId);
+      
+      res.json({
+        success: true,
+        message: `Tenant ${tenantId} (${name}) created successfully`,
+        tenantId,
+        name
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create tenant' });
+    }
+  });
 
   // Initialize backup system after a delay
   const initializeBackup = async () => {
