@@ -663,6 +663,11 @@ export function useTransportData() {
 
     try {
       const processInvoice = (invoiceData: any[], invoiceType: string) => {
+        console.log(`📋 Procesez facturi ${invoiceType}...`);
+        let processedCount = 0;
+        let skippedCount = 0;
+        let totalProcessed = 0;
+        
         invoiceData.forEach((row, index) => {
           let vrid = '';
           if (row['Tour ID'] && row['Tour ID'].trim()) {
@@ -674,7 +679,13 @@ export function useTransportData() {
           }
 
           const amount = parseFloat(row['Gross Pay Amt (Excl. Tax)'] || 0);
-          if (isNaN(amount) || amount === 0) return;
+          if (isNaN(amount) || amount === 0) {
+            skippedCount++;
+            return;
+          }
+          
+          processedCount++;
+          totalProcessed += amount;
 
           const tripRecord = tripData.find((trip: any) => 
             trip['Trip ID'] === vrid || trip['VR ID'] === vrid
@@ -739,10 +750,61 @@ export function useTransportData() {
           results[company].VRID_details[vrid][invoiceType] = amount;
           results[company].VRID_details[vrid].commission += commission;
         });
+        
+        console.log(`✅ ${invoiceType}: ${processedCount} procese, ${skippedCount} sărite, total €${totalProcessed.toFixed(2)}`);
       };
 
+      console.log('🔢 ÎNCEPE CALCULAREA FACTURILOR:');
+      console.log(`📊 Facturi 7 zile: ${invoice7Data.length} linii`);
+      console.log(`📊 Facturi 30 zile: ${invoice30Data.length} linii`);
+      
+      // Calculate totals before processing
+      const invoice7Total = invoice7Data.reduce((sum: number, row: any) => {
+        const amount = parseFloat(row['Gross Pay Amt (Excl. Tax)'] || 0);
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+      
+      const invoice30Total = invoice30Data.reduce((sum: number, row: any) => {
+        const amount = parseFloat(row['Gross Pay Amt (Excl. Tax)'] || 0);
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+      
+      console.log(`💰 TOTAL BRUT FACTURI 7 ZILE: €${invoice7Total.toFixed(2)}`);
+      console.log(`💰 TOTAL BRUT FACTURI 30 ZILE: €${invoice30Total.toFixed(2)}`);
+      console.log(`💰 TOTAL BRUT TOATE FACTURILE: €${(invoice7Total + invoice30Total).toFixed(2)}`);
+      
       processInvoice(invoice7Data, '7_days');
       processInvoice(invoice30Data, '30_days');
+      
+      // Calculate and display final totals
+      let finalTotal7Days = 0;
+      let finalTotal30Days = 0;
+      let finalTotalCommission = 0;
+      
+      Object.keys(results).forEach(company => {
+        finalTotal7Days += results[company].Total_7_days;
+        finalTotal30Days += results[company].Total_30_days;
+        finalTotalCommission += results[company].Total_comision;
+      });
+      
+      console.log('🏁 REZULTATE FINALE DUPĂ PROCESARE:');
+      console.log(`💰 Total procesat 7 zile: €${finalTotal7Days.toFixed(2)}`);
+      console.log(`💰 Total procesat 30 zile: €${finalTotal30Days.toFixed(2)}`);
+      console.log(`💰 Total procesat toate: €${(finalTotal7Days + finalTotal30Days).toFixed(2)}`);
+      console.log(`💸 Total comisioane: €${finalTotalCommission.toFixed(2)}`);
+      
+      // Check for discrepancy
+      const expectedTotal = invoice7Total + invoice30Total;
+      const actualTotal = finalTotal7Days + finalTotal30Days;
+      const discrepancy = expectedTotal - actualTotal;
+      
+      if (Math.abs(discrepancy) > 0.01) {
+        console.log('🚨 DIFERENȚĂ DETECTATĂ:');
+        console.log(`📊 Total așteptat din facturi: €${expectedTotal.toFixed(2)}`);
+        console.log(`📊 Total calculat în sistem: €${actualTotal.toFixed(2)}`);
+        console.log(`⚠️ DIFERENȚĂ: €${Math.abs(discrepancy).toFixed(2)} ${discrepancy > 0 ? '(lipsesc din sistem)' : '(în plus în sistem)'}`);
+        alert(`🚨 DIFERENȚĂ DETECTATĂ: €${Math.abs(discrepancy).toFixed(2)}\nTotal facturi: €${expectedTotal.toFixed(2)}\nTotal procesat: €${actualTotal.toFixed(2)}\nVerificați consola pentru detalii.`);
+      }
 
       setProcessedData(results);
       setSelectedWeek(processingWeek);
