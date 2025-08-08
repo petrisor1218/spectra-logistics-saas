@@ -708,6 +708,18 @@ export function useTransportData() {
           } else {
             console.log(`VRID ${vrid} - Nu s-a găsit în trip data - Căutăm în istoric...`);
             unmatchedVrids.push(vrid); // Track for historical search
+            
+            // 🔍 DEBUG: Caută în toate trip records pentru acest VRID
+            const alternativeSearch = tripData.find((trip: any) => 
+              JSON.stringify(trip).toLowerCase().includes(vrid.toLowerCase())
+            );
+            if (alternativeSearch) {
+              console.log(`🕵️ VRID ${vrid} găsit în trip data prin căutare alternativă:`, alternativeSearch);
+              const foundCompany = extractAndFindDriver(alternativeSearch['Driver']);
+              console.log(`🎯 VRID ${vrid} ar trebui să fie la: ${foundCompany}`);
+            } else {
+              console.log(`❌ VRID ${vrid} absolut negăsit în trip data`);
+            }
           }
 
           // ⚠️ DETECTARE SUME MICI - Alert pentru sume ≤10 EUR
