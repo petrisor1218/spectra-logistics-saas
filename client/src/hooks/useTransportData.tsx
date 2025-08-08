@@ -615,18 +615,9 @@ export function useTransportData() {
         setInvoice7Data(data);
         setUploadedFiles(prev => ({ ...prev, invoice7: [file.name] }));
       } else if (type === 'invoice30') {
-        // Pentru facturile de 30 de zile, adaugă la datele existente
-        if (invoice30Data && invoice30Data.length > 0) {
-          const combinedData = [...invoice30Data, ...data];
-          setInvoice30Data(combinedData);
-        } else {
-          setInvoice30Data(data);
-        }
-        // Adaugă numele fișierului la lista de fișiere încărcate
-        setUploadedFiles(prev => ({ 
-          ...prev, 
-          invoice30: [...prev.invoice30, file.name] 
-        }));
+        // Înlocuiește datele existente în loc să le acumuleze
+        setInvoice30Data(data);
+        setUploadedFiles(prev => ({ ...prev, invoice30: [file.name] }));
       }
       
     } catch (error: any) {
@@ -1378,6 +1369,11 @@ export function useTransportData() {
     setTripData(null);
     setInvoice7Data(null);
     setInvoice30Data(null);
+    // Curăță și datele procesate pentru a preveni confuzia
+    setProcessedData({});
+    setPendingMappings([]);
+    setSmallAmountAlerts([]);
+    console.log('🧹 Toate fișierele și datele procesate au fost șterse din memoria sesiunii');
   };
 
   return {
