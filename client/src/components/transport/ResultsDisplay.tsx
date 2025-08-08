@@ -24,12 +24,18 @@ export function ResultsDisplay({
   getRemainingPayment,
   selectedWeek
 }: ResultsDisplayProps) {
-  // Filter out "Unmatched" from companies list for payments view
-  const companies = Object.keys(processedData).filter(company => company !== 'Unmatched');
+  // 🚫 FILTRARE COMPLETĂ A DATELOR "Unmatched" pentru tab-ul de plăți
+  const filteredProcessedData = Object.keys(processedData)
+    .filter(company => company !== 'Unmatched' && company !== 'Pending Mapping')
+    .reduce((obj: any, company: string) => {
+      obj[company] = processedData[company];
+      return obj;
+    }, {});
   
-  // Debug log
-  console.log('ResultsDisplay - processedData:', processedData);
-  console.log('ResultsDisplay - companies (filtered):', companies);
+  // Use filtered data for companies list  
+  const companies = Object.keys(filteredProcessedData);
+  
+  // Debug cleaned up - showing only relevant companies for payments
   
   if (!processedData || Object.keys(processedData).length === 0) {
     return (
@@ -76,7 +82,7 @@ export function ResultsDisplay({
 
         <div className="space-y-4">
           {companies.map((company, index) => {
-            const data = processedData[company];
+            const data = filteredProcessedData[company];
             const totalAmount = data.Total_7_days + data.Total_30_days - data.Total_comision;
             const driversCount = Object.keys(data.VRID_details || {}).length;
             const commissionRate = company === "Fast Express" ? "2%" : "4%";
