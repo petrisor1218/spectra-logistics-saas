@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ArrowLeft, Clock, Crown, Star, Shield } from 'lucide-react';
+import { Check, ArrowLeft, Clock, Crown, Star, Shield, Building } from 'lucide-react';
+import { Label } from "@/components/ui/label";
 import { Link } from 'wouter';
 import { apiRequest } from "@/lib/queryClient";
 
@@ -55,10 +56,42 @@ function SubscribeForm({ planId }: { planId: string }) {
   const elements = useElements();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<'info' | 'payment'>('info');
+  
+  // Tenant information state
+  const [tenantInfo, setTenantInfo] = useState({
+    companyName: '',
+    firstName: '',
+    lastName: '',
+    contactEmail: '',
+    contactPhone: '',
+    tenantName: ''
+  });
 
   const plan = planDetails[planId as keyof typeof planDetails];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle tenant info form submission
+  const handleInfoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!tenantInfo.companyName || !tenantInfo.contactEmail || !tenantInfo.firstName || !tenantInfo.lastName) {
+      toast({
+        title: "Date incomplete",
+        description: "Completați toate câmpurile obligatorii.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Set tenant name if not provided
+    if (!tenantInfo.tenantName) {
+      setTenantInfo(prev => ({ ...prev, tenantName: prev.companyName }));
+    }
+    
+    setStep('payment');
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!stripe || !elements || !plan) {
@@ -68,10 +101,28 @@ function SubscribeForm({ planId }: { planId: string }) {
     setIsLoading(true);
 
     try {
-      // Pentru Setup Intent (trial), folosim confirmSetup în loc de confirmPayment
+      // Create subscription with tenant info
+      const subscriptionResponse = await apiRequest('/api/create-subscription', {
+        method: 'POST',
+        body: JSON.stringify({
+          planId,
+          trialDays: plan.trialDays,
+          // Include tenant information
+          ...tenantInfo
+        }),
+      });
+
+      const subscriptionData = await subscriptionResponse.json();
+      
+      if (!subscriptionResponse.ok) {
+        throw new Error(subscriptionData.message || 'Subscription failed');
+      }
+
+      // Now confirm the setup intent
       const { error, setupIntent } = await stripe.confirmSetup({
         elements,
         redirect: 'if_required',
+        clientSecret: subscriptionData.clientSecret
       });
 
       if (error) {
@@ -182,9 +233,14 @@ function SubscribeForm({ planId }: { planId: string }) {
       {/* Payment Form */}
       <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
         <CardHeader>
-          <CardTitle>Activează perioada de probă</CardTitle>
+          <CardTitle>
+            {step === 'info' ? 'Date de contact și companie' : 'Activează perioada de probă'}
+          </CardTitle>
           <p className="text-gray-300">
-            🎁 Fără plată acum - facturarea începe după {plan.trialDays} zile
+            {step === 'info' 
+              ? 'Completează datele pentru crearea tenant-ului'
+              : '🎁 Fără plată acum - facturarea începe după ' + plan.trialDays + ' zile'
+            }
           </p>
         </CardHeader>
         <CardContent>
@@ -197,41 +253,143 @@ function SubscribeForm({ planId }: { planId: string }) {
               <p><strong>Data:</strong> orice dată viitoare (ex: 12/26)</p>
             </div>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <PaymentElement 
-              options={{
-                layout: "tabs"
-              }}
-            />
-            
-            <div className="flex gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 border-white/30 text-white hover:bg-white/10"
-                asChild
-              >
-                <Link href="/pricing">
+          {step === 'info' ? (
+            <form onSubmit={handleInfoSubmit} className="space-y-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Building className="w-5 h-5 text-blue-400" />
+                Informații despre companie
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="companyName" className="text-gray-200">Nume Companie *</Label>
+                  <Input
+                    id="companyName"
+                    value={tenantInfo.companyName}
+                    onChange={(e) => setTenantInfo(prev => ({ ...prev, companyName: e.target.value }))}
+                    placeholder="ex: Transport Express SRL"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="tenantName" className="text-gray-200">Nume Tenant</Label>
+                  <Input
+                    id="tenantName"
+                    value={tenantInfo.tenantName}
+                    onChange={(e) => setTenantInfo(prev => ({ ...prev, tenantName: e.target.value }))}
+                    placeholder="ex: TransportExpress"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Dacă nu completezi, se va folosi numele companiei</p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="firstName" className="text-gray-200">Prenume *</Label>
+                  <Input
+                    id="firstName"
+                    value={tenantInfo.firstName}
+                    onChange={(e) => setTenantInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                    placeholder="Prenumele tău"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="lastName" className="text-gray-200">Nume *</Label>
+                  <Input
+                    id="lastName"
+                    value={tenantInfo.lastName}
+                    onChange={(e) => setTenantInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                    placeholder="Numele tău"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="contactEmail" className="text-gray-200">Email Contact *</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={tenantInfo.contactEmail}
+                    onChange={(e) => setTenantInfo(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    placeholder="contact@companie.ro"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="contactPhone" className="text-gray-200">Telefon Contact</Label>
+                  <Input
+                    id="contactPhone"
+                    value={tenantInfo.contactPhone}
+                    onChange={(e) => setTenantInfo(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    placeholder="+40123456789"
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 border-white/30 text-white hover:bg-white/10"
+                  asChild
+                >
+                  <Link href="/pricing">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Înapoi
+                  </Link>
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+                >
+                  Continuă la plată
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handlePaymentSubmit} className="space-y-6">
+              <PaymentElement 
+                options={{
+                  layout: "tabs"
+                }}
+              />
+              
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 border-white/30 text-white hover:bg-white/10"
+                  onClick={() => setStep('info')}
+                >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Înapoi
-                </Link>
-              </Button>
-              <Button
-                type="submit"
-                disabled={!stripe || !elements || isLoading}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Se procesează...
-                  </>
-                ) : (
-                  `🎁 Activează ${plan.trialDays} zile gratuite`
-                )}
-              </Button>
-            </div>
-          </form>
+                  Înapoi la date
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!stripe || !elements || isLoading}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Se procesează...
+                    </>
+                  ) : (
+                    `🎁 Activează ${plan.trialDays} zile gratuite`
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>

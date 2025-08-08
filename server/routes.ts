@@ -1319,7 +1319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Stripe subscription routes
+  // Stripe subscription routes WITH AUTOMATIC TENANT CREATION
   app.post("/api/create-subscription", async (req, res) => {
     try {
       const keyStart = process.env.STRIPE_SECRET_KEY?.substring(0, 7);
@@ -1332,14 +1332,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { planId, trialDays = 3 } = req.body;
+      const { 
+        planId, 
+        trialDays = 3,
+        // Tenant information
+        companyName,
+        contactEmail,
+        contactPhone,
+        firstName,
+        lastName,
+        tenantName
+      } = req.body;
       
-      // Creează customer pentru user-ul curent (dacă nu există)
+      // Create Stripe customer with tenant information
       const customer = await stripe.customers.create({
-        email: `test@example.com`, // În producție, va fi email-ul real al user-ului
+        email: contactEmail || 'temp@example.com',
+        name: `${firstName || ''} ${lastName || ''}`.trim(),
         metadata: {
           planId,
-          userId: 'demo-user'
+          // Tenant creation data for webhook
+          companyName: companyName || '',
+          tenantName: tenantName || companyName || '',
+          contactPhone: contactPhone || '',
+          firstName: firstName || '',
+          lastName: lastName || '',
+          tenantCreation: 'pending',
+          autoCreateTenant: 'true'
         }
       });
 
@@ -1356,11 +1374,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      console.log(`✅ Created trial setup for ${trialDays} days - no charge during trial`);
+      console.log(`✅ Created trial setup for ${trialDays} days for ${companyName || 'Unknown Company'} - tenant will be auto-created after payment`);
       res.json({ 
         clientSecret: setupIntent.client_secret,
         customerId: customer.id,
-        trialDays 
+        trialDays,
+        message: 'După confirmarea plății, tenant-ul va fi creat automat și veți primi credențialele pe email!'
       });
     } catch (error: any) {
       console.error("Error creating subscription:", error);
@@ -1371,35 +1390,230 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Webhook endpoint for Stripe events
+  // Advanced Webhook for AUTOMATIC TENANT CREATION
   app.post("/api/stripe-webhook", async (req, res) => {
     try {
-      // Handle Stripe webhook events for subscription updates
       const event = req.body;
+      console.log(`🎣 Webhook primit: ${event.type}`);
       
       switch (event.type) {
+        case 'setup_intent.succeeded':
+          // 🎆 PAYMENT SUCCESSFUL - CREATE TENANT AUTOMATICALLY!
+          await handleTenantCreationAfterPayment(event.data.object);
+          break;
         case 'payment_intent.succeeded':
           // Handle successful subscription payment
-          console.log('Subscription payment succeeded:', event.data.object);
+          console.log('💰 Subscription payment succeeded:', event.data.object.id);
+          await handleTenantCreationAfterPayment(event.data.object);
           break;
         case 'customer.subscription.created':
           // Handle new subscription
-          console.log('New subscription created:', event.data.object);
+          console.log('🎆 New subscription created:', event.data.object.id);
           break;
         case 'customer.subscription.updated':
           // Handle subscription updates
-          console.log('Subscription updated:', event.data.object);
+          console.log('⚙️ Subscription updated:', event.data.object.id);
           break;
         default:
-          console.log('Unhandled event type:', event.type);
+          console.log('❔ Unhandled event type:', event.type);
       }
 
       res.json({ received: true });
     } catch (error) {
-      console.error("Webhook error:", error);
+      console.error("🔥 Webhook error:", error);
       res.status(400).json({ error: "Webhook failed" });
     }
   });
+  
+  // 🎩 MAGIC FUNCTION: Auto-create tenant after successful payment
+  async function handleTenantCreationAfterPayment(paymentObject: any) {
+    try {
+      if (!stripe) return;
+      
+      console.log('🎩 Starting automatic tenant creation...');
+      
+      // Get customer info from Stripe
+      const customer = await stripe.customers.retrieve(paymentObject.customer);
+      
+      if (customer.deleted || !customer.metadata) {
+        console.log('⚠️ Customer not found or no metadata');
+        return;
+      }
+      
+      const metadata = customer.metadata;
+      
+      // Check if this customer needs tenant creation
+      if (metadata.autoCreateTenant !== 'true' || metadata.tenantCreation !== 'pending') {
+        console.log('🙃 No tenant creation needed for this customer');
+        return;
+      }
+      
+      // Extract tenant data from metadata
+      const tenantName = metadata.tenantName || metadata.companyName || 'New Tenant';
+      const companyName = metadata.companyName || '';
+      const contactEmail = (customer as any).email || '';
+      const contactPhone = metadata.contactPhone || '';
+      const firstName = metadata.firstName || '';
+      const lastName = metadata.lastName || '';
+      
+      console.log(`🏢 Creating tenant: ${tenantName}`);
+      
+      // Create the tenant
+      const [newTenant] = await db
+        .insert(tenants)
+        .values({
+          name: tenantName,
+          description: `Tenant creat automat după plata Stripe pentru ${companyName}`,
+          status: 'active',
+          companyName,
+          contactEmail,
+          contactPhone,
+          subscriptionPlan: 'professional'
+        })
+        .returning();
+      
+      // Generate secure credentials
+      const adminUsername = `admin_${newTenant.id}`;
+      const adminPassword = generateSecurePassword();
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      
+      // Create admin user
+      const adminUser = await storage.createUser({
+        username: adminUsername,
+        password: hashedPassword,
+        email: contactEmail,
+        firstName,
+        lastName,
+        role: 'admin',
+        tenantId: newTenant.id,
+        companyName,
+        subscriptionStatus: 'active'
+      });
+      
+      // Initialize order sequence
+      await tenantStorage.initializeOrderSequence(newTenant.id);
+      
+      // Update Stripe customer metadata
+      await stripe.customers.update(paymentObject.customer, {
+        metadata: {
+          ...metadata,
+          tenantCreation: 'completed',
+          tenantId: newTenant.id.toString(),
+          adminUsername
+        }
+      });
+      
+      console.log(`✅ Tenant creat cu succes: ${tenantName} (ID: ${newTenant.id})`);
+      console.log(`👤 Admin user: ${adminUsername}`);
+      
+      // 📧 Send welcome email with credentials
+      await sendWelcomeEmailWithCredentials({
+        tenantName,
+        companyName,
+        contactEmail,
+        adminUsername,
+        adminPassword,
+        tenantId: newTenant.id,
+        firstName,
+        lastName
+      });
+      
+    } catch (error) {
+      console.error('🔥 Error creating tenant after payment:', error);
+    }
+  }
+  
+  // 🔑 Generate secure password
+  function generateSecurePassword(length = 12) {
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+  }
+  
+  // 📧 Send welcome email with login credentials
+  async function sendWelcomeEmailWithCredentials(tenantData: any) {
+    try {
+      const { 
+        tenantName, 
+        companyName, 
+        contactEmail, 
+        adminUsername, 
+        adminPassword, 
+        tenantId,
+        firstName,
+        lastName 
+      } = tenantData;
+      
+      const emailService = new FreeEmailService();
+      
+      const subject = `🎆 Bun venit la ${tenantName} - Credențialele tale de acces`;
+      
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px;">
+          <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+            <h1 style="color: #333; text-align: center; margin-bottom: 30px;">
+              🎆 Bun venit în Transport Management System!
+            </h1>
+            
+            <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+              <h2 style="color: #667eea; margin-top: 0;">🏢 Tenant-ul tău a fost creat!</h2>
+              <p><strong>Numele tenant-ului:</strong> ${tenantName}</p>
+              ${companyName ? `<p><strong>Compania:</strong> ${companyName}</p>` : ''}
+              <p><strong>ID Tenant:</strong> #${tenantId}</p>
+            </div>
+            
+            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+              <h2 style="color: #28a745; margin-top: 0;">🔑 Credențialele tale de acces</h2>
+              <p><strong>Username:</strong> <code style="background: #f1f1f1; padding: 4px 8px; border-radius: 4px; font-size: 14px;">${adminUsername}</code></p>
+              <p><strong>Parola:</strong> <code style="background: #f1f1f1; padding: 4px 8px; border-radius: 4px; font-size: 14px;">${adminPassword}</code></p>
+              <p style="color: #d32f2f; font-size: 14px; margin-top: 15px;">
+                ⚠️ <strong>Important:</strong> Salvează aceste credențiale într-un loc sigur și schimbă parola la prima conectare!
+              </p>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+              <h2 style="color: #856404; margin-top: 0;">🚀 Cum te conectezi</h2>
+              <ol style="color: #856404; line-height: 1.6;">
+                <li>Accsesează pagina de login pentru tenanți</li>
+                <li>Selectează tenant-ul tău: <strong>${tenantName}</strong></li>
+                <li>Introduceți username-ul și parola de mai sus</li>
+                <li>Startă să gestionezi transporturile tale!</li>
+              </ol>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'https://your-domain.com'}/tenant-login" 
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                🔐 Conectează-te Acum
+              </a>
+            </div>
+            
+            <div style="border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #666; font-size: 14px;">
+              <p>Ai întrebări? Contactează-ne pe support@transport-system.com</p>
+              <p style="margin-top: 15px;">
+                Cu drag,<br>
+                <strong>Echipa Transport Management System</strong> 🚚
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      await emailService.sendEmail(
+        contactEmail,
+        subject,
+        htmlContent
+      );
+      
+      console.log(`📧 Welcome email sent to ${contactEmail} pentru ${tenantName}`);
+      
+    } catch (error) {
+      console.error('📧 Error sending welcome email:', error);
+    }
+  }
 
   // Backup routes
   app.post('/api/backup', async (req, res) => {
