@@ -272,7 +272,9 @@ export function SavedDataCalendar({
                     </h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {Object.entries(week.processedData).map(([company, data]: [string, any]) => {
+                      {Object.entries(week.processedData)
+                        .filter(([company]) => company !== 'Unmatched' && company !== 'Pending Mapping')
+                        .map(([company, data]: [string, any]) => {
                         const total = data.Total_7_days + data.Total_30_days - data.Total_comision;
                         
                         return (
