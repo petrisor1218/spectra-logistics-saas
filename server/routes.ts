@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { tenantStorage } from "./storage-tenant";
 import { tenantMiddleware, requireTenantAuth } from "./middleware/tenant";
-import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema } from "@shared/schema";
+import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema, insertTenantSchema, tenants } from "@shared/schema";
+import { eq } from 'drizzle-orm';
+import { db } from './db';
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
 import connectPg from 'connect-pg-simple';
@@ -1488,26 +1490,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Tenant creation endpoint (for admin use)
-  app.post('/api/admin/tenants', async (req, res) => {
+  // ===== COMPLETE TENANT MANAGEMENT ENDPOINTS =====
+  
+  // List all tenants
+  app.get('/api/admin/tenants', async (req, res) => {
     try {
-      const { tenantId, name } = req.body;
+      const allTenants = await db.select().from(tenants);
+      res.json(allTenants);
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      res.status(500).json({ error: 'Failed to fetch tenants' });
+    }
+  });
+  
+  // Get specific tenant details
+  app.get('/api/admin/tenants/:id', async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
       
-      if (!tenantId || !name) {
-        return res.status(400).json({ error: 'Tenant ID and name are required' });
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
       }
       
+      res.json(tenant);
+    } catch (error) {
+      console.error('Error fetching tenant:', error);
+      res.status(500).json({ error: 'Failed to fetch tenant' });
+    }
+  });
+
+  // Create new tenant
+  app.post('/api/admin/tenants', async (req, res) => {
+    try {
+      const validatedData = insertTenantSchema.parse(req.body);
+      
+      const [newTenant] = await db
+        .insert(tenants)
+        .values(validatedData)
+        .returning();
+      
       // Initialize order sequence for new tenant
-      await tenantStorage.initializeOrderSequence(tenantId);
+      await tenantStorage.initializeOrderSequence(newTenant.id);
+      
+      console.log(`✅ New tenant created: ${newTenant.name} (ID: ${newTenant.id})`);
       
       res.json({
         success: true,
-        message: `Tenant ${tenantId} (${name}) created successfully`,
-        tenantId,
-        name
+        message: `Tenant "${newTenant.name}" created successfully`,
+        tenant: newTenant
       });
     } catch (error) {
+      console.error('Error creating tenant:', error);
       res.status(500).json({ error: 'Failed to create tenant' });
+    }
+  });
+  
+  // Update tenant
+  app.put('/api/admin/tenants/:id', async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      const updateData = { ...req.body, updatedAt: new Date() };
+      
+      const [updatedTenant] = await db
+        .update(tenants)
+        .set(updateData)
+        .where(eq(tenants.id, tenantId))
+        .returning();
+        
+      if (!updatedTenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      
+      console.log(`✅ Tenant updated: ${updatedTenant.name} (ID: ${tenantId})`);
+      
+      res.json({
+        success: true,
+        message: `Tenant "${updatedTenant.name}" updated successfully`,
+        tenant: updatedTenant
+      });
+    } catch (error) {
+      console.error('Error updating tenant:', error);
+      res.status(500).json({ error: 'Failed to update tenant' });
+    }
+  });
+  
+  // Delete tenant (with safety checks)
+  app.delete('/api/admin/tenants/:id', async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      
+      if (tenantId === 1) {
+        return res.status(400).json({ error: 'Cannot delete primary tenant (ID: 1)' });
+      }
+      
+      // Get tenant info before deleting
+      const [tenantToDelete] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+      
+      if (!tenantToDelete) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      
+      // Delete the tenant (note: in production, you might want to soft delete)
+      await db.delete(tenants).where(eq(tenants.id, tenantId));
+      
+      console.log(`🗑️ Tenant deleted: ${tenantToDelete.name} (ID: ${tenantId})`);
+      
+      res.json({
+        success: true,
+        message: `Tenant "${tenantToDelete.name}" deleted successfully`
+      });
+    } catch (error) {
+      console.error('Error deleting tenant:', error);
+      res.status(500).json({ error: 'Failed to delete tenant' });
+    }
+  });
+  
+  // Tenant statistics endpoint
+  app.get('/api/admin/tenant-stats', async (req, res) => {
+    try {
+      const allTenants = await db.select().from(tenants);
+      const activeTenants = allTenants.filter(t => t.status === 'active');
+      const inactiveTenants = allTenants.filter(t => t.status !== 'active');
+      
+      res.json({
+        totalTenants: allTenants.length,
+        activeTenants: activeTenants.length,
+        inactiveTenants: inactiveTenants.length,
+        tenants: allTenants
+      });
+    } catch (error) {
+      console.error('Error fetching tenant stats:', error);
+      res.status(500).json({ error: 'Failed to fetch tenant statistics' });
     }
   });
 

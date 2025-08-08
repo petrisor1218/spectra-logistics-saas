@@ -14,6 +14,8 @@ import SubscriptionSuccess from "@/pages/subscription-success";
 import AdminDashboard from "@/pages/admin-dashboard";
 import Analytics from "@/pages/analytics";
 import Backup from "@/pages/backup";
+import TenantManagement from "@/pages/tenant-management";
+import TenantLogin from "@/pages/tenant-login";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -47,6 +49,9 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/tenants" component={TenantManagement} />
+      <Route path="/tenant-login" component={TenantLogin} />
+      <Route path="/tenant/:tenantId/dashboard" component={Home} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/backup" component={Backup} />
       <Route path="/pricing" component={Pricing} />

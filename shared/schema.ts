@@ -238,3 +238,26 @@ export type OrderSequence = typeof orderSequence.$inferSelect;
 
 export type InsertCompanyBalance = z.infer<typeof insertCompanyBalanceSchema>;
 export type CompanyBalance = typeof companyBalances.$inferSelect;
+
+// Tenants table for multi-tenant management
+export const tenants = pgTable("tenants", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  status: varchar("status", { length: 20 }).default("active"), // active, inactive, suspended
+  contactEmail: varchar("contact_email", { length: 255 }),
+  contactPhone: varchar("contact_phone", { length: 50 }),
+  companyName: varchar("company_name", { length: 200 }),
+  subscriptionPlan: varchar("subscription_plan", { length: 50 }).default("professional"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTenantSchema = createInsertSchema(tenants).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type Tenant = typeof tenants.$inferSelect;

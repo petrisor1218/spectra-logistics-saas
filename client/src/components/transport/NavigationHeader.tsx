@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Truck, Bell, LogOut, User, Shield, BarChart3, Database } from "lucide-react";
+import { Truck, Bell, LogOut, User, Shield, BarChart3, Database, Building } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,27 @@ export function NavigationHeader() {
             </Button>
 
             <div className="w-px h-6 bg-white/20"></div>
+
+            {/* Tenant Login Button */}
+            <Button
+              onClick={() => setLocation('/tenant-login')}
+              className="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600"
+              size="sm"
+              variant="outline"
+            >
+              <Building className="w-4 h-4 mr-2" />
+              Login Tenant
+            </Button>
+
+            {/* Tenant Management Button */}
+            <Button
+              onClick={() => setLocation('/tenants')}
+              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+              size="sm"
+            >
+              <Building className="w-4 h-4 mr-2" />
+              Gestionare
+            </Button>
 
             {/* Admin Dashboard Button */}
             <Button
