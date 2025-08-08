@@ -700,7 +700,7 @@ export function useTransportData() {
             if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
             } else if (foundCompany === 'Pending') {
-              console.log(`VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - verificați mapările pendente`);
+              console.log(`VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - verificați mapările pendinte`);
               company = 'Pending Mapping'; // Special category for pending drivers
             } else {
               console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
@@ -731,8 +731,16 @@ export function useTransportData() {
             };
           }
 
-          const commissionRate = company === "Fast Express" ? 0.02 : 0.04;
-          const commission = amount * commissionRate;
+          // 🚫 VRID-urile Unmatched NU PRIMESC COMISION!
+          // Comisionul se calculează doar când sunt asignate la o companie reală
+          let commission = 0;
+          if (company !== 'Unmatched' && company !== 'Pending Mapping') {
+            const commissionRate = company === "Fast Express" ? 0.02 : 0.04;
+            commission = amount * commissionRate;
+            console.log(`💰 VRID ${vrid}: €${amount.toFixed(2)} → ${company} (comision: €${commission.toFixed(2)} la ${(commissionRate*100)}%)`);
+          } else {
+            console.log(`🚫 VRID ${vrid}: €${amount.toFixed(2)} → ${company} (FĂRĂ COMISION - se va calcula la asignare)`);
+          }
 
           if (invoiceType === '7_days') {
             results[company].Total_7_days += amount;
@@ -887,17 +895,31 @@ export function useTransportData() {
                         };
                       }
                       
-                      // Move VRID details
-                      results[foundCompany].VRID_details[vrid] = vridDetails;
-                      results[foundCompany].Total_7_days += vridDetails['7_days'] || 0;
-                      results[foundCompany].Total_30_days += vridDetails['30_days'] || 0;
-                      results[foundCompany].Total_comision += vridDetails.commission || 0;
+                      // 🔄 RECALCULARE COMISION CORECT pentru compania reală!
+                      const totalAmount = (vridDetails['7_days'] || 0) + (vridDetails['30_days'] || 0);
+                      const correctCommissionRate = foundCompany === "Fast Express" ? 0.02 : 0.04;
+                      const correctCommission = totalAmount * correctCommissionRate;
                       
-                      // Remove from Unmatched
+                      console.log(`💰 Recalculez comision pentru ${vrid}: €${totalAmount.toFixed(2)} x ${(correctCommissionRate*100)}% = €${correctCommission.toFixed(2)} (${foundCompany})`);
+                      
+                      // Create new VRID details with correct commission
+                      const correctedVridDetails = {
+                        '7_days': vridDetails['7_days'] || 0,
+                        '30_days': vridDetails['30_days'] || 0,
+                        'commission': correctCommission  // 🎯 Comision recalculat corect!
+                      };
+                      
+                      // Move VRID details with corrected commission
+                      results[foundCompany].VRID_details[vrid] = correctedVridDetails;
+                      results[foundCompany].Total_7_days += correctedVridDetails['7_days'];
+                      results[foundCompany].Total_30_days += correctedVridDetails['30_days'];
+                      results[foundCompany].Total_comision += correctedVridDetails.commission;
+                      
+                      // Remove from Unmatched (care avea comision 0)
                       delete results.Unmatched.VRID_details[vrid];
                       results.Unmatched.Total_7_days -= vridDetails['7_days'] || 0;
                       results.Unmatched.Total_30_days -= vridDetails['30_days'] || 0;
-                      results.Unmatched.Total_comision -= vridDetails.commission || 0;
+                      results.Unmatched.Total_comision -= vridDetails.commission || 0;  // Ar trebui să fie 0 oricum
                       
                       movedVrids++;
                     }
