@@ -12,6 +12,7 @@ import Pricing from "@/pages/pricing";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminTenants from "@/pages/AdminTenants";
 import Analytics from "@/pages/analytics";
 import Backup from "@/pages/backup";
 import TenantManagement from "@/pages/tenant-management";
@@ -36,6 +37,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/tenants" component={AdminTenants} />
         <Route path="/tenant-login" component={TenantLogin} />
         <Route path="/register-tenant" component={TenantRegistration} />
         <Route path="/pricing" component={Pricing} />
@@ -52,6 +54,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/tenants" component={AdminTenants} />
       <Route path="/tenants" component={TenantManagement} />
       <Route path="/tenant-login" component={TenantLogin} />
       <Route path="/tenant/:tenantId/dashboard" component={Home} />

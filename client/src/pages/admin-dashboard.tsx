@@ -24,8 +24,10 @@ import {
   Plus,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Building
 } from 'lucide-react';
+import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 
 interface User {
@@ -252,6 +254,12 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <Link href="/admin/tenants">
+                <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
+                  <Building className="w-4 h-4 mr-2" />
+                  Gestionează Tenant-uri
+                </Button>
+              </Link>
               <Button 
                 onClick={handleAddSubscriber}
                 className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"

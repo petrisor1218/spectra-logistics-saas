@@ -13,13 +13,14 @@ import Stripe from "stripe";
 import { EmailService } from "./emailService";
 import { FreeEmailService } from './freeEmailService';
 import { getSecondaryUsers, getSecondaryProjects, getSecondaryTasks, getSecondaryStats } from './secondary-db-routes';
+import { SubscriptionManager } from './subscription-manager';
 
 let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
   console.log('STRIPE_SECRET_KEY starts with:', process.env.STRIPE_SECRET_KEY.substring(0, 10));
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2023-10-16",
+    apiVersion: "2024-06-20",
   });
 } else {
   console.warn('STRIPE_SECRET_KEY not found - Stripe functionality will be disabled');
@@ -1867,6 +1868,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ==================== ADMIN TENANT MANAGEMENT ====================
+  
+  // Creează tenant nou (pentru admin)
+  app.post('/api/admin/create-tenant', async (req, res) => {
+    try {
+      const { companyName, firstName, lastName, contactEmail, contactPhone } = req.body;
+      
+      if (!companyName || !firstName || !lastName || !contactEmail) {
+        return res.status(400).json({ error: 'Toate câmpurile obligatorii trebuie completate' });
+      }
+
+      console.log(`🏗️ Creare tenant nou: ${companyName} (${contactEmail})`);
+      
+      const result = await SubscriptionManager.createTenant({
+        companyName,
+        firstName,
+        lastName,
+        contactEmail,
+        contactPhone: contactPhone || ''
+      });
+
+      // Notifică admin prin email despre noul tenant
+      await FreeEmailService.sendEmail(
+        'admin@transportpro.com', // Înlocuiește cu email-ul tău
+        `🎉 Tenant nou creat: ${companyName}`,
+        `
+        <h2>Tenant nou creat cu succes!</h2>
+        <p><strong>Companie:</strong> ${companyName}</p>
+        <p><strong>Contact:</strong> ${firstName} ${lastName}</p>
+        <p><strong>Email:</strong> ${contactEmail}</p>
+        <p><strong>Telefon:</strong> ${contactPhone}</p>
+        <p><strong>Username generat:</strong> ${result.credentials.username}</p>
+        <p><strong>Tenant ID:</strong> ${result.tenant.id}</p>
+        <p>Credențialele au fost trimise automat clientului la ${contactEmail}</p>
+        `
+      );
+
+      console.log(`✅ Tenant ${companyName} creat cu succes (ID: ${result.tenant.id})`);
+
+      res.json({
+        success: true,
+        message: 'Tenant creat cu succes și credențiale trimise',
+        tenant: result.tenant,
+        credentials: result.credentials
+      });
+
+    } catch (error: any) {
+      console.error('❌ Eroare la crearea tenant-ului:', error);
+      res.status(500).json({ error: error.message || 'Nu s-a putut crea tenant-ul' });
+    }
+  });
+
+  // Lista tenant-urilor (pentru admin)
+  app.get('/api/admin/tenants', async (req, res) => {
+    try {
+      const tenantsList = await db.select({
+        id: tenants.id,
+        name: tenants.name,
+        adminEmail: tenants.adminEmail,
+        contactPerson: tenants.contactPerson,
+        contactPhone: tenants.contactPhone,
+        status: tenants.status,
+        subscriptionId: tenants.subscriptionId,
+        createdAt: tenants.createdAt
+      }).from(tenants).orderBy(tenants.id);
+
+      // Adaugă username-ul adminului pentru fiecare tenant
+      const tenantsWithAdmin = await Promise.all(
+        tenantsList.map(async (tenant) => {
+          const [adminUser] = await db.select({ username: users.username })
+            .from(users)
+            .where(eq(users.tenantId, tenant.id))
+            .where(eq(users.role, 'admin'))
+            .limit(1);
+
+          return {
+            ...tenant,
+            adminUsername: adminUser?.username
+          };
+        })
+      );
+
+      res.json(tenantsWithAdmin);
+    } catch (error: any) {
+      console.error('❌ Eroare la obținerea tenant-urilor:', error);
+      res.status(500).json({ error: 'Nu s-au putut obține tenant-urile' });
+    }
+  });
+
+  // Webhook Stripe pentru notificare abonamente
+  app.post('/api/stripe/webhook', async (req, res) => {
+    try {
+      const event = req.body;
+
+      console.log('📧 Webhook Stripe primit:', event.type);
+
+      switch (event.type) {
+        case 'invoice.payment_succeeded':
+          const subscription = event.data.object;
+          console.log(`💰 Plată reușită pentru subscription: ${subscription.subscription}`);
+          
+          // Notifică admin prin email
+          await FreeEmailService.sendEmail(
+            'admin@transportpro.com', // Înlocuiește cu email-ul tău
+            '💰 Plată nouă primită - Transport Pro',
+            `
+            <h2>Plată nouă primită!</h2>
+            <p><strong>Subscription ID:</strong> ${subscription.subscription}</p>
+            <p><strong>Sumă:</strong> ${subscription.amount_paid / 100} ${subscription.currency.toUpperCase()}</p>
+            <p><strong>Email client:</strong> ${subscription.customer_email}</p>
+            <p><strong>Status:</strong> ${subscription.status}</p>
+            <p>Te rog să creezi tenant-ul pentru acest client în panoul de administrare.</p>
+            <a href="${process.env.BASE_URL || 'http://localhost:5000'}/admin/tenants">Accesează panoul admin</a>
+            `
+          );
+          break;
+
+        case 'customer.subscription.created':
+          console.log(`🎉 Abonament nou creat: ${event.data.object.id}`);
+          break;
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('❌ Eroare webhook Stripe:', error);
+      res.status(500).json({ error: 'Webhook error' });
+    }
+  });
+
   // Tenant logout
   app.post('/api/tenant/:tenantId/logout', async (req, res) => {
     try {
