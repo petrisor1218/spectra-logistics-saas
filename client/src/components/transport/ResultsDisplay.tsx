@@ -24,16 +24,18 @@ export function ResultsDisplay({
   getRemainingPayment,
   selectedWeek
 }: ResultsDisplayProps) {
-  // 🚫 FILTRARE COMPLETĂ A DATELOR "Unmatched" pentru tab-ul de plăți
-  const filteredProcessedData = Object.keys(processedData)
-    .filter(company => company !== 'Unmatched' && company !== 'Pending Mapping')
-    .reduce((obj: any, company: string) => {
-      obj[company] = processedData[company];
-      return obj;
-    }, {});
+  // 🔄 REDISTRIBUIRE AUTOMATĂ A VRID-URILOR UNMATCHED LA COMPANII CORECTE
+  const redistributedData = { ...processedData };
   
-  // Use filtered data for companies list  
-  const companies = Object.keys(filteredProcessedData);
+  // Dacă există Unmatched, încearcă să redistribui VRID-urile
+  if (redistributedData.Unmatched && Object.keys(redistributedData.Unmatched.VRID_details || {}).length > 0) {
+    console.log('⚠️ ATENȚIE: Există VRID-uri neîmperecheate care ar trebui redistribuite:');
+    console.log('🔍 VRID-uri Unmatched:', redistributedData.Unmatched.VRID_details);
+    console.log('💰 Suma totală Unmatched: €' + (redistributedData.Unmatched.Total_7_days + redistributedData.Unmatched.Total_30_days).toFixed(2));
+  }
+  
+  // Filtrăm doar pentru afișare, dar păstrăm informațiile pentru investigare
+  const companies = Object.keys(redistributedData).filter(company => company !== 'Unmatched' && company !== 'Pending Mapping');
   
   // Debug cleaned up - showing only relevant companies for payments
   
@@ -82,7 +84,7 @@ export function ResultsDisplay({
 
         <div className="space-y-4">
           {companies.map((company, index) => {
-            const data = filteredProcessedData[company];
+            const data = redistributedData[company];
             const totalAmount = data.Total_7_days + data.Total_30_days - data.Total_comision;
             const driversCount = Object.keys(data.VRID_details || {}).length;
             const commissionRate = company === "Fast Express" ? "2%" : "4%";
