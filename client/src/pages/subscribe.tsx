@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ArrowLeft, Clock, Crown, Star, Shield, Building } from 'lucide-react';
+import { Check, ArrowLeft, ArrowRight, Clock, Crown, Star, Shield, Building } from 'lucide-react';
 import { Label } from "@/components/ui/label";
 import { Link } from 'wouter';
 import { apiRequest } from "@/lib/queryClient";
