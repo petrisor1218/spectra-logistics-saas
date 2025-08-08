@@ -24,11 +24,12 @@ export function ResultsDisplay({
   getRemainingPayment,
   selectedWeek
 }: ResultsDisplayProps) {
-  const companies = Object.keys(processedData);
+  // Filter out "Unmatched" from companies list for payments view
+  const companies = Object.keys(processedData).filter(company => company !== 'Unmatched');
   
   // Debug log
   console.log('ResultsDisplay - processedData:', processedData);
-  console.log('ResultsDisplay - companies:', companies);
+  console.log('ResultsDisplay - companies (filtered):', companies);
   
   if (!processedData || Object.keys(processedData).length === 0) {
     return (
