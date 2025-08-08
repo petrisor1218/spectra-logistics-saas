@@ -19,7 +19,6 @@ import { PendingDriverMappings } from "@/components/processing/PendingDriverMapp
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import PaymentHistoryView from "@/components/payment/PaymentHistoryView";
 import SmallAmountAlertsModal from "@/components/transport/SmallAmountAlertsModal";
-import { TruckHero } from "@/components/transport/TruckHero";
 import { TruckEmptyState } from "@/components/transport/TruckEmptyState";
 import { TruckBackground } from "@/components/transport/TruckBackground";
 import { useTransportData } from "@/hooks/useTransportData";
@@ -125,9 +124,6 @@ export default function Home() {
       
       <main className="pt-24 pb-8">
         <div className="container mx-auto px-6">
-          {/* Hero Section with Truck Graphics */}
-          <TruckHero />
-          
           {/* Status Overview Cards */}
           <StatusCards 
             processedData={processedData}
