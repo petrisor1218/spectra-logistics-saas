@@ -70,6 +70,7 @@ export interface IStorage {
   // Payment history methods
   getPaymentHistory(paymentId?: number): Promise<PaymentHistoryRecord[]>;
   createPaymentHistoryRecord(record: InsertPaymentHistory): Promise<PaymentHistoryRecord>;
+  clearPaymentHistoryReferences(paymentId: number): Promise<void>;
 
   // Transport orders
   createTransportOrder(order: InsertTransportOrder): Promise<TransportOrder>;
@@ -314,6 +315,18 @@ export class DatabaseStorage implements IStorage {
       .values(insertRecord)
       .returning();
     return record;
+  }
+
+  async clearPaymentHistoryReferences(paymentId: number): Promise<void> {
+    console.log(`🧹 Clearing payment history references for payment ${paymentId}`);
+    
+    // Update all existing payment_history records for this payment to have null paymentId
+    await db
+      .update(paymentHistory)
+      .set({ paymentId: null })
+      .where(eq(paymentHistory.paymentId, paymentId));
+      
+    console.log(`✅ Payment history references cleared for payment ${paymentId}`);
   }
 
   // Transport orders methods

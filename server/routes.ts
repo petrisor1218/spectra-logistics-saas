@@ -461,7 +461,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (currentPayment) {
         console.log(`🗑️ Found payment to delete: ${currentPayment.companyName} - ${currentPayment.weekLabel} - ${currentPayment.amount} EUR`);
         
-        // Create history record FIRST with null paymentId for deleted records
+        // First, update any existing payment history records to remove FK reference
+        await storage.clearPaymentHistoryReferences(id);
+        
+        // Create history record for the deletion with null paymentId
         await storage.createPaymentHistoryRecord({
           paymentId: null, // Set to null for deleted payments to avoid FK constraint
           action: "deleted",
