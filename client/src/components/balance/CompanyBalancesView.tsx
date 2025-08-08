@@ -14,6 +14,21 @@ const formatCurrency = (amount: number): string => {
     minimumFractionDigits: 2,
   }).format(amount);
 };
+
+// Helper function to fix Romanian diacritics for PDF generation
+const fixRomanianText = (text: string): string => {
+  return text
+    .replace(/ă/g, 'a')
+    .replace(/â/g, 'a') 
+    .replace(/î/g, 'i')
+    .replace(/ș/g, 's')
+    .replace(/ț/g, 't')
+    .replace(/Ă/g, 'A')
+    .replace(/Â/g, 'A')
+    .replace(/Î/g, 'I')
+    .replace(/Ș/g, 'S')
+    .replace(/Ț/g, 'T');
+};
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw, Trash2, AlertTriangle, FileText } from "lucide-react";
@@ -397,7 +412,7 @@ export default function CompanyBalancesView() {
     
     doc.setFontSize(14);
     doc.setTextColor(100, 100, 100);
-    doc.text('Bilanțuri Companii - Situația Restanțelor', 20, 35);
+    doc.text(fixRomanianText('Bilanțuri Companii - Situația Restanțelor'), 20, 35);
     
     doc.setFontSize(10);
     doc.text(`Generat: ${new Date().toLocaleDateString('ro-RO')} ${new Date().toLocaleTimeString('ro-RO')}`, 20, 45);
@@ -562,12 +577,12 @@ export default function CompanyBalancesView() {
       // Text footer
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text('Sistema Transport - Bilanțuri Companii', 20, pageHeight - 12);
+      doc.text(fixRomanianText('Sistema Transport - Bilanțuri Companii'), 20, pageHeight - 12);
       doc.text(`Pagina ${i} din ${pageCount}`, 190 - 30, pageHeight - 12);
     }
     
     // Salvare PDF
-    doc.save(`bilante_companii_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(fixRomanianText(`bilante_companii_${new Date().toISOString().split('T')[0]}.pdf`));
     
     toast({
       title: "PDF generat cu succes",

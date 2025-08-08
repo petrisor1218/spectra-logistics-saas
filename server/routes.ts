@@ -448,27 +448,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment deletion with proper history handling
   app.delete("/api/payments/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`🗑️ Deleting payment with id: ${id}`);
       
-      // Get current payment for history
+      // Get current payment for history BEFORE deleting
       const currentPayments = await storage.getAllPayments();
       const currentPayment = currentPayments.find(p => p.id === id);
       
-      await storage.deletePayment(id);
-      
-      // Create history record
       if (currentPayment) {
+        console.log(`🗑️ Found payment to delete: ${currentPayment.companyName} - ${currentPayment.weekLabel} - ${currentPayment.amount} EUR`);
+        
+        // Create history record FIRST with null paymentId for deleted records
         await storage.createPaymentHistoryRecord({
-          paymentId: id,
+          paymentId: null, // Set to null for deleted payments to avoid FK constraint
           action: "deleted",
           previousData: currentPayment,
         });
+        
+        // Now delete the payment
+        await storage.deletePayment(id);
+        
+        console.log(`✅ Payment ${id} deleted successfully`);
+        res.json({ success: true, message: "Payment deleted successfully" });
+      } else {
+        console.log(`⚠️ Payment ${id} not found`);
+        res.status(404).json({ error: "Payment not found" });
       }
-      
-      res.json({ success: true });
     } catch (error) {
+      console.error("❌ Error deleting payment:", error);
       res.status(500).json({ error: "Failed to delete payment" });
     }
   });
@@ -1216,20 +1226,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete payment by ID endpoint
-  app.delete("/api/payments/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deletePayment(id);
-      res.json({ 
-        success: true, 
-        message: "Payment deleted successfully" 
-      });
-    } catch (error) {
-      console.error("Error deleting payment:", error);
-      res.status(500).json({ message: "Failed to delete payment" });
-    }
-  });
 
   // Stripe subscription routes
   app.post("/api/create-subscription", async (req, res) => {

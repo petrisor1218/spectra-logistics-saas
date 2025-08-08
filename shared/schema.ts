@@ -100,7 +100,7 @@ export const companyBalances = pgTable("company_balances", {
 
 export const paymentHistory = pgTable("payment_history", {
   id: serial("id").primaryKey(),
-  paymentId: integer("payment_id").references(() => payments.id),
+  paymentId: integer("payment_id").references(() => payments.id), // Nullable for deleted payments
   action: varchar("action", { length: 50 }).notNull(), // 'created', 'updated', 'deleted'
   previousData: jsonb("previous_data"),
   createdAt: timestamp("created_at").defaultNow(),

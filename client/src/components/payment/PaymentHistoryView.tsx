@@ -46,6 +46,21 @@ const formatDate = (date: string): string => {
   }).format(new Date(date));
 };
 
+// Helper function to fix Romanian diacritics for PDF generation
+const fixRomanianText = (text: string): string => {
+  return text
+    .replace(/ă/g, 'a')
+    .replace(/â/g, 'a') 
+    .replace(/î/g, 'i')
+    .replace(/ș/g, 's')
+    .replace(/ț/g, 't')
+    .replace(/Ă/g, 'A')
+    .replace(/Â/g, 'A')
+    .replace(/Î/g, 'I')
+    .replace(/Ș/g, 'S')
+    .replace(/Ț/g, 'T');
+};
+
 interface DeletePaymentModalProps {
   payment: Payment;
   isOpen: boolean;
@@ -258,10 +273,10 @@ export default function PaymentHistoryView() {
     
     doc.setFontSize(14);
     doc.setTextColor(100, 100, 100);
-    doc.text('Istoric Plăți - Situația Completă', 20, 35);
+    doc.text(fixRomanianText('Istoric Plăți - Situația Completă'), 20, 35);
     
     doc.setFontSize(10);
-    doc.text(`Generat: ${new Date().toLocaleDateString('ro-RO')} ${new Date().toLocaleTimeString('ro-RO')}`, 20, 45);
+    doc.text(fixRomanianText(`Generat: ${new Date().toLocaleDateString('ro-RO')} ${new Date().toLocaleTimeString('ro-RO')}`), 20, 45);
     
     // Linie separatoare
     doc.setLineWidth(0.5);
@@ -385,7 +400,7 @@ export default function PaymentHistoryView() {
     }
     
     // Salvare PDF
-    doc.save(`istoric_plati_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(fixRomanianText(`istoric_plati_${new Date().toISOString().split('T')[0]}.pdf`));
     
     toast({
       title: "PDF generat cu succes",
