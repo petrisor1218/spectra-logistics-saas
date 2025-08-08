@@ -667,6 +667,7 @@ export function useTransportData() {
         let processedCount = 0;
         let skippedCount = 0;
         let totalProcessed = 0;
+        const processedVRIDs: Array<{ vrid: string; amount: number; company: string; row: number }> = [];
         
         invoiceData.forEach((row, index) => {
           let vrid = '';
@@ -686,6 +687,8 @@ export function useTransportData() {
           
           processedCount++;
           totalProcessed += amount;
+          // Note: company will be determined later in processing
+          processedVRIDs.push({ vrid, amount, company: 'TBD', row: index + 1 });
 
           const tripRecord = tripData.find((trip: any) => 
             trip['Trip ID'] === vrid || trip['VR ID'] === vrid
@@ -752,11 +755,46 @@ export function useTransportData() {
         });
         
         console.log(`✅ ${invoiceType}: ${processedCount} procese, ${skippedCount} sărite, total €${totalProcessed.toFixed(2)}`);
+        
+        // Show first and last few processed items for verification
+        if (processedVRIDs.length > 0) {
+          console.log(`📄 Primele 3 VRID-uri procesate (${invoiceType}):`, processedVRIDs.slice(0, 3));
+          if (processedVRIDs.length > 6) {
+            console.log(`📄 Ultimele 3 VRID-uri procesate (${invoiceType}):`, processedVRIDs.slice(-3));
+          }
+        }
       };
 
       console.log('🔢 ÎNCEPE CALCULAREA FACTURILOR:');
       console.log(`📊 Facturi 7 zile: ${invoice7Data.length} linii`);
       console.log(`📊 Facturi 30 zile: ${invoice30Data.length} linii`);
+      
+      // Debug: Show specific invoice numbers mentioned by user
+      const targetInvoices = ['7744', '1741', 'E470', 'A7A8'];
+      console.log('🔍 CĂUTARE FACTURI SPECIFICE:');
+      
+      targetInvoices.forEach(invoiceNum => {
+        const found7Days = invoice7Data.filter((row: any) => 
+          (row['Tour ID'] && row['Tour ID'].includes(invoiceNum)) ||
+          (row['Load ID'] && row['Load ID'].includes(invoiceNum)) ||
+          JSON.stringify(row).includes(invoiceNum)
+        );
+        const found30Days = invoice30Data.filter((row: any) => 
+          (row['Tour ID'] && row['Tour ID'].includes(invoiceNum)) ||
+          (row['Load ID'] && row['Load ID'].includes(invoiceNum)) ||
+          JSON.stringify(row).includes(invoiceNum)
+        );
+        
+        if (found7Days.length > 0) {
+          console.log(`📋 Invoice ${invoiceNum} găsită în 7 zile:`, found7Days);
+        }
+        if (found30Days.length > 0) {
+          console.log(`📋 Invoice ${invoiceNum} găsită în 30 zile:`, found30Days);
+        }
+        if (found7Days.length === 0 && found30Days.length === 0) {
+          console.log(`❌ Invoice ${invoiceNum} nu a fost găsită în datele procesate`);
+        }
+      });
       
       // Calculate totals before processing
       const invoice7Total = invoice7Data.reduce((sum: number, row: any) => {
