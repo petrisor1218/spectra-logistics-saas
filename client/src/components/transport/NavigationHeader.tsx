@@ -74,6 +74,17 @@ export function NavigationHeader() {
 
             <div className="w-px h-6 bg-white/20"></div>
 
+            {/* Tenant Registration Button */}
+            <Button
+              onClick={() => setLocation('/register-tenant')}
+              className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+              size="sm"
+              variant="outline"
+            >
+              <Building className="w-4 h-4 mr-2" />
+              Tenant Nou
+            </Button>
+
             {/* Tenant Login Button */}
             <Button
               onClick={() => setLocation('/tenant-login')}

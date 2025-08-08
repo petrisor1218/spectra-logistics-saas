@@ -51,32 +51,35 @@ export default function TenantLogin() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`/api/tenant/${selectedTenantId}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
         credentials: 'include'
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error('Login failed');
+        throw new Error(result.error || 'Login failed');
       }
 
       // Store selected tenant in session storage
       sessionStorage.setItem('selectedTenantId', selectedTenantId);
+      sessionStorage.setItem('tenantUser', JSON.stringify(result.user));
       
       // Redirect to tenant-specific URL
       setLocation(`/tenant/${selectedTenantId}/dashboard`);
       
       toast({
         title: "✅ Conectare reușită!",
-        description: `Bun venit în sistemul tenant-ului ${tenants.find(t => t.id.toString() === selectedTenantId)?.name}!`,
+        description: `Bun venit, ${result.user.username}! Tenant: ${tenants.find(t => t.id.toString() === selectedTenantId)?.name}`,
       });
       
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "❌ Eroare la conectare",
-        description: "Username sau parolă incorectă.",
+        description: error.message || "Username sau parolă incorectă.",
         variant: "destructive",
       });
     } finally {

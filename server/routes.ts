@@ -1490,6 +1490,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== TENANT REGISTRATION & AUTH ENDPOINTS =====
+  
+  // Tenant registration with first admin user
+  app.post('/api/register-tenant', async (req, res) => {
+    try {
+      const { 
+        tenantName, 
+        tenantDescription, 
+        companyName, 
+        contactEmail, 
+        contactPhone,
+        adminUsername, 
+        adminPassword,
+        adminEmail 
+      } = req.body;
+      
+      // Validate required fields
+      if (!tenantName || !adminUsername || !adminPassword) {
+        return res.status(400).json({ error: 'Tenant name, admin username și parola sunt obligatorii' });
+      }
+      
+      // Check if admin username already exists
+      const existingUser = await storage.getUserByUsername(adminUsername);
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username-ul există deja în sistem' });
+      }
+      
+      // Create the tenant first
+      const [newTenant] = await db
+        .insert(tenants)
+        .values({
+          name: tenantName,
+          description: tenantDescription,
+          status: 'active',
+          companyName,
+          contactEmail,
+          contactPhone,
+          subscriptionPlan: 'professional'
+        })
+        .returning();
+      
+      // Hash the admin password
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      
+      // Create the admin user for this tenant
+      const adminUser = await storage.createUser({
+        username: adminUsername,
+        password: hashedPassword,
+        email: adminEmail,
+        role: 'admin',
+        tenantId: newTenant.id,
+        companyName: companyName
+      });
+      
+      // Initialize order sequence for the new tenant
+      await tenantStorage.initializeOrderSequence(newTenant.id);
+      
+      console.log(`✅ Tenant înregistrat: ${newTenant.name} (ID: ${newTenant.id}) cu admin: ${adminUsername}`);
+      
+      res.json({
+        success: true,
+        message: `Tenant "${newTenant.name}" a fost creat cu succes!`,
+        tenant: {
+          id: newTenant.id,
+          name: newTenant.name,
+          companyName: newTenant.companyName
+        },
+        admin: {
+          username: adminUser.username,
+          email: adminUser.email
+        }
+      });
+    } catch (error) {
+      console.error('Error registering tenant:', error);
+      res.status(500).json({ error: 'Nu s-a putut înregistra tenant-ul' });
+    }
+  });
+  
+  // Tenant-specific login
+  app.post('/api/tenant/:tenantId/login', async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: 'Username și parola sunt obligatorii' });
+      }
+      
+      // Get user and verify tenant
+      const user = await tenantStorage.getUserByUsername(username, parseInt(tenantId));
+      if (!user) {
+        return res.status(401).json({ error: 'Username sau parolă incorectă' });
+      }
+      
+      // Verify tenant association
+      if (user.tenantId !== parseInt(tenantId)) {
+        return res.status(401).json({ error: 'Utilizatorul nu aparține acestui tenant' });
+      }
+      
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: 'Username sau parolă incorectă' });
+      }
+      
+      // Store user session
+      req.session.userId = user.id;
+      req.session.tenantId = user.tenantId;
+      
+      console.log(`🔐 Login reușit pentru tenant ${tenantId}: ${username}`);
+      
+      res.json({
+        success: true,
+        message: 'Autentificare reușită!',
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          tenantId: user.tenantId,
+          companyName: user.companyName
+        }
+      });
+    } catch (error) {
+      console.error('Error in tenant login:', error);
+      res.status(500).json({ error: 'Eroare la autentificare' });
+    }
+  });
+  
+  // Get current tenant user
+  app.get('/api/tenant/:tenantId/auth/user', async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const userId = req.session.userId;
+      const sessionTenantId = req.session.tenantId;
+      
+      if (!userId || !sessionTenantId) {
+        return res.status(401).json({ error: 'Nu sunteți autentificat' });
+      }
+      
+      if (sessionTenantId !== parseInt(tenantId)) {
+        return res.status(403).json({ error: 'Nu aveți acces la acest tenant' });
+      }
+      
+      const user = await tenantStorage.getUser(userId, sessionTenantId);
+      if (!user) {
+        return res.status(404).json({ error: 'Utilizatorul nu a fost găsit' });
+      }
+      
+      res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId,
+        companyName: user.companyName
+      });
+    } catch (error) {
+      console.error('Error getting tenant user:', error);
+      res.status(500).json({ error: 'Eroare la obținerea utilizatorului' });
+    }
+  });
+  
+  // Tenant logout
+  app.post('/api/tenant/:tenantId/logout', async (req, res) => {
+    try {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+          return res.status(500).json({ error: 'Eroare la deconectare' });
+        }
+        res.json({ success: true, message: 'Deconectare reușită!' });
+      });
+    } catch (error) {
+      console.error('Error in tenant logout:', error);
+      res.status(500).json({ error: 'Eroare la deconectare' });
+    }
+  });
+  
   // ===== COMPLETE TENANT MANAGEMENT ENDPOINTS =====
   
   // List all tenants
