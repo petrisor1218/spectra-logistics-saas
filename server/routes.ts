@@ -390,11 +390,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const balances = await storage.getCompanyBalances();
             const companyBalances = balances
               .filter(b => b.companyName === payment.companyName && parseFloat(b.outstandingBalance) !== 0)
-              .map(b => ({
-                weekLabel: b.weekLabel,
-                remainingAmount: parseFloat(b.outstandingBalance),
-                totalInvoiced: parseFloat(b.totalInvoiced)
-              }))
+              .map(b => {
+                let remainingAmount = parseFloat(b.outstandingBalance);
+                
+                // If this balance is for the same week as the payment, subtract the payment amount
+                if (b.weekLabel === payment.weekLabel) {
+                  remainingAmount = remainingAmount - parseFloat(payment.amount);
+                }
+                
+                return {
+                  weekLabel: b.weekLabel,
+                  remainingAmount: remainingAmount,
+                  totalInvoiced: parseFloat(b.totalInvoiced)
+                };
+              })
+              .filter(b => b.remainingAmount !== 0) // Only show non-zero balances
               .sort((a, b) => b.weekLabel.localeCompare(a.weekLabel)); // Sort by week, newest first
             
             // Send email using the free email service (more reliable)
