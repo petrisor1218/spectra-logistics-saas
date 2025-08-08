@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Save, X, User, Building, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 interface Driver {
   id: number;
@@ -35,14 +36,26 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
     nameVariants: []
   });
   const { toast } = useToast();
+  const [location] = useLocation();
+  
+  // Helper function to get correct API base URL based on context
+  const getApiBaseUrl = () => {
+    // Check if we are in tenant context
+    const tenantMatch = location.match(/\/tenant\/(\d+)/);
+    if (tenantMatch) {
+      return `/api/tenant/${tenantMatch[1]}`;
+    }
+    return '/api';
+  };
 
   useEffect(() => {
     Promise.all([fetchDrivers(), fetchCompanies()]);
-  }, []);
+  }, [location]);
 
   const fetchDrivers = async () => {
     try {
-      const response = await fetch('/api/drivers');
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/drivers`);
       if (response.ok) {
         const data = await response.json();
         setDrivers(data);
@@ -61,7 +74,8 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('/api/companies');
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/companies`);
       if (response.ok) {
         const data = await response.json();
         setCompanies(data);
@@ -103,7 +117,8 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
       };
 
       const method = editingId ? 'PUT' : 'POST';
-      const url = editingId ? `/api/drivers/${editingId}` : '/api/drivers';
+      const apiBaseUrl = getApiBaseUrl();
+      const url = editingId ? `${apiBaseUrl}/drivers/${editingId}` : `${apiBaseUrl}/drivers`;
       
       const response = await fetch(url, {
         method,
@@ -141,7 +156,8 @@ export function DriverManagement({ loadDriversFromDatabase }: DriverManagementPr
     if (!confirm('Sigur doriți să ștergeți acest șofer?')) return;
     
     try {
-      const response = await fetch(`/api/drivers/${id}`, { method: 'DELETE' });
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/drivers/${id}`, { method: 'DELETE' });
       if (response.ok) {
         await fetchDrivers();
         toast({

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit, Save, X, Building, Phone, MapPin, CreditCard, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 
 interface Company {
   id: number;
@@ -33,14 +34,26 @@ export function CompanyManagement() {
     contact: ''
   });
   const { toast } = useToast();
+  const [location] = useLocation();
+  
+  // Helper function to get correct API base URL based on context
+  const getApiBaseUrl = () => {
+    // Check if we are in tenant context
+    const tenantMatch = location.match(/\/tenant\/(\d+)/);
+    if (tenantMatch) {
+      return `/api/tenant/${tenantMatch[1]}`;
+    }
+    return '/api';
+  };
 
   useEffect(() => {
     fetchCompanies();
-  }, []);
+  }, [location]);
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('/api/companies');
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/companies`);
       if (response.ok) {
         const data = await response.json();
         setCompanies(data);
@@ -60,7 +73,8 @@ export function CompanyManagement() {
   const handleSave = async (companyData: Partial<Company>) => {
     try {
       const method = editingId ? 'PUT' : 'POST';
-      const url = editingId ? `/api/companies/${editingId}` : '/api/companies';
+      const apiBaseUrl = getApiBaseUrl();
+      const url = editingId ? `${apiBaseUrl}/companies/${editingId}` : `${apiBaseUrl}/companies`;
       
       const response = await fetch(url, {
         method,
@@ -104,7 +118,8 @@ export function CompanyManagement() {
     if (!confirm('Sigur doriți să ștergeți această companie?')) return;
     
     try {
-      const response = await fetch(`/api/companies/${id}`, { method: 'DELETE' });
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/companies/${id}`, { method: 'DELETE' });
       if (response.ok) {
         await fetchCompanies();
         toast({
