@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Lock, User, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -15,6 +16,18 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAuthenticated, logout } = useAuth();
+
+  // Logout any existing user when accessing login page
+  useEffect(() => {
+    if (isAuthenticated) {
+      logout();
+      toast({
+        title: "Deconectat",
+        description: "Ai fost deconectat pentru a te putea reconecta.",
+      });
+    }
+  }, [isAuthenticated, logout, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

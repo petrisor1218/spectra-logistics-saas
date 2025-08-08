@@ -60,7 +60,7 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
-      <Route path="/login" component={Home} />
+      <Route path="/login" component={LoginPage} />
       <Route path="*" component={NotFound} />
     </Switch>
   );
