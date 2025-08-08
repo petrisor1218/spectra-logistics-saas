@@ -1259,10 +1259,11 @@ export function useTransportData() {
         const data = await response.json();
         if (data) {
           console.log('Loaded processed data for week:', data.processedData);
-          // Set both processed data (for calculations) and saved data (for payments tab)
-          setProcessedData(data.processedData || {});
-          setSavedProcessedData(data.processedData || {}); // Store saved data separately
+          // 🚫 NU ACTUALIZA processedData - acelea sunt doar pentru procesarea temporală!
+          // ✅ Actualizează DOAR savedProcessedData pentru tab-ul plăților
+          setSavedProcessedData(data.processedData || {}); // Store saved data from DB
           setSelectedWeek(weekLabel);
+          console.log('💾 Date salvate încărcate pentru plăți. processedData rămâne neschimbat pentru procesarea temporală.');
           setProcessingWeek(weekLabel);
           // Also load existing payments for this week
           await loadPaymentsForWeek(weekLabel);
