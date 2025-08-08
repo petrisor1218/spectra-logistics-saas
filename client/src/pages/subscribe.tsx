@@ -116,6 +116,12 @@ function SubscribeForm({ planId }: { planId: string }) {
         throw new Error(subscriptionData.message || 'Subscription failed');
       }
 
+      // Submit elements first (required by Stripe)
+      const submitResult = await elements.submit();
+      if (submitResult.error) {
+        throw new Error(submitResult.error.message);
+      }
+
       // Now confirm the setup intent
       const { error, setupIntent } = await stripe.confirmSetup({
         elements,
