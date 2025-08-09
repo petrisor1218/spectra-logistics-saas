@@ -116,14 +116,11 @@ export default function AnalyticsDashboard() {
     return sum + weekTotal;
   }, 0);
   
-  // Use the consistent source - prefer weekly processing data as it's more detailed and complete
-  const totalInvoiced = totalInvoicedFromWeeklyData || totalInvoicedFromBalances;
+  // Use company balances as the authoritative source - these are the real processed amounts  
+  const totalInvoiced = totalInvoicedFromBalances;
   
-  // Debug info - show both totals for transparency
-  console.log('📊 Analytics Data Sources:');
-  console.log('💰 Total din Company Balances:', totalInvoicedFromBalances.toFixed(2));
-  console.log('📈 Total din Weekly Processing:', totalInvoicedFromWeeklyData.toFixed(2));
-  console.log('✅ Total folosit pentru afișare:', totalInvoiced.toFixed(2));
+  // Debug info - confirm we're using the correct data source
+  console.log('✅ Using Company Balances as authoritative source:', totalInvoiced.toFixed(2));
 
   // Prepare chart data
   const companyPerformanceData = balances.reduce((acc: any[], balance) => {
@@ -201,14 +198,14 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  // Calculate monthly data for analysis - extract real date from week label instead of processing date
-  const monthlyData = weeklyInvoicedData.reduce((acc: any[], week: any) => {
-    // Extract real date from week label like "11 feb. - 17 feb." 
-    const weekLabel = week.weekLabel;
+  // Calculate monthly data for analysis using company balances data - the authoritative source
+  // Group balances by month extracted from weekLabel
+  const monthlyDataFromBalances = balances.reduce((acc: any[], balance) => {
+    const weekLabel = balance.weekLabel;
     let weekDate = new Date();
     
     try {
-      // Parse week label to extract month
+      // Parse week label to extract month like "11 feb. - 17 feb."
       const monthMatch = weekLabel.match(/(\d+)\s+(\w+)/);
       if (monthMatch) {
         const day = parseInt(monthMatch[1]);
@@ -227,8 +224,8 @@ export default function AnalyticsDashboard() {
         }
       }
     } catch (error) {
-      console.log('Error parsing week date, using current date:', error);
-      weekDate = new Date(week.processingDate);
+      console.log('Error parsing balance date:', error);
+      weekDate = new Date(); // fallback to current date
     }
     
     const monthKey = `${weekDate.getFullYear()}-${String(weekDate.getMonth() + 1).padStart(2, '0')}`;
@@ -237,20 +234,23 @@ export default function AnalyticsDashboard() {
     
     const existing = acc.find(item => item.monthKey === monthKey);
     if (existing) {
-      existing.totalInvoiced += week.totalInvoiced;
+      existing.totalInvoiced += Number(balance.totalInvoiced || 0);
       existing.weekCount += 1;
     } else {
       acc.push({
         monthKey,
-        monthName, // Just month name (e.g., "ianuarie")
-        fullMonthName, // Full name with year (e.g., "ianuarie 2024")
-        totalInvoiced: week.totalInvoiced,
+        monthName,
+        fullMonthName,
+        totalInvoiced: Number(balance.totalInvoiced || 0),
         weekCount: 1,
         date: weekDate
       });
     }
     return acc;
   }, []).sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
+
+  // Use this data for monthly analysis instead of weekly processing data
+  const monthlyData = monthlyDataFromBalances;
 
   // Find best and worst months
   const sortedMonths = [...monthlyData].sort((a, b) => b.totalInvoiced - a.totalInvoiced);
