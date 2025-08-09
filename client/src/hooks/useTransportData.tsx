@@ -387,10 +387,23 @@ export function useTransportData() {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     
+    // Check if we need to add year info (cross-year weeks or different from current year)
+    const currentYear = now.getFullYear();
+    const startYear = startOfWeek.getFullYear();
+    const endYear = endOfWeek.getFullYear();
+    
+    let label;
+    if (startYear !== currentYear || endYear !== currentYear || startYear !== endYear) {
+      // Include year when it's not current year or crosses years
+      label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    } else {
+      label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`;
+    }
+    
     return {
       start: startOfWeek,
       end: endOfWeek,
-      label: `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`
+      label
     };
   };
 
@@ -403,10 +416,23 @@ export function useTransportData() {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     
+    // Check if we need to add year info (cross-year weeks or different from current year)
+    const currentYear = new Date().getFullYear();
+    const startYear = startOfWeek.getFullYear();
+    const endYear = endOfWeek.getFullYear();
+    
+    let label;
+    if (startYear !== currentYear || endYear !== currentYear || startYear !== endYear) {
+      // Include year when it's not current year or crosses years
+      label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    } else {
+      label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`;
+    }
+    
     return {
       start: startOfWeek,
       end: endOfWeek,
-      label: `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`
+      label
     };
   };
 
@@ -428,7 +454,18 @@ export function useTransportData() {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       
-      const label = `${weekStart.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`;
+      // Check if we need to add year info for older weeks
+      const currentYear = new Date().getFullYear();
+      const startYear = weekStart.getFullYear();
+      const endYear = weekEnd.getFullYear();
+      
+      let label;
+      if (startYear !== currentYear || endYear !== currentYear || startYear !== endYear) {
+        // Include year when it's not current year or crosses years
+        label = `${weekStart.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })} - ${weekEnd.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      } else {
+        label = `${weekStart.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`;
+      }
       
       weeks.push({
         value: label,

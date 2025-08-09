@@ -56,9 +56,11 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
   // Funcție pentru a converti weekLabel în dată pentru sortare
   const parseWeekLabelToDate = (weekLabel: string): Date => {
     try {
-      // Format: "27 iul. - 2 aug." sau "13 iul. - 19 iul."
-      const parts = weekLabel.split(' - ')[0].trim(); // "27 iul."
-      const [day, monthAbbr] = parts.split(' ');
+      // Format: "27 iul. - 2 aug." sau "13 iul. - 19 iul." sau "27 iul. 2024 - 2 aug. 2024"
+      const parts = weekLabel.split(' - ')[0].trim(); // "27 iul." sau "27 iul. 2024"
+      const splitParts = parts.split(' ');
+      const day = splitParts[0];
+      const monthAbbr = splitParts[1];
       
       const monthMap: Record<string, number> = {
         'ian.': 0, 'feb.': 1, 'mar.': 2, 'apr.': 3, 'mai': 4, 'iun.': 5,
@@ -66,7 +68,15 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       };
       
       const month = monthMap[monthAbbr] ?? 6; // Default to July if not found
-      const year = 2025; // Current year
+      
+      // Check if year is present in the parts
+      let year = 2025; // Default to current year
+      if (splitParts.length >= 3) {
+        const yearPart = parseInt(splitParts[2]);
+        if (!isNaN(yearPart) && yearPart > 2000) {
+          year = yearPart;
+        }
+      }
       
       return new Date(year, month, parseInt(day));
     } catch (e) {

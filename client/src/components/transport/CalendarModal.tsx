@@ -123,6 +123,11 @@ export function CalendarModal({
             {selectedWeek && (
               <div className="text-center text-gray-400 text-sm mb-4">
                 Săptămâna selectată: <span className="text-primary-400 font-medium">{selectedWeek}</span>
+                {selectedWeek.includes('2024') && (
+                  <div className="text-orange-400 text-xs mt-1">
+                    ⚠️ Date din anul 2024
+                  </div>
+                )}
               </div>
             )}
 

@@ -79,7 +79,7 @@ export function SavedDataCalendar({
 
   // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
-    // Extract start date from "DD mmm. - DD mmm." format
+    // Extract start date from "DD mmm. - DD mmm." or "DD mmm. YYYY - DD mmm. YYYY" format
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
       'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
@@ -90,7 +90,15 @@ export function SavedDataCalendar({
     const day = parseInt(parts[0]);
     const monthStr = parts[1].replace('.', '');
     const month = monthMap[monthStr] ?? 0;
-    const year = 2025; // Assuming current year
+    
+    // Check if year is present in the string
+    let year = 2025; // Default to current year
+    if (parts.length >= 3) {
+      const yearPart = parseInt(parts[2]);
+      if (!isNaN(yearPart) && yearPart > 2000) {
+        year = yearPart;
+      }
+    }
     
     return new Date(year, month, day);
   };

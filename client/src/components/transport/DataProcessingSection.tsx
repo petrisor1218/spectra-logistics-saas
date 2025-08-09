@@ -63,11 +63,22 @@ export function DataProcessingSection({
             <SelectContent>
               {weekOptions.map(week => (
                 <SelectItem key={week.value} value={week.value}>
-                  {week.label}
+                  <div className="flex items-center justify-between w-full">
+                    <span>{week.label}</span>
+                    {week.label.includes('2024') && (
+                      <span className="text-orange-400 text-xs ml-2">📅 2024</span>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          
+          {processingWeek && processingWeek.includes('2024') && (
+            <div className="text-orange-400 text-xs bg-orange-400/10 p-2 rounded-lg">
+              ⚠️ Atenție: Procesezi date din anul 2024
+            </div>
+          )}
           
           <Button
             onClick={() => setShowCalendar(true)}
