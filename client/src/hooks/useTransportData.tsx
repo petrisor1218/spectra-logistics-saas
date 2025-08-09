@@ -101,6 +101,7 @@ export function useTransportData() {
   // Load weekly processing data on mount
   useEffect(() => {
     loadAllWeeklyProcessing();
+    loadDriversFromDatabase();
   }, []);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -138,6 +139,7 @@ export function useTransportData() {
   
   const loadDriversFromDatabase = async () => {
     try {
+      console.log('🔄 Loading drivers from database...');
       const [driversResponse, companiesResponse] = await Promise.all([
         fetch('/api/drivers'),
         fetch('/api/companies')
@@ -146,6 +148,7 @@ export function useTransportData() {
       if (driversResponse.ok && companiesResponse.ok) {
         const drivers = await driversResponse.json();
         const companies = await companiesResponse.json();
+        console.log('📥 Raw API response - drivers:', drivers.length, 'companies:', companies.length);
         
         const dbDriverMap: Record<string, string> = {};
         
@@ -176,8 +179,9 @@ export function useTransportData() {
         
         setDynamicDriverMap(dbDriverMap);
         console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
-        console.log('👥 Șoferi din baza de date:', drivers.map((d: any) => `${d.name} → ${companies.find((c: any) => c.id === d.companyId)?.name || 'FĂRĂ COMPANIE'}`));
-        console.log('🔗 Mapare completă (primele 5):', Object.entries(dbDriverMap).slice(0, 5));
+        console.log('👥 Numărul șoferilor din baza de date:', drivers.length);
+        console.log('🔗 Exemplu mapare "Sorin Cristinel Dumitru":', Object.entries(dbDriverMap).filter(([key]) => key.includes('sorin') && key.includes('cristinel')));
+        console.log('🔗 Căutare "dumitru sorin cristinel":', dbDriverMap['dumitru sorin cristinel']);
         return dbDriverMap;
       }
     } catch (error) {
