@@ -122,7 +122,8 @@ export class DatabaseStorage implements IStorage {
 
   // Company methods
   async getAllCompanies(): Promise<Company[]> {
-    return await db.select().from(companies);
+    // In simplified system, only return companies for tenant 1
+    return await db.select().from(companies).where(eq(companies.tenantId, 1));
   }
 
   async getCompanyByName(name: string): Promise<Company | undefined> {
@@ -156,11 +157,15 @@ export class DatabaseStorage implements IStorage {
 
   // Driver methods
   async getAllDrivers(): Promise<Driver[]> {
-    return await db.select().from(drivers);
+    // In simplified system, only return drivers for tenant 1
+    return await db.select().from(drivers).where(eq(drivers.tenantId, 1));
   }
 
   async getDriversByCompany(companyId: number): Promise<Driver[]> {
-    return await db.select().from(drivers).where(eq(drivers.companyId, companyId));
+    // In simplified system, filter by both company and tenant
+    return await db.select().from(drivers).where(
+      and(eq(drivers.companyId, companyId), eq(drivers.tenantId, 1))
+    );
   }
 
   async createDriver(insertDriver: InsertDriver): Promise<Driver> {
