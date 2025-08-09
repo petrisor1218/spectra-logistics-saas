@@ -233,6 +233,15 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(payments).where(eq(payments.weekLabel, weekLabel)).orderBy(desc(payments.paymentDate));
   }
 
+  async getPaymentsByCompanyAndWeek(companyName: string, weekLabel: string): Promise<Payment[]> {
+    return await db.select().from(payments).where(
+      and(
+        eq(payments.companyName, companyName),
+        eq(payments.weekLabel, weekLabel)
+      )
+    ).orderBy(desc(payments.paymentDate));
+  }
+
   async getAllPayments(): Promise<Payment[]> {
     return await db.select().from(payments).orderBy(desc(payments.paymentDate));
   }

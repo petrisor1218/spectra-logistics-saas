@@ -1323,6 +1323,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      // Check if payment already exists to prevent duplicates
+      const existingPayments = await storage.getPaymentsByCompanyAndWeek(companyName, weekLabel);
+      const totalPaid = existingPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const newTotal = totalPaid + parseFloat(paidAmount);
+      
+      // Get the balance to check total invoiced
+      const balance = await storage.getCompanyBalanceByWeek(companyName, weekLabel);
+      if (balance && newTotal > parseFloat(balance.totalInvoiced) + 1) {
+        return res.status(400).json({ 
+          message: `Suma plății (${paidAmount}) depășește restanța de ${balance.outstandingBalance} EUR` 
+        });
+      }
+
       // First create the payment record in the payments table
       const paymentData = {
         companyName: companyName,
