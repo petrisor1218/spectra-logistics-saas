@@ -362,18 +362,21 @@ export function useTransportData() {
     
     console.log(`   Sugestie: ${finalSuggestion}`);
     
-    // Add to pending mappings if not already there
+    // Check if driver already exists in pending mappings - if so, don't add again
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
-    if (!isAlreadyPending) {
-      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
-      const alternatives = allCompanies.filter(c => c !== finalSuggestion);
-      
-      setPendingMappings(prev => [...prev, {
-        driverName,
-        suggestedCompany: finalSuggestion,
-        alternatives
-      }]);
+    if (isAlreadyPending) {
+      console.log(`⏳ Șoferul "${driverName}" este deja în așteptare`);
+      return "Pending";
     }
+    
+    const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
+    const alternatives = allCompanies.filter(c => c !== finalSuggestion);
+    
+    setPendingMappings(prev => [...prev, {
+      driverName,
+      suggestedCompany: finalSuggestion,
+      alternatives
+    }]);
     
     return "Pending"; // Mark as pending for user decision
   };

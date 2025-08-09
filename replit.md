@@ -19,6 +19,7 @@ Preferred communication style: Simple, everyday language.
 - **Driver Persistence Fixed**: Șoferii se salvează acum perfect fără probleme de tenant-uri
 - **Pending Mapping Resolution**: Added automatic reprocessing after driver addition to eliminate "Pending Mapping"
 - **Dynamic Driver Loading**: System now reloads driver mappings and reprocesses data automatically
+- **Duplicate Request Prevention**: Fixed logic to prevent asking for drivers that are already pending or saved
 - **Testing Confirmed**: Creat cu succes "Test Șofer Nou" - sistemul funcționează impecabil
 
 ### ✅ Company Balance Payment System - FULLY RESOLVED - August 9, 2025
