@@ -260,7 +260,13 @@ export function useTransportData() {
         
         // Find company ID by matching selected company name
         for (const company of companies) {
-          if (company.name === 'Fast & Express S.R.L.' && selectedCompany === 'Fast Express') {
+          // First try exact match for full database company names
+          if (company.name === selectedCompany) {
+            targetCompanyId = company.id;
+            break;
+          }
+          // Then try legacy mappings for backwards compatibility
+          else if (company.name === 'Fast & Express S.R.L.' && selectedCompany === 'Fast Express') {
             targetCompanyId = company.id;
             break;
           } else if (company.name === 'Stef Trans S.R.L.' && selectedCompany === 'Stef Trans') {
@@ -269,7 +275,16 @@ export function useTransportData() {
           } else if (company.name === 'De Cargo Sped S.R.L.' && selectedCompany === 'DE Cargo Speed') {
             targetCompanyId = company.id;
             break;
+          } else if (company.name === 'Daniel Ontheroad S.R.L.' && selectedCompany === 'Daniel Ontheroad') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'Bis General' && selectedCompany === 'Bis General') {
+            targetCompanyId = company.id;
+            break;
           } else if (company.name === 'Toma SRL' && selectedCompany === 'Toma SRL') {
+            targetCompanyId = company.id;
+            break;
+          } else if (company.name === 'wf srl' && selectedCompany === 'wf srl') {
             targetCompanyId = company.id;
             break;
           }
@@ -289,7 +304,11 @@ export function useTransportData() {
             console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`);
             await loadDriversFromDatabase();
             return selectedCompany;
+          } else {
+            console.error('❌ Eroare la adăugarea șoferului:', await response.text());
           }
+        } else {
+          console.error('❌ Nu s-a găsit compania:', selectedCompany, 'în lista:', companies.map(c => c.name));
         }
       }
     } catch (error) {
