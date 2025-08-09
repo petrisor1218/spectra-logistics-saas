@@ -1147,7 +1147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         attachments: [{
           filename: `Comanda_Transport_${orderData.companyName.replace(/[^a-zA-Z0-9]/g, '_')}_${orderData.orderNumber}.pdf`,
           content: pdfContent,
-          contentType: 'application/pdf'
+          type: 'application/pdf',
+          disposition: 'attachment'
         }]
       });
 
@@ -1206,7 +1207,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         attachments: [{
           filename: `Raport_${companyName}_${weekLabel.replace(/\s/g, '_')}.pdf`,
           content: pdfContent,
-          contentType: 'application/pdf'
+          type: 'application/pdf',
+          disposition: 'attachment'
         }]
       });
 
