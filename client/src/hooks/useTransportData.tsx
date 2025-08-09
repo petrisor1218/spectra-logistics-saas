@@ -65,7 +65,7 @@ const DRIVER_COMPANY_MAP_ORIGINAL = {
   "Costica Mihalcea": "Daniel Ontheroad",
   "Adrian Budescu": "Daniel Ontheroad",
   "Danut Feleaga": "Daniel Ontheroad",
-  "Razvan Jurubita": "Daniel Ontheroad",
+  // "Razvan Jurubita": "Daniel Ontheroad", // MOVED TO DATABASE
   "Feleagă Marian": "Daniel Ontheroad",
   "Dimitrov F": "Daniel Ontheroad",
   "Cernat Lucian Marian": "DE Cargo Speed",
@@ -166,6 +166,10 @@ export function useTransportData() {
                 mappedCompanyName = 'Stef Trans';
               } else if (company.name === 'Toma SRL') {
                 mappedCompanyName = 'Toma SRL';
+              } else if (company.name === 'Daniel Ontheroad S.R.L.') {
+                mappedCompanyName = 'Daniel Ontheroad S.R.L.';
+              } else if (company.name === 'WF SRL') {
+                mappedCompanyName = 'WF SRL';
               }
               
               // Generate variants for each driver name
@@ -183,8 +187,17 @@ export function useTransportData() {
         console.log('🔗 Total mapări:', {
           'Toma SRL': Object.entries(dbDriverMap).filter(([key, company]) => company === 'Toma SRL').length,
           'Fast Express': Object.entries(dbDriverMap).filter(([key, company]) => company === 'Fast Express').length,
+          'Daniel Ontheroad': Object.entries(dbDriverMap).filter(([key, company]) => company === 'Daniel Ontheroad S.R.L.').length,
           'Total': Object.keys(dbDriverMap).length
         });
+        console.log('🔍 Jurubita mapping:', Object.entries(dbDriverMap).filter(([key, company]) => key.includes('jurubita') || key.includes('razvan')));
+        
+        // Check if Jurubita is updated correctly - find exact match
+        const jurubita = drivers.find((d: any) => d.name.toLowerCase().includes('jurubita'));
+        if (jurubita) {
+          const jurubCompany = companies.find((c: any) => c.id === jurubita.companyId);
+          console.log('🔍 Jurubita în DB:', jurubita.name, '→', jurubCompany?.name, '(companyId:', jurubita.companyId, ')');
+        }
         return dbDriverMap;
       }
     } catch (error) {
@@ -205,9 +218,13 @@ export function useTransportData() {
       });
     });
     
-    // Add dynamic mapping (will override static if same name exists)
+    // Add dynamic mapping (will override static if same name exists) - DATABASE WINS!
     Object.entries(dynamicDriverMap).forEach(([variant, company]) => {
       DRIVER_COMPANY_MAP[variant] = company;
+      // Log overrides for debugging
+      if (variant.includes('jurubita') || variant.includes('razvan')) {
+        console.log('🔄 Override static mapping:', variant, '→', company);
+      }
     });
     
     return DRIVER_COMPANY_MAP;
