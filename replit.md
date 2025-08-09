@@ -10,13 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent System Completion - August 9, 2025
 
-### ✅ Multi-Tenant System Eliminated - FULLY RESOLVED - August 9, 2025
+### ✅ Multi-Tenant System Eliminated & Pending Mapping Fixed - FULLY RESOLVED - August 9, 2025
 - **Critical Decision**: Removed entire multi-tenant architecture due to complexity and bugs
 - **Root Cause**: Multi-tenant system created unnecessary complications for driver/company management
 - **Solution**: Simplified to single-tenant system with all data on tenant_id = 1
 - **Database Cleanup**: Removed all tenant 1 and 2 data, moved tenant 3 data to tenant 1
 - **Endpoint Simplification**: All `/api/drivers`, `/api/companies`, `/api/company-balances` routes simplified
 - **Driver Persistence Fixed**: Șoferii se salvează acum perfect fără probleme de tenant-uri
+- **Pending Mapping Resolution**: Added automatic reprocessing after driver addition to eliminate "Pending Mapping"
+- **Dynamic Driver Loading**: System now reloads driver mappings and reprocesses data automatically
 - **Testing Confirmed**: Creat cu succes "Test Șofer Nou" - sistemul funcționează impecabil
 
 ### ✅ Company Balance Payment System - FULLY RESOLVED - August 9, 2025

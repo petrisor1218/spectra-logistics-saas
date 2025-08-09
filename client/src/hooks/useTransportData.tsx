@@ -309,6 +309,8 @@ export function useTransportData() {
           if (response.ok) {
             console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`);
             await loadDriversFromDatabase();
+            // Trigger reprocessing of existing data with new driver mappings
+            setTimeout(() => reprocessExistingData(), 100);
             return selectedCompany;
           } else {
             console.error('❌ Eroare la adăugarea șoferului:', await response.text());
@@ -374,6 +376,24 @@ export function useTransportData() {
     }
     
     return "Pending"; // Mark as pending for user decision
+  };
+
+  // Reprocess existing data with updated driver mappings
+  const reprocessExistingData = async () => {
+    if (!tripData || !invoice7Data || !invoice30Data || !processedData || Object.keys(processedData).length === 0) {
+      console.log('🔄 No existing data to reprocess');
+      return;
+    }
+
+    console.log('🔄 Reprocessing existing data with updated driver mappings...');
+    
+    // Reload drivers to get latest mappings
+    await loadDriversFromDatabase();
+    
+    // Call processData to reprocess everything with new mappings
+    await processData();
+    
+    console.log('✅ Data reprocessed with updated mappings');
   };
 
   // Week functions - DO NOT MODIFY!
