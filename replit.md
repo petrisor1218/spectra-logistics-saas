@@ -18,6 +18,9 @@ Preferred communication style: Simple, everyday language.
 - **Status Logic**: Correct automatic status updates (pending → partial → paid)
 - **Real Data**: Using authentic February 2024 processing data with accurate company invoices
 - **Testing Confirmed**: Successfully tested partial (5000 EUR) and full (1445.46 EUR) payments with correct balance calculations
+- **Analytics Calculation Fix**: Corrected negative balance issue (-€35,397.05) by fixing totalRemaining calculation logic
+- **Formula Correction**: "De Încasat" now calculated as totalInvoiced - totalPaid instead of summing individual outstandingBalance values
+- **Final Result**: Positive balance of €3,258.22 with 2 companies showing outstanding amounts
 
 ### ✅ Multi-Tenant Architecture System - FULLY OPERATIONAL - August 8, 2025
 - **Shared Schema + Tenant ID**: Complete implementation for scalable multi-tenancy
