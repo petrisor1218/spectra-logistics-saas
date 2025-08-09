@@ -83,13 +83,47 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  // Calculate metrics with safe number conversion and correct field names
-  const totalInvoiced = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
+  // Calculate metrics using BOTH sources for consistency checking
+  // Main metrics from company_balances (current system)
+  const totalInvoicedFromBalances = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
   const totalPaid = balances.reduce((sum, b) => sum + Number(b.totalPaid || 0), 0);
   const totalRemaining = balances.reduce((sum, b) => sum + Number(b.outstandingBalance || 0), 0);
   const activeCompanies = new Set(balances.map(b => b.companyName)).size;
   const averagePayment = payments.length > 0 ? totalPaid / payments.length : 0;
   const overdueBalances = balances.filter(b => b.paymentStatus === 'pending' && Number(b.outstandingBalance || 0) > 1).length;
+  
+  // Calculate total invoiced from weekly processing data (for consistency)
+  const totalInvoicedFromWeeklyData = weeklyProcessingData.reduce((sum, week: any) => {
+    if (!week.processedData) return sum;
+    
+    const processedData = week.processedData as any;
+    let weekTotal = 0;
+    
+    Object.keys(processedData).forEach(companyName => {
+      if (companyName === 'Unmatched' || companyName === 'Totals') return;
+      
+      const companyData = processedData[companyName];
+      if (companyData && (companyData.Total_7_days || companyData.Total_30_days)) {
+        const total7Days = parseFloat(companyData.Total_7_days) || 0;
+        const total30Days = parseFloat(companyData.Total_30_days) || 0;
+        const totalCommission = parseFloat(companyData.Total_comision) || 0;
+        
+        // Total invoiced excluding commission
+        weekTotal += total7Days + total30Days - totalCommission;
+      }
+    });
+    
+    return sum + weekTotal;
+  }, 0);
+  
+  // Use the consistent source - prefer weekly processing data as it's more detailed and complete
+  const totalInvoiced = totalInvoicedFromWeeklyData || totalInvoicedFromBalances;
+  
+  // Debug info - show both totals for transparency
+  console.log('📊 Analytics Data Sources:');
+  console.log('💰 Total din Company Balances:', totalInvoicedFromBalances.toFixed(2));
+  console.log('📈 Total din Weekly Processing:', totalInvoicedFromWeeklyData.toFixed(2));
+  console.log('✅ Total folosit pentru afișare:', totalInvoiced.toFixed(2));
 
   // Prepare chart data
   const companyPerformanceData = balances.reduce((acc: any[], balance) => {
@@ -119,7 +153,7 @@ export default function AnalyticsDashboard() {
     color: pieColors[index % pieColors.length]
   }));
 
-  // Calculate weekly invoiced amounts for trending analysis
+  // Calculate weekly invoiced amounts for trending analysis  
   const weeklyInvoicedData = weeklyProcessingData
     .map((week: any) => {
       if (!week.processedData) return null;
@@ -137,7 +171,7 @@ export default function AnalyticsDashboard() {
           const total30Days = parseFloat(companyData.Total_30_days) || 0;
           const totalCommission = parseFloat(companyData.Total_comision) || 0;
           
-          // Total invoiced excluding commission
+          // Total invoiced excluding commission (same calculation as main totalInvoiced)
           const totalInvoiced = total7Days + total30Days - totalCommission;
           totalWeekInvoiced += totalInvoiced;
         }
