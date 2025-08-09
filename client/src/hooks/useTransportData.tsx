@@ -139,8 +139,8 @@ export function useTransportData() {
   const loadDriversFromDatabase = async () => {
     try {
       const [driversResponse, companiesResponse] = await Promise.all([
-        fetch('/api/tenant/3/drivers'),
-        fetch('/api/tenant/3/companies')
+        fetch('/api/drivers'),
+        fetch('/api/companies')
       ]);
       
       if (driversResponse.ok && companiesResponse.ok) {
@@ -243,8 +243,8 @@ export function useTransportData() {
   // Add driver to database after user confirmation
   const addDriverToDatabase = async (driverName: string, selectedCompany: string) => {
     try {
-      // Check if driver already exists first - use tenant-aware endpoint
-      const existingDriversResponse = await fetch('/api/tenant/3/drivers');
+      // Check if driver already exists first
+      const existingDriversResponse = await fetch('/api/drivers');
       if (existingDriversResponse.ok) {
         const existingDrivers = await existingDriversResponse.json();
         const existingDriver = existingDrivers.find((d: any) => 
@@ -259,7 +259,7 @@ export function useTransportData() {
         }
       }
 
-      const companiesResponse = await fetch('/api/tenant/3/companies');
+      const companiesResponse = await fetch('/api/companies');
       if (companiesResponse.ok) {
         const companies = await companiesResponse.json();
         let targetCompanyId = null;
@@ -297,7 +297,7 @@ export function useTransportData() {
         }
         
         if (targetCompanyId) {
-          const response = await fetch('/api/tenant/3/drivers', {
+          const response = await fetch('/api/drivers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

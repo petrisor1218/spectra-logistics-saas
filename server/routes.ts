@@ -1350,7 +1350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`💾 Plată salvată în tabelul payments: ${payment.companyName} - ${payment.weekLabel} - ${payment.amount} EUR`);
 
       // Then update the balance record
-      const balance = await storage.updateCompanyBalancePayment(companyName, weekLabel, paidAmount);
+      const updatedBalance = await storage.updateCompanyBalancePayment(companyName, weekLabel, paidAmount);
       
       // Create payment history record
       await storage.createPaymentHistoryRecord({
@@ -1359,7 +1359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         previousData: null,
       });
 
-      res.json(balance);
+      res.json(updatedBalance);
     } catch (error) {
       console.error("Error updating company balance payment:", error);
       res.status(500).json({ message: "Failed to update payment" });
