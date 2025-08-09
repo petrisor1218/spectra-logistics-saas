@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { tenantStorage } from "./storage-tenant";
 import { tenantMiddleware, requireTenantAuth } from "./middleware/tenant";
-import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema, insertTenantSchema, tenants } from "@shared/schema";
+import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema, insertTenantSchema, tenants, companyBalances, weeklyProcessing, payments, type InsertCompanyBalance, type CompanyBalance } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import bcrypt from 'bcryptjs';
@@ -1328,20 +1328,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Company balance endpoints
-  app.get("/api/company-balances", async (req, res) => {
+  app.get("/api/company-balances", async (req: any, res) => {
     try {
-      const balances = await storage.getCompanyBalances();
-      res.json(balances);
+      // Get current user session to determine tenant
+      let tenantId = 1; // Default fallback
+      if (req.session?.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user && user.tenantId) {
+          tenantId = user.tenantId;
+        }
+      }
+      
+      console.log(`📊 Fetching company balances for tenant ${tenantId}`);
+      
+      // For now, use standard storage but filter by tenant_id in query
+      const allBalances = await storage.getCompanyBalances();
+      const tenantBalances = allBalances.filter(b => b.tenantId === tenantId);
+      res.json(tenantBalances);
     } catch (error) {
       console.error("Error fetching company balances:", error);
       res.status(500).json({ message: "Failed to fetch company balances" });
     }
   });
 
-  app.post("/api/company-balances/generate", async (req, res) => {
+  app.post("/api/company-balances/generate", async (req: any, res) => {
     try {
-      const balances = await storage.generateCompanyBalancesFromCalendarData();
-      res.json(balances);
+      // Get current user session to determine tenant
+      let tenantId = 1; // Default fallback
+      if (req.session?.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user && user.tenantId) {
+          tenantId = user.tenantId;
+        }
+      }
+      
+      console.log(`🔄 Generating company balances for tenant ${tenantId}`);
+      
+      // First, clear existing balances for this tenant
+      await db.delete(companyBalances).where(eq(companyBalances.tenantId, tenantId));
+      
+      // Get tenant-specific data
+      const weeklyData = await db.select().from(weeklyProcessing)
+        .where(eq(weeklyProcessing.tenantId, tenantId))
+        .orderBy(weeklyProcessing.weekLabel);
+      
+      const allPayments = await db.select().from(payments)
+        .where(eq(payments.tenantId, tenantId));
+      
+      const balancesToCreate: InsertCompanyBalance[] = [];
+      
+      for (const week of weeklyData) {
+        if (!week.processedData) continue;
+        
+        const processedData = week.processedData as any;
+        
+        // Extract company totals from processed data
+        Object.keys(processedData).forEach(companyName => {
+          if (companyName === 'Unmatched' || companyName === 'Totals') return;
+          
+          const companyData = processedData[companyName];
+          if (companyData && (companyData.Total_7_days || companyData.Total_30_days)) {
+            const total7Days = parseFloat(companyData.Total_7_days) || 0;
+            const total30Days = parseFloat(companyData.Total_30_days) || 0;
+            const totalCommission = parseFloat(companyData.Total_comision) || 0;
+            
+            // Total invoiced should exclude commission - commission is separate from company payments
+            const totalInvoiced = total7Days + total30Days - totalCommission;
+            
+            // Calculate total paid for this company and week
+            const weekPayments = allPayments.filter(p => 
+              p.companyName === companyName && p.weekLabel === week.weekLabel
+            );
+            const totalPaid = weekPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            
+            let outstandingBalance = totalInvoiced - totalPaid;
+            
+            let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
+            if (totalPaid === 0) {
+              paymentStatus = 'pending';
+            } else if (totalPaid >= totalInvoiced || Math.abs(totalInvoiced - totalPaid) < 1) {
+              paymentStatus = 'paid';
+              // Set outstanding balance to 0 if difference is less than 1 EUR
+              if (Math.abs(totalInvoiced - totalPaid) < 1) {
+                outstandingBalance = 0;
+              }
+            } else {
+              paymentStatus = 'partial';
+            }
+            
+            balancesToCreate.push({
+              companyName,
+              weekLabel: week.weekLabel,
+              totalInvoiced: totalInvoiced.toString(),
+              totalPaid: totalPaid.toString(),
+              outstandingBalance: outstandingBalance.toString(),
+              paymentStatus,
+              tenantId,
+              lastUpdated: new Date()
+            });
+          }
+        });
+      }
+      
+      // Insert all balances
+      let createdBalances: CompanyBalance[] = [];
+      if (balancesToCreate.length > 0) {
+        createdBalances = await db.insert(companyBalances).values(balancesToCreate).returning();
+        console.log(`✅ Generated ${createdBalances.length} company balances for tenant ${tenantId}`);
+      }
+      
+      res.json(createdBalances);
     } catch (error) {
       console.error("Error generating company balances:", error);
       res.status(500).json({ message: "Failed to generate company balances" });
