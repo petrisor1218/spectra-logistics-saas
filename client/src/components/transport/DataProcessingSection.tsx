@@ -14,6 +14,7 @@ interface DataProcessingSectionProps {
   processData: () => void;
   canProcess: boolean;
   processedData?: any;
+  saveProcessedData: (week: string) => void;
   onShowUnmatchedModal?: () => void;
 }
 
@@ -27,6 +28,7 @@ export function DataProcessingSection({
   processData,
   canProcess,
   processedData,
+  saveProcessedData,
   onShowUnmatchedModal
 }: DataProcessingSectionProps) {
   return (
@@ -93,6 +95,33 @@ export function DataProcessingSection({
               <Play className="mr-2" size={16} />
               {loading ? 'Procesare...' : 'Procesează Datele'}
             </Button>
+            
+            {/* Manual Save Button - Only shows after processing */}
+            {processedData && Object.keys(processedData).length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-3"
+              >
+                <Button
+                  onClick={() => {
+                    if (processingWeek) {
+                      saveProcessedData(processingWeek);
+                    } else {
+                      alert('Selectează o săptămână pentru a salva datele');
+                    }
+                  }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  size="lg"
+                >
+                  💾 Salvează în DB
+                </Button>
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  Datele sunt procesate în memorie. Apasă pentru a salva în baza de date.
+                </p>
+              </motion.div>
+            )}
             
             {processedData && processedData.Unmatched && onShowUnmatchedModal && (
               <motion.div
