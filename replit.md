@@ -8,7 +8,16 @@ This is a modern React-based transport payment management application built with
 
 Preferred communication style: Simple, everyday language.
 
-## Recent System Completion - August 8, 2025
+## Recent System Completion - August 9, 2025
+
+### ✅ Company Balance Payment System - FULLY RESOLVED - August 9, 2025
+- **Critical Fix**: Resolved -5000 EUR balance errors through complete data cleanup and proper endpoint implementation
+- **Payment Persistence**: Fixed missing `/api/company-balances/payment` endpoint causing payment data loss
+- **Multi-Tenant Isolation**: Ensured proper tenant_id separation (tenant 3 for admin_abc user)
+- **Database Integrity**: Cleaned duplicate payments and foreign key constraints
+- **Status Logic**: Correct automatic status updates (pending → partial → paid)
+- **Real Data**: Using authentic February 2024 processing data with accurate company invoices
+- **Testing Confirmed**: Successfully tested partial (5000 EUR) and full (1445.46 EUR) payments with correct balance calculations
 
 ### ✅ Multi-Tenant Architecture System - FULLY OPERATIONAL - August 8, 2025
 - **Shared Schema + Tenant ID**: Complete implementation for scalable multi-tenancy
