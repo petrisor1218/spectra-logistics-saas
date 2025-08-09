@@ -1290,8 +1290,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/company-balances/payment", async (req, res) => {
     try {
-      const { companyName, weekLabel, paidAmount } = req.body;
+      const { companyName, weekLabel, paidAmount, balanceId } = req.body;
+      
+      if (!companyName || !weekLabel || !paidAmount) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      // First create the payment record in the payments table
+      const paymentData = {
+        companyName: companyName,
+        amount: paidAmount.toString(),
+        description: `Plată pentru ${weekLabel}`,
+        paymentDate: new Date(),
+        weekLabel: weekLabel,
+        paymentType: 'full'
+      };
+
+      const payment = await storage.createPayment(paymentData);
+      console.log(`💾 Plată salvată în tabelul payments: ${payment.companyName} - ${payment.weekLabel} - ${payment.amount} EUR`);
+
+      // Then update the balance record
       const balance = await storage.updateCompanyBalancePayment(companyName, weekLabel, paidAmount);
+      
+      // Create payment history record
+      await storage.createPaymentHistoryRecord({
+        paymentId: payment.id,
+        action: "created",
+        previousData: null,
+      });
+
       res.json(balance);
     } catch (error) {
       console.error("Error updating company balance payment:", error);
