@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent System Completion - August 9, 2025
 
+### ✅ Driver Persistence Multi-Tenant Fix - FULLY RESOLVED - August 9, 2025
+- **Critical Issue**: Fixed drivers not persisting after file uploads for multi-tenant users
+- **Root Cause**: Legacy `/api/drivers` and `/api/companies` routes used non-tenant-aware storage
+- **Solution**: Updated legacy routes to automatically detect user's tenant from session and use tenant-aware storage
+- **Tenant Detection**: Added automatic tenant ID extraction from user session in legacy routes
+- **Full Isolation**: All driver and company operations now properly isolated by tenant
+- **Backwards Compatibility**: Maintains fallback to tenant 1 for legacy sessions
+- **Testing Confirmed**: Tenant 3 (`admin_abc`) now saves and retrieves drivers correctly
+
 ### ✅ Company Balance Payment System - FULLY RESOLVED - August 9, 2025
 - **Critical Fix**: Resolved -5000 EUR balance errors through complete data cleanup and proper endpoint implementation
 - **Payment Persistence**: Fixed missing `/api/company-balances/payment` endpoint causing payment data loss
