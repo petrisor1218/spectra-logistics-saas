@@ -928,10 +928,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company management routes
-  app.get("/api/companies", async (req, res) => {
+  // Company management routes - TENANT AWARE
+  app.get("/api/companies", async (req: any, res) => {
     try {
-      const companies = await storage.getAllCompanies();
+      // Get current user session to determine tenant
+      let tenantId = 1; // Default fallback
+      if (req.session?.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user && user.tenantId) {
+          tenantId = user.tenantId;
+        }
+      }
+      
+      console.log(`🏢 Fetching companies for tenant ${tenantId}`);
+      
+      const companies = await tenantStorage.getAllCompanies(tenantId);
       res.json(companies);
     } catch (error) {
       console.error("Error fetching companies:", error);
@@ -939,10 +950,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/companies", async (req, res) => {
+  app.post("/api/companies", async (req: any, res) => {
     try {
+      // Get current user session to determine tenant
+      let tenantId = 1; // Default fallback
+      if (req.session?.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user && user.tenantId) {
+          tenantId = user.tenantId;
+        }
+      }
+      
+      console.log(`🏢 Creating company for tenant ${tenantId}`);
+      
       const validatedData = insertCompanySchema.parse(req.body);
-      const company = await storage.createCompany(validatedData);
+      const company = await tenantStorage.createCompany(validatedData, tenantId);
       res.json(company);
     } catch (error) {
       console.error("Error creating company:", error);
@@ -973,11 +995,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver management routes with company join  
-  app.get("/api/drivers", async (req, res) => {
+  // Driver management routes with company join - TENANT AWARE
+  app.get("/api/drivers", async (req: any, res) => {
     try {
-      const drivers = await storage.getAllDrivers();
-      const companies = await storage.getAllCompanies();
+      // Get current user session to determine tenant
+      let tenantId = 1; // Default fallback
+      if (req.session?.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user && user.tenantId) {
+          tenantId = user.tenantId;
+        }
+      }
+      
+      console.log(`📋 Fetching drivers for tenant ${tenantId}`);
+      
+      const drivers = await tenantStorage.getAllDrivers(tenantId);
+      const companies = await tenantStorage.getAllCompanies(tenantId);
       
       const result = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
@@ -1031,10 +1064,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/drivers", async (req, res) => {
+  app.post("/api/drivers", async (req: any, res) => {
     try {
+      // Get current user session to determine tenant
+      let tenantId = 1; // Default fallback
+      if (req.session?.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user && user.tenantId) {
+          tenantId = user.tenantId;
+        }
+      }
+      
+      console.log(`👤 Creating driver for tenant ${tenantId}`);
+      
       const validatedData = insertDriverSchema.parse(req.body);
-      const driver = await storage.createDriver(validatedData);
+      const driver = await tenantStorage.createDriver(validatedData, tenantId);
       res.json(driver);
     } catch (error) {
       console.error("Error creating driver:", error);
