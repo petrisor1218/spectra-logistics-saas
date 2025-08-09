@@ -51,7 +51,7 @@ export function PendingDriverMappings({
     const fetchCompanies = async () => {
       try {
         const apiBaseUrl = getApiBaseUrl();
-        const response = await fetch(`${apiBaseUrl}/companies`);
+        const response = await fetch(`${apiBaseUrl}/tenant/3/companies`);
         if (response.ok) {
           const companies = await response.json();
           setAllCompanies(companies);

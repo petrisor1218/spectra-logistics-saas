@@ -274,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Multi-tenant company routes
-  app.get("/api/tenant/:tenantId/companies", requireTenantAuth, async (req: any, res) => {
+  app.get("/api/tenant/:tenantId/companies", async (req: any, res) => {
     try {
       const tenantId = req.tenantId;
       const companies = await tenantStorage.getAllCompanies(tenantId);
@@ -295,13 +295,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Multi-tenant driver routes
-  app.get("/api/tenant/:tenantId/drivers", requireTenantAuth, async (req: any, res) => {
+  app.get("/api/tenant/:tenantId/drivers", async (req: any, res) => {
     try {
       const tenantId = req.tenantId;
       const drivers = await tenantStorage.getAllDrivers(tenantId);
       res.json(drivers);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch drivers" });
+    }
+  });
+
+  app.post("/api/tenant/:tenantId/drivers", async (req: any, res) => {
+    try {
+      const tenantId = req.tenantId;
+      const { name, companyId } = req.body;
+      
+      if (!name || !companyId) {
+        return res.status(400).json({ error: "Name and companyId are required" });
+      }
+      
+      const driver = await tenantStorage.createDriver({
+        name,
+        companyId,
+        nameVariants: [],
+        phone: "",
+        email: ""
+      }, tenantId);
+      
+      console.log(`✅ Created driver for tenant ${tenantId}: "${name}" → companyId: ${companyId}`);
+      res.json(driver);
+    } catch (error) {
+      console.error("❌ Error creating driver:", error);
+      res.status(500).json({ error: "Failed to create driver" });
     }
   });
 

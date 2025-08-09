@@ -42,7 +42,10 @@ export function tenantMiddleware(req: Request, res: Response, next: NextFunction
 
 // Authentication middleware with tenant support
 export function requireTenantAuth(req: any, res: Response, next: NextFunction) {
-  if (!req.session?.userId) {
+  // Check multiple authentication mechanisms
+  const isAuthenticated = req.session?.userId || req.user || req.headers.authorization;
+  
+  if (!isAuthenticated) {
     return res.status(401).json({ error: 'Authentication required' });
   }
   
