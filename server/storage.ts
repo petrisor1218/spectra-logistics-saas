@@ -436,7 +436,7 @@ export class DatabaseStorage implements IStorage {
       .insert(weeklyProcessing)
       .values(weeklyData)
       .onConflictDoUpdate({
-        target: weeklyProcessing.weekLabel,
+        target: [weeklyProcessing.weekLabel, weeklyProcessing.tenantId],
         set: {
           ...weeklyData,
           processingDate: new Date()

@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb, unique, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -63,7 +63,9 @@ export const weeklyProcessing = pgTable("weekly_processing", {
   invoice7Data: jsonb("invoice7_data"), // Raw 7-day invoice content  
   invoice30Data: jsonb("invoice30_data"), // Raw 30-day invoice content
   tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
-});
+}, (table) => ({
+  uniqueWeekTenant: unique().on(table.weekLabel, table.tenantId)
+}));
 
 // New table for historical VRID tracking
 export const historicalTrips = pgTable("historical_trips", {

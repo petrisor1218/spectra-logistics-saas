@@ -211,14 +211,15 @@ export function PendingDriverMappings({
             {pendingMappings.map((mapping, index) => {
               // Use all companies from database instead of just file-processed ones
               const allDatabaseCompanies = allCompanies.map(c => c.name);
-              const allOptions = [...new Set([mapping.suggestedCompany, ...mapping.alternatives, ...allDatabaseCompanies])];
+              const optionsSet = new Set([mapping.suggestedCompany, ...mapping.alternatives, ...allDatabaseCompanies]);
+              const allOptions = Array.from(optionsSet);
               const selectedCompany = selectedCompanies[mapping.driverName] || mapping.suggestedCompany;
               
               // selectedCompany is now properly initialized via useEffect
               
               return (
                 <motion.div
-                  key={mapping.driverName}
+                  key={`${mapping.driverName}-${index}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
