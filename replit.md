@@ -74,7 +74,10 @@ Preferred communication style: Simple, everyday language.
 - **User Roles**: Admin and subscriber roles with proper database schema
 - **Tenant Isolation**: Tenant ID system for separate databases per subscriber
 - **Analytics Dashboard**: Real-time subscriber statistics, revenue tracking, and status monitoring
-- **Demo Users**: Admin user (admin/admin123) and subscriber user (Fastexpress/Olanda99) created
+- **Demo Users**: 
+  - Admin user: `admin/admin123` (tenant 1)
+  - Admin ABC user: `admin_abc/admin123` (tenant 3) - email: admin@transportabc.ro
+  - Subscriber user: `Fastexpress/Olanda99` 
 - **Evidence System**: Clear visibility into all subscriber activities and subscription statuses
 
 The system now provides complete financial oversight with automated balance tracking, smart payment status detection, accurate commission handling, seamless integration with existing calendar and payment data, plus full SaaS management capabilities for subscriber administration.
