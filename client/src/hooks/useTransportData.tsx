@@ -178,10 +178,13 @@ export function useTransportData() {
         });
         
         setDynamicDriverMap(dbDriverMap);
-        console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
+            console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
         console.log('👥 Numărul șoferilor din baza de date:', drivers.length);
-        console.log('🔗 Mapări Toma SRL:', Object.entries(dbDriverMap).filter(([key, company]) => company === 'Toma SRL'));
-        console.log('🔗 Căutare "sorin bataus":', dbDriverMap['sorin bataus']);
+        console.log('🔗 Total mapări:', {
+          'Toma SRL': Object.entries(dbDriverMap).filter(([key, company]) => company === 'Toma SRL').length,
+          'Fast Express': Object.entries(dbDriverMap).filter(([key, company]) => company === 'Fast Express').length,
+          'Total': Object.keys(dbDriverMap).length
+        });
         return dbDriverMap;
       }
     } catch (error) {
@@ -315,10 +318,13 @@ export function useTransportData() {
             await loadDriversFromDatabase();
             // Trigger reprocessing of existing data with new driver mappings
             console.log('🔄 Declanșez reprocessing după salvarea șoferului...');
-            setTimeout(() => {
-              console.log('⚡ Execut reprocessing-ul acum...');
-              reprocessExistingData();
-            }, 500); // Increased delay to ensure database reload
+            // Force immediate UI refresh by clearing existing data
+            setProcessedData({});
+            setPendingMappings([]);
+            
+            // Immediate reprocessing
+            console.log('⚡ Execut reprocessing-ul IMEDIAT...');
+            reprocessExistingData();
             return selectedCompany;
           } else {
             console.error('❌ Eroare la adăugarea șoferului:', await response.text());
@@ -406,12 +412,18 @@ export function useTransportData() {
     console.log('🧹 Curăță mapping-urile pendinte...');
     setPendingMappings([]);
     
-    // Force state update
+    // Force complete state reset for clean reprocessing
     setProcessedData({});
     
     // Call processData to reprocess everything with new mappings
     console.log('⚙️ Reprocesează toate datele...');
-    await processData();
+    const result = await processData();
+    
+    // Force component re-render by switching tabs and back
+    console.log('🔄 Forțez actualizarea UI-ului prin schimbarea tab-ului...');
+    const currentTab = activeTab;
+    setActiveTab('upload');
+    setTimeout(() => setActiveTab(currentTab), 100);
     
     console.log('✅ Data reprocessed with updated mappings');
   };
