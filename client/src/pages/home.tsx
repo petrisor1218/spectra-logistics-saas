@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield, AlertTriangle } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield, AlertTriangle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
@@ -18,6 +18,7 @@ import { ManagementTabs } from "@/components/management/ManagementTabs";
 import { PendingDriverMappings } from "@/components/processing/PendingDriverMappings";
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import PaymentHistoryView from "@/components/payment/PaymentHistoryView";
+import { CompanySummaryTable } from "@/components/transport/CompanySummaryTable";
 import SmallAmountAlertsModal from "@/components/transport/SmallAmountAlertsModal";
 import { TruckEmptyState } from "@/components/transport/TruckEmptyState";
 import { TruckBackground } from "@/components/transport/TruckBackground";
@@ -83,6 +84,7 @@ export default function Home() {
     saveProcessedData,
     loadAllWeeklyProcessing,
     loadWeeklyProcessingByWeek,
+    weeklyProcessingData,
     assignUnmatchedVRID,
     loadDriversFromDatabase,
     pendingMappings,
@@ -109,6 +111,7 @@ export default function Home() {
     { id: 'calculations', label: 'Calcule și Totale', icon: Calculator },
     { id: 'payments', label: 'Evidența Plăților', icon: DollarSign },
     { id: 'balances', label: 'Bilanțuri Companii', icon: BarChart3 },
+    { id: 'summary', label: 'Sumar Companii', icon: TrendingUp },
     { id: 'reports', label: 'Rapoarte Săptămânale', icon: BarChart3 },
     { id: 'orders', label: 'Comenzi Transport', icon: Truck },
     { id: 'management', label: 'Gestionare', icon: Settings },
@@ -478,6 +481,17 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 <CompanyBalancesView />
+              </motion.div>
+            )}
+
+            {/* Company Summary Tab */}
+            {activeTab === 'summary' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CompanySummaryTable weeklyProcessingData={weeklyProcessingData || []} />
               </motion.div>
             )}
 

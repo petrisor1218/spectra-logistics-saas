@@ -1,0 +1,231 @@
+📊 Funcționalitatea principală (liniile 170-235)
+Calculul datelor pentru sumele pe companii:
+
+const companySummaryData = useMemo(() => {
+  if (!weeklyProcessingData || !Array.isArray(weeklyProcessingData)) return [];
+  
+  const summaryMap = new Map();
+  
+  // Iterează prin toate săptămânile procesate
+  weeklyProcessingData.forEach((weekData: any) => {
+    const weekLabel = weekData.weekLabel;
+    const dataToProcess = weekData.processedData || weekData.data;
+    
+    if (!dataToProcess) return;
+    
+    try {
+      const parsed = typeof dataToProcess === 'string' 
+        ? JSON.parse(dataToProcess) 
+        : dataToProcess;
+        
+      // Pentru fiecare companie din săptămână
+      Object.entries(parsed).forEach(([companyName, companyData]: [string, any]) => {
+        if (!summaryMap.has(companyName)) {
+          summaryMap.set(companyName, {
+            companyName,
+            weeks: []
+          });
+        }
+        
+        const total = (companyData.Total_7_days || 0) + (companyData.Total_30_days || 0);
+        const commission = companyData.Total_comision || 0;
+        const net = total - commission;
+        
+        // Adaugă săptămâna pentru companie
+        summaryMap.get(companyName).weeks.push({
+          weekLabel,
+          total7Days: companyData.Total_7_days || 0,
+          total30Days: companyData.Total_30_days || 0,
+          totalInvoice: total,
+          commission,
+          net,
+          sortDate: parseWeekLabelToDate(weekLabel)
+        });
+      });
+    } catch (e) {
+      console.error('Error parsing week data:', e);
+    }
+  });
+  
+  // Sortează săptămânile pentru fiecare companie (cel mai recent primul)
+  Array.from(summaryMap.values()).forEach(company => {
+    company.weeks.sort((a: any, b: any) => b.sortDate.getTime() - a.sortDate.getTime());
+  });
+  
+  // Aplică sortarea companiilor
+  const sortedCompanies = Array.from(summaryMap.values());
+  
+  if (sortBy === 'total') {
+    // Sortează după totalul general (descrescător)
+    sortedCompanies.sort((a, b) => {
+      const totalA = a.weeks.reduce((sum: number, week: any) => sum + week.totalInvoice, 0);
+      const totalB = b.weeks.reduce((sum: number, week: any) => sum + week.totalInvoice, 0);
+      return totalB - totalA;
+    });
+  } else if (sortBy === 'weeks') {
+    // Sortează după numărul de săptămâni
+    sortedCompanies.sort((a, b) => b.weeks.length - a.weeks.length);
+  } else {
+    // Sortează alfabetic
+    sortedCompanies.sort((a, b) => a.companyName.localeCompare(b.companyName));
+  }
+  
+  return sortedCompanies;
+}, [weeklyProcessingData, sortBy]);
+🎛️ Controalele de sortare și limitare (liniile 630-665)
+Header cu controale:
+
+<CardTitle className="flex items-center justify-between">
+  <div className="flex items-center gap-2">
+    <TrendingUp className="w-5 h-5" />
+    Sume pe Companii - Toate Săptămânile
+  </div>
+  <div className="flex items-center gap-3 text-sm">
+    {/* Control sortare */}
+    <div className="flex items-center gap-2">
+      <label className="text-sm font-medium">Sortare:</label>
+      <Select value={sortBy} onValueChange={(value) => setSortBy(value)}>
+        <SelectContent>
+          <SelectItem value="total">Total DESC</SelectItem>
+          <SelectItem value="company">Companie A-Z</SelectItem>
+          <SelectItem value="weeks">Nr. Săptămâni</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+    
+    {/* Control limitare săptămâni */}
+    <div className="flex items-center gap-2">
+      <label className="text-sm font-medium">Max săptămâni:</label>
+      <Select value={maxWeeksToShow.toString()} onValueChange={(value) => setMaxWeeksToShow(parseInt(value))}>
+        <SelectContent>
+          <SelectItem value="4">4</SelectItem>
+          <SelectItem value="8">8</SelectItem>
+          <SelectItem value="12">12</SelectItem>
+          <SelectItem value="24">24</SelectItem>
+          <SelectItem value="999">Toate</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  </div>
+</CardTitle>
+📋 Tabelul principal (liniile 670-735)
+Rândul principal pentru fiecare companie:
+
+{companySummaryData.map((company, index) => {
+  const totalInvoiced = company.weeks.reduce((sum, week) => sum + week.totalInvoice, 0);
+  const totalCommission = company.weeks.reduce((sum, week) => sum + week.commission, 0);
+  const totalNet = company.weeks.reduce((sum, week) => sum + week.net, 0);
+  
+  return (
+    <React.Fragment key={company.companyName}>
+      <motion.tr
+        className="border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+        onClick={() => setExpandedCompany(expandedCompany === company.companyName ? '' : company.companyName)}
+      >
+        <TableCell className="font-medium flex items-center gap-2">
+          <span className="text-xs">
+            {expandedCompany === company.companyName ? '▼' : '▶'}
+          </span>
+          {company.companyName}
+        </TableCell>
+        <TableCell className="text-center">
+          <Badge variant="outline">{company.weeks.length}</Badge>
+        </TableCell>
+        <TableCell className="text-right font-semibold text-blue-600">
+          {totalInvoiced.toFixed(2)} EUR
+        </TableCell>
+        <TableCell className="text-right text-orange-600">
+          {totalCommission.toFixed(2)} EUR
+        </TableCell>
+        <TableCell className="text-right font-semibold text-green-600">
+          {totalNet.toFixed(2)} EUR
+        </TableCell>
+        <TableCell className="text-center">
+          {/* Afișează ultimele 3 săptămâni ca badges */}
+          <div className="flex flex-wrap gap-1 justify-center max-w-xs">
+            {company.weeks.slice(0, 3).map((week, i) => (
+              <Badge key={i} variant="secondary" className="text-xs px-2 py-1">
+                {week.weekLabel.split(' - ')[0]} ({week.totalInvoice.toFixed(0)}€)
+              </Badge>
+            ))}
+            {company.weeks.length > 3 && (
+              <Badge variant="outline">+{company.weeks.length - 3}</Badge>
+            )}
+          </div>
+        </TableCell>
+      </motion.tr>
+🔍 Secțiunea expandată (liniile 740-805)
+Detaliile complete când dai click pe o companie:
+
+{expandedCompany === company.companyName && (
+  <motion.tr className="bg-white/5 dark:bg-gray-800/50">
+    <TableCell colSpan={6} className="p-4">
+      <div className="space-y-3">
+        <h4 className="font-semibold text-lg mb-3">
+          Detalii pe Săptămâni - {company.companyName}
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Limitează la maxWeeksToShow săptămâni */}
+          {company.weeks.slice(0, maxWeeksToShow).map((week, weekIndex) => (
+            <motion.div
+              key={weekIndex}
+              className="glass-card p-3 rounded-lg border border-white/10"
+            >
+              <div className="text-sm font-medium mb-2 text-blue-600">
+                {week.weekLabel}
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span>7 zile:</span>
+                  <span className="font-medium">{week.total7Days.toFixed(2)} EUR</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>30 zile:</span>
+                  <span className="font-medium">{week.total30Days.toFixed(2)} EUR</span>
+                </div>
+                <div className="flex justify-between border-t pt-1">
+                  <span className="font-medium">Total:</span>
+                  <span className="font-semibold text-blue-600">
+                    {week.totalInvoice.toFixed(2)} EUR
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-orange-600">Comision:</span>
+                  <span className="text-orange-600">
+                    -{week.commission.toFixed(2)} EUR
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-1">
+                  <span className="font-medium text-green-600">Net:</span>
+                  <span className="font-semibold text-green-600">
+                    {week.net.toFixed(2)} EUR
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+          
+          {/* Mesaj dacă sunt mai multe săptămâni decât limita */}
+          {company.weeks.length > maxWeeksToShow && (
+            <div className="col-span-full text-center p-4 text-gray-500">
+              <p className="text-sm">
+                Afișate {maxWeeksToShow} din {company.weeks.length} săptămâni disponibile.
+              </p>
+              <p className="text-xs mt-1">
+                Modificați limita din controalele de mai sus pentru a vedea mai multe.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </TableCell>
+  </motion.tr>
+)}
+✨ Caracteristici cheie:
+📊 Agregare automată - Calculează totalurile pentru toate săptămânile fiecărei companii
+🔄 Sortare flexibilă - După total, nume companie sau numărul de săptămâni
+📏 Limitare inteligentă - Poate afișa doar ultimele X săptămâni pentru a evita supraaglomerarea
+🎯 Expandare detaliată - Click pe companie pentru a vedea breakdown-ul pe săptămâni
+💫 Animații fluide - Framer Motion pentru tranziții plăcute
+🎨 Design glassmorphism - UI modern cu efecte vizuale
+Codul este optimizat pentru scalabilitate și poate gestiona multe săptămâni fără să devină imposibil de folosit!

@@ -96,6 +96,7 @@ export function useTransportData() {
   const [loading, setLoading] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState('');
   const [processingWeek, setProcessingWeek] = useState('');
+  const [weeklyProcessingData, setWeeklyProcessingData] = useState<any[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   
@@ -1264,7 +1265,9 @@ export function useTransportData() {
     try {
       const response = await fetch('/api/weekly-processing');
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        setWeeklyProcessingData(data);
+        return data;
       }
     } catch (error) {
       console.error('Error loading weekly processing data:', error);
@@ -1427,6 +1430,7 @@ export function useTransportData() {
     invoice30FileRef,
     uploadedFiles,
     smallAmountAlerts,
+    weeklyProcessingData,
     
     // Actions
     setActiveTab,
