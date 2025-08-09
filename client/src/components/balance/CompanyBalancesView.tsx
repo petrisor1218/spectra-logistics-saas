@@ -698,9 +698,14 @@ export default function CompanyBalancesView() {
           const companyTotalOutstanding = companyBalances.reduce((sum, balance) => 
             sum + parseFloat(balance.outstandingBalance || '0'), 0);
           
+          // Create unique key using company name and first balance ID or week label
+          const uniqueKey = companyBalances.length > 0 
+            ? `${companyName}-${companyBalances[0].id || companyBalances[0].weekLabel}-${index}`
+            : `${companyName}-${index}`;
+          
           return (
           <motion.div
-            key={companyName}
+            key={uniqueKey}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 * index }}

@@ -1374,11 +1374,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`🗑️ Ștergere plată: ${companyName} - ${weekLabel} - ${paymentAmount} EUR`);
       
-      const balance = await storage.deleteCompanyBalancePayment(companyName, weekLabel, paymentAmount);
+      const deletedBalance = await storage.deleteCompanyBalancePayment(companyName, weekLabel, paymentAmount);
       res.json({ 
         success: true, 
         message: `Plată de ${paymentAmount} EUR ștearsă cu succes`,
-        balance: balance
+        balance: deletedBalance
       });
     } catch (error) {
       console.error("Error deleting payment:", error);
