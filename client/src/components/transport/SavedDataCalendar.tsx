@@ -98,6 +98,11 @@ export function SavedDataCalendar({
       if (!isNaN(yearPart) && yearPart > 2000) {
         year = yearPart;
       }
+    } else {
+      // If no year is specified and month is February, it's likely 2024 data
+      if (monthStr === 'feb') {
+        year = 2024;
+      }
     }
     
     return new Date(year, month, day);

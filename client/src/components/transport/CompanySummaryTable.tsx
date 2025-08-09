@@ -48,7 +48,20 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
         };
         
         const month = romanianMonths[monthStr] ?? 0;
-        const year = new Date().getFullYear(); // Use current year
+        
+        // Check if year is present in the string
+        let year = new Date().getFullYear(); // Default to current year
+        if (parts.length >= 3) {
+          const yearPart = parseInt(parts[2]);
+          if (!isNaN(yearPart) && yearPart > 2000) {
+            year = yearPart;
+          }
+        } else {
+          // If no year is specified and month is February, it's likely 2024 data
+          if (monthStr === 'feb') {
+            year = 2024;
+          }
+        }
         
         return new Date(year, month, day);
       }

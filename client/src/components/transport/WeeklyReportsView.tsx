@@ -76,6 +76,11 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         if (!isNaN(yearPart) && yearPart > 2000) {
           year = yearPart;
         }
+      } else {
+        // If no year is specified and month is February, it's likely 2024 data
+        if (monthAbbr === 'feb.') {
+          year = 2024;
+        }
       }
       
       return new Date(year, month, parseInt(day));
