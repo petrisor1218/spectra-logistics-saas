@@ -5,11 +5,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, UserPlus, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useLocation } from 'wouter';
 
 interface PendingMapping {
   driverName: string;
   suggestedCompany: string;
   alternatives: string[];
+}
+
+interface Company {
+  id: number;
+  name: string;
+  commissionRate: string;
 }
 
 interface PendingDriverMappingsProps {
@@ -26,7 +33,36 @@ export function PendingDriverMappings({
   onMappingComplete
 }: PendingDriverMappingsProps) {
   const { toast } = useToast();
+  const [location] = useLocation();
   const [selectedCompanies, setSelectedCompanies] = useState<Record<string, string>>({});
+  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
+  
+  // Helper function to get correct API base URL based on context
+  const getApiBaseUrl = () => {
+    const tenantMatch = location.match(/\/tenant\/(\d+)/);
+    if (tenantMatch) {
+      return `/api/tenant/${tenantMatch[1]}`;
+    }
+    return '/api';
+  };
+
+  // Fetch all companies from database
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const apiBaseUrl = getApiBaseUrl();
+        const response = await fetch(`${apiBaseUrl}/companies`);
+        if (response.ok) {
+          const companies = await response.json();
+          setAllCompanies(companies);
+        }
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+      }
+    };
+    
+    fetchCompanies();
+  }, [location]);
 
   // Initialize selected companies with suggestions when pendingMappings changes
   useEffect(() => {
@@ -173,7 +209,9 @@ export function PendingDriverMappings({
 
           <AnimatePresence>
             {pendingMappings.map((mapping, index) => {
-              const allOptions = [mapping.suggestedCompany, ...mapping.alternatives];
+              // Use all companies from database instead of just file-processed ones
+              const allDatabaseCompanies = allCompanies.map(c => c.name);
+              const allOptions = [...new Set([mapping.suggestedCompany, ...mapping.alternatives, ...allDatabaseCompanies])];
               const selectedCompany = selectedCompanies[mapping.driverName] || mapping.suggestedCompany;
               
               // selectedCompany is now properly initialized via useEffect
@@ -203,8 +241,8 @@ export function PendingDriverMappings({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="glass-dropdown">
-                            {allOptions.map((company) => (
-                              <SelectItem key={company} value={company}>
+                            {allOptions.map((company, idx) => (
+                              <SelectItem key={`${company}-${idx}`} value={company}>
                                 <span className="flex items-center">
                                   {company}
                                   {company === mapping.suggestedCompany && (
