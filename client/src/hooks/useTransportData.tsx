@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
 // Company details from transport orders system
@@ -97,6 +97,11 @@ export function useTransportData() {
   const [selectedWeek, setSelectedWeek] = useState('');
   const [processingWeek, setProcessingWeek] = useState('');
   const [weeklyProcessingData, setWeeklyProcessingData] = useState<any[]>([]);
+  
+  // Load weekly processing data on mount
+  useEffect(() => {
+    loadAllWeeklyProcessing();
+  }, []);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   
@@ -977,34 +982,14 @@ export function useTransportData() {
         }
       }
 
-      // Save weekly data with complete historical VRID tracking
-      try {
-        const saveResponse = await fetch('/api/weekly-processing', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            weekLabel: processingWeek,
-            data: results,
-            processedAt: new Date().toISOString(),
-            // Raw data for historical VRID persistence
-            tripData: tripData,
-            invoice7Data: invoice7Data,
-            invoice30Data: invoice30Data
-          })
-        });
-        
-        if (saveResponse.ok) {
-          console.log(`💾 Date salvate complet pentru ${processingWeek}:`);
-          console.log(`   📋 ${tripData.length} cursuri salvate în istoric permanent`);
-          console.log(`   📊 ${invoice7Data.length + invoice30Data.length} facturi procesate`);
-          console.log(`   🏢 ${Object.keys(results).length} companii identificate`);
-        }
-        
-        // Create company balances
-        await createCompanyBalances(processingWeek, results);
-      } catch (error) {
-        console.log('Eroare la salvarea datelor:', error);
-      }
+      // ❌ SALVARE AUTOMATĂ DEZACTIVATĂ - utilizatorul decide când să salveze
+      console.log(`📊 Procesare completă pentru ${processingWeek}:`);
+      console.log(`   📋 ${tripData.length} cursuri procesate în memorie`);
+      console.log(`   📊 ${invoice7Data.length + invoice30Data.length} facturi procesate`);
+      console.log(`   🏢 ${Object.keys(results).length} companii identificate`);
+      console.log(`💡 Pentru a salva datele în baza de date, folosește butonul "Salvează în DB" din tab-ul Management`);
+      
+      // Nu mai salvăm automat - utilizatorul controlează când se salvează
 
     } catch (error: any) {
       alert('Eroare la procesarea datelor: ' + error.message);
