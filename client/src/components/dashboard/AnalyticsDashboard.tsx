@@ -87,10 +87,21 @@ export default function AnalyticsDashboard() {
   // Main metrics from company_balances (current system)
   const totalInvoicedFromBalances = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
   const totalPaid = balances.reduce((sum, b) => sum + Number(b.totalPaid || 0), 0);
-  const totalRemaining = balances.reduce((sum, b) => sum + Number(b.outstandingBalance || 0), 0);
+  
+  // Calculate total remaining correctly - should be totalInvoiced - totalPaid, not sum of individual outstandingBalance
+  // This fixes the negative balance issue when payments exceed invoices in some weeks
+  const totalRemaining = totalInvoicedFromBalances - totalPaid;
+  
   const activeCompanies = new Set(balances.map(b => b.companyName)).size;
   const averagePayment = payments.length > 0 ? totalPaid / payments.length : 0;
   const overdueBalances = balances.filter(b => b.paymentStatus === 'pending' && Number(b.outstandingBalance || 0) > 1).length;
+  
+  // Debug the calculation
+  console.log('💰 Debug calcule Analytics:');
+  console.log('   Total Facturat:', totalInvoicedFromBalances.toFixed(2));
+  console.log('   Total Încasat:', totalPaid.toFixed(2));
+  console.log('   De Încasat (corect):', totalRemaining.toFixed(2));
+  console.log('   Sumă individual outstandingBalance:', balances.reduce((sum, b) => sum + Number(b.outstandingBalance || 0), 0).toFixed(2));
   
   // Calculate total invoiced from weekly processing data (for consistency)
   const totalInvoicedFromWeeklyData = weeklyProcessingData.reduce((sum, week: any) => {
