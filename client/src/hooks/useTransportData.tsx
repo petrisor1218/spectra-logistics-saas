@@ -180,8 +180,8 @@ export function useTransportData() {
         setDynamicDriverMap(dbDriverMap);
         console.log('✅ Încărcat mappingul șoferilor din baza de date:', Object.keys(dbDriverMap).length, 'variante');
         console.log('👥 Numărul șoferilor din baza de date:', drivers.length);
-        console.log('🔗 Exemplu mapare "Sorin Cristinel Dumitru":', Object.entries(dbDriverMap).filter(([key]) => key.includes('sorin') && key.includes('cristinel')));
-        console.log('🔗 Căutare "dumitru sorin cristinel":', dbDriverMap['dumitru sorin cristinel']);
+        console.log('🔗 Mapări Toma SRL:', Object.entries(dbDriverMap).filter(([key, company]) => company === 'Toma SRL'));
+        console.log('🔗 Căutare "sorin bataus":', dbDriverMap['sorin bataus']);
         return dbDriverMap;
       }
     } catch (error) {
@@ -314,7 +314,11 @@ export function useTransportData() {
             console.log(`✅ Adăugat șofer nou: "${driverName}" → "${selectedCompany}"`);
             await loadDriversFromDatabase();
             // Trigger reprocessing of existing data with new driver mappings
-            setTimeout(() => reprocessExistingData(), 100);
+            console.log('🔄 Declanșez reprocessing după salvarea șoferului...');
+            setTimeout(() => {
+              console.log('⚡ Execut reprocessing-ul acum...');
+              reprocessExistingData();
+            }, 500); // Increased delay to ensure database reload
             return selectedCompany;
           } else {
             console.error('❌ Eroare la adăugarea șoferului:', await response.text());
@@ -395,9 +399,18 @@ export function useTransportData() {
     console.log('🔄 Reprocessing existing data with updated driver mappings...');
     
     // Reload drivers to get latest mappings
+    console.log('📥 Reîncarcă șoferii din baza de date...');
     await loadDriversFromDatabase();
     
+    // Clear pending mappings since we have new data
+    console.log('🧹 Curăță mapping-urile pendinte...');
+    setPendingMappings([]);
+    
+    // Force state update
+    setProcessedData({});
+    
     // Call processData to reprocess everything with new mappings
+    console.log('⚙️ Reprocesează toate datele...');
     await processData();
     
     console.log('✅ Data reprocessed with updated mappings');
