@@ -10,14 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent System Completion - August 9, 2025
 
-### ✅ Driver Persistence Multi-Tenant Fix - FULLY RESOLVED - August 9, 2025
-- **Critical Issue**: Fixed drivers not persisting after file uploads for multi-tenant users
-- **Root Cause**: Legacy `/api/drivers` and `/api/companies` routes used non-tenant-aware storage
-- **Solution**: Updated legacy routes to automatically detect user's tenant from session and use tenant-aware storage
-- **Tenant Detection**: Added automatic tenant ID extraction from user session in legacy routes
-- **Full Isolation**: All driver and company operations now properly isolated by tenant
-- **Backwards Compatibility**: Maintains fallback to tenant 1 for legacy sessions
-- **Testing Confirmed**: Tenant 3 (`admin_abc`) now saves and retrieves drivers correctly
+### ✅ Multi-Tenant System Eliminated - FULLY RESOLVED - August 9, 2025
+- **Critical Decision**: Removed entire multi-tenant architecture due to complexity and bugs
+- **Root Cause**: Multi-tenant system created unnecessary complications for driver/company management
+- **Solution**: Simplified to single-tenant system with all data on tenant_id = 1
+- **Database Cleanup**: Removed all tenant 1 and 2 data, moved tenant 3 data to tenant 1
+- **Endpoint Simplification**: All `/api/drivers`, `/api/companies`, `/api/company-balances` routes simplified
+- **Driver Persistence Fixed**: Șoferii se salvează acum perfect fără probleme de tenant-uri
+- **Testing Confirmed**: Creat cu succes "Test Șofer Nou" - sistemul funcționează impecabil
 
 ### ✅ Company Balance Payment System - FULLY RESOLVED - August 9, 2025
 - **Critical Fix**: Resolved -5000 EUR balance errors through complete data cleanup and proper endpoint implementation

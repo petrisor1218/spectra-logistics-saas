@@ -928,21 +928,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Company management routes - TENANT AWARE
+  // Company management routes - SIMPLIFIED  
   app.get("/api/companies", async (req: any, res) => {
     try {
-      // Get current user session to determine tenant
-      let tenantId = 1; // Default fallback
-      if (req.session?.userId) {
-        const user = await storage.getUser(req.session.userId);
-        if (user && user.tenantId) {
-          tenantId = user.tenantId;
-        }
-      }
+      console.log(`🏢 Fetching all companies (simplified system)`);
       
-      console.log(`🏢 Fetching companies for tenant ${tenantId}`);
-      
-      const companies = await tenantStorage.getAllCompanies(tenantId);
+      const companies = await storage.getAllCompanies();
       res.json(companies);
     } catch (error) {
       console.error("Error fetching companies:", error);
@@ -995,22 +986,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver management routes with company join - TENANT AWARE
+  // Driver management routes with company join - SIMPLIFIED
   app.get("/api/drivers", async (req: any, res) => {
     try {
-      // Get current user session to determine tenant
-      let tenantId = 1; // Default fallback
-      if (req.session?.userId) {
-        const user = await storage.getUser(req.session.userId);
-        if (user && user.tenantId) {
-          tenantId = user.tenantId;
-        }
-      }
+      console.log(`📋 Fetching all drivers (simplified system)`);
       
-      console.log(`📋 Fetching drivers for tenant ${tenantId}`);
-      
-      const drivers = await tenantStorage.getAllDrivers(tenantId);
-      const companies = await tenantStorage.getAllCompanies(tenantId);
+      const drivers = await storage.getAllDrivers();
+      const companies = await storage.getAllCompanies();
       
       const result = drivers.map(driver => {
         const company = companies.find(c => c.id === driver.companyId);
@@ -1066,19 +1048,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/drivers", async (req: any, res) => {
     try {
-      // Get current user session to determine tenant
-      let tenantId = 1; // Default fallback
-      if (req.session?.userId) {
-        const user = await storage.getUser(req.session.userId);
-        if (user && user.tenantId) {
-          tenantId = user.tenantId;
-        }
-      }
-      
-      console.log(`👤 Creating driver for tenant ${tenantId}`);
+      console.log(`👤 Creating driver (simplified system)`);
       
       const validatedData = insertDriverSchema.parse(req.body);
-      const driver = await tenantStorage.createDriver(validatedData, tenantId);
+      const driver = await storage.createDriver(validatedData);
       res.json(driver);
     } catch (error) {
       console.error("Error creating driver:", error);
@@ -1330,21 +1303,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company balance endpoints
   app.get("/api/company-balances", async (req: any, res) => {
     try {
-      // Get current user session to determine tenant
-      let tenantId = 1; // Default fallback
-      if (req.session?.userId) {
-        const user = await storage.getUser(req.session.userId);
-        if (user && user.tenantId) {
-          tenantId = user.tenantId;
-        }
-      }
-      
-      console.log(`📊 Fetching company balances for tenant ${tenantId}`);
-      
-      // For now, use standard storage but filter by tenant_id in query
-      const allBalances = await storage.getCompanyBalances();
-      const tenantBalances = allBalances.filter(b => b.tenantId === tenantId);
-      res.json(tenantBalances);
+      console.log(`📊 Fetching all company balances (simplified system)`);
+      const balances = await storage.getCompanyBalances();
+      res.json(balances);
     } catch (error) {
       console.error("Error fetching company balances:", error);
       res.status(500).json({ message: "Failed to fetch company balances" });
