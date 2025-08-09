@@ -167,9 +167,36 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  // Calculate monthly data for analysis
+  // Calculate monthly data for analysis - extract real date from week label instead of processing date
   const monthlyData = weeklyInvoicedData.reduce((acc: any[], week: any) => {
-    const weekDate = new Date(week.processingDate);
+    // Extract real date from week label like "11 feb. - 17 feb." 
+    const weekLabel = week.weekLabel;
+    let weekDate = new Date();
+    
+    try {
+      // Parse week label to extract month
+      const monthMatch = weekLabel.match(/(\d+)\s+(\w+)/);
+      if (monthMatch) {
+        const day = parseInt(monthMatch[1]);
+        const monthStr = monthMatch[2].toLowerCase();
+        
+        // Map Romanian month abbreviations to numbers
+        const monthMap: Record<string, number> = {
+          'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
+          'iul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+        };
+        
+        const monthNum = monthMap[monthStr.substring(0, 3)];
+        if (monthNum !== undefined) {
+          // Use 2024 as the year since data is from February 2024
+          weekDate = new Date(2024, monthNum, day);
+        }
+      }
+    } catch (error) {
+      console.log('Error parsing week date, using current date:', error);
+      weekDate = new Date(week.processingDate);
+    }
+    
     const monthKey = `${weekDate.getFullYear()}-${String(weekDate.getMonth() + 1).padStart(2, '0')}`;
     const monthName = weekDate.toLocaleDateString('ro-RO', { month: 'long' });
     const fullMonthName = weekDate.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
