@@ -295,6 +295,21 @@ export class DatabaseStorage implements IStorage {
       .insert(payments)
       .values(insertPayment)
       .returning();
+    
+    // Actualizează automat soldul companiei după adăugarea plății
+    if (payment.companyName && payment.weekLabel && payment.amount) {
+      try {
+        await this.updateCompanyBalancePayment(
+          payment.companyName, 
+          payment.weekLabel, 
+          parseFloat(payment.amount)
+        );
+        console.log(`✅ Company balance updated for ${payment.companyName} - ${payment.weekLabel}`);
+      } catch (error) {
+        console.error(`❌ Failed to update company balance for ${payment.companyName}:`, error);
+      }
+    }
+    
     return payment;
   }
 
@@ -686,52 +701,51 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance> {
+  // Funcție pentru recalcularea soldurilor pe baza plăților existente
+  async recalculateCompanyBalance(companyName: string, weekLabel: string): Promise<CompanyBalance> {
     const existing = await this.getCompanyBalanceByWeek(companyName, weekLabel);
     if (!existing) {
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
-    // IMPORTANT: Save the payment in the payments table so it persists through synchronization
-    const paymentData: InsertPayment = {
-      companyName: companyName,
-      weekLabel: weekLabel,
-      amount: paidAmount.toString(),
-      description: `Plată manuală adăugată prin bilanțe`
-    };
-
-    await db.insert(payments).values(paymentData);
-    console.log(`💾 Plată salvată în tabelul payments: ${companyName} - ${weekLabel} - ${paidAmount} EUR`);
-
-    const newTotalPaid = parseFloat(existing.totalPaid || '0') + paidAmount;
-    const totalInvoiced = parseFloat(existing.totalInvoiced || '0');
-    let newOutstandingBalance = totalInvoiced - newTotalPaid;
+    // Calculează suma totală plătită pe baza plăților reale din tabel
+    const payments = await this.getPaymentsByCompanyAndWeek(companyName, weekLabel);
+    const totalPaid = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
     
-    // If difference is less than 1 EUR, consider it paid and set balance to 0
-    let newStatus: 'pending' | 'partial' | 'paid' = 'pending';
-    if (newTotalPaid === 0) {
-      newStatus = 'pending';
-    } else if (newTotalPaid >= totalInvoiced || Math.abs(newOutstandingBalance) < 1) {
-      newStatus = 'paid';
-      if (Math.abs(newOutstandingBalance) < 1) {
-        newOutstandingBalance = 0;
+    const totalInvoiced = parseFloat(existing.totalInvoiced || '0');
+    let outstandingBalance = totalInvoiced - totalPaid;
+    
+    // Dacă diferența este mai mică de 1 EUR, consideră plătit complet
+    let status: 'pending' | 'partial' | 'paid' = 'pending';
+    if (totalPaid === 0) {
+      status = 'pending';
+    } else if (totalPaid >= totalInvoiced || Math.abs(outstandingBalance) < 1) {
+      status = 'paid';
+      if (Math.abs(outstandingBalance) < 1) {
+        outstandingBalance = 0;
       }
     } else {
-      newStatus = 'partial';
+      status = 'partial';
     }
 
     const [updated] = await db
       .update(companyBalances)
       .set({
-        totalPaid: newTotalPaid.toString(),
-        outstandingBalance: newOutstandingBalance.toString(),
-        paymentStatus: newStatus,
+        totalPaid: totalPaid.toString(),
+        outstandingBalance: outstandingBalance.toString(),
+        paymentStatus: status,
         lastUpdated: new Date()
       })
       .where(eq(companyBalances.id, existing.id))
       .returning();
-    
+
+    console.log(`✅ Recalculated balance for ${companyName} - ${weekLabel}: paid ${totalPaid}/${totalInvoiced}`);
     return updated;
+  }
+
+  async updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance> {
+    // Nu mai creăm plată duplicată - doar recalculăm pe baza plăților existente
+    return this.recalculateCompanyBalance(companyName, weekLabel);
   }
 
   async deleteCompanyBalancePayment(companyName: string, weekLabel: string, paymentAmount: number): Promise<CompanyBalance> {

@@ -1498,6 +1498,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST route to recalculate all company balances for a specific week
+  app.post("/api/company-balances/recalculate", async (req, res) => {
+    try {
+      const { weekLabel } = req.body;
+      
+      console.log(`🔄 Recalculating all company balances for week: ${weekLabel}`);
+      
+      // Găsește toate soldurile pentru săptămâna specificată
+      const allBalances = await storage.getCompanyBalances();
+      const weekBalances = allBalances.filter(balance => balance.weekLabel === weekLabel);
+      
+      const recalculatedBalances = [];
+      for (const balance of weekBalances) {
+        try {
+          const updated = await storage.recalculateCompanyBalance(balance.companyName, weekLabel);
+          recalculatedBalances.push(updated);
+        } catch (error) {
+          console.error(`Failed to recalculate balance for ${balance.companyName}:`, error);
+        }
+      }
+      
+      console.log(`✅ Recalculated ${recalculatedBalances.length} company balances for week ${weekLabel}`);
+      res.json({ 
+        success: true, 
+        recalculated: recalculatedBalances.length, 
+        weekLabel,
+        balances: recalculatedBalances 
+      });
+    } catch (error) {
+      console.error("Error recalculating company balances:", error);
+      res.status(500).json({ error: "Failed to recalculate company balances" });
+    }
+  });
+
 
   // Stripe subscription routes WITH AUTOMATIC TENANT CREATION
   app.post("/api/create-subscription", async (req, res) => {
