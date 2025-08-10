@@ -29,6 +29,11 @@ import { SimpleLogin } from "@/components/auth/SimpleLogin";
 export default function Home() {
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
   const [showSmallAmountAlertsModal, setShowSmallAmountAlertsModal] = useState(false);
+  const [importantNote, setImportantNote] = useState(() => {
+    return localStorage.getItem('important-note') || '';
+  });
+  const [showNoteInput, setShowNoteInput] = useState(false);
+  const [noteInputValue, setNoteInputValue] = useState('');
   const { isAuthenticated, isLoading, login } = useAuth();
   
   // Show login screen if not authenticated
@@ -204,6 +209,102 @@ export default function Home() {
               )}
             </div>
           </motion.div>
+
+          {/* Important Note Notification */}
+          {importantNote && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-xl p-6 backdrop-blur-lg"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                  <div>
+                    <h3 className="text-red-300 font-semibold mb-2">NOTĂ IMPORTANTĂ</h3>
+                    <p className="text-white whitespace-pre-wrap">{importantNote}</p>
+                  </div>
+                </div>
+                <motion.button
+                  onClick={() => {
+                    localStorage.removeItem('important-note');
+                    setImportantNote('');
+                  }}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  ✓ Rezolvat
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Add Important Note Button */}
+          {!importantNote && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6"
+            >
+              {!showNoteInput ? (
+                <motion.button
+                  onClick={() => setShowNoteInput(true)}
+                  className="px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-300 hover:bg-yellow-500/30 transition-colors text-sm font-medium"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  📝 Adaugă notă importantă
+                </motion.button>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gray-800/50 border border-gray-600 rounded-xl p-4 backdrop-blur-lg"
+                >
+                  <div className="space-y-3">
+                    <textarea
+                      value={noteInputValue}
+                      onChange={(e) => setNoteInputValue(e.target.value)}
+                      placeholder="Scrie nota ta importantă aici..."
+                      className="w-full h-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 resize-none"
+                    />
+                    <div className="flex items-center space-x-3">
+                      <motion.button
+                        onClick={() => {
+                          if (noteInputValue.trim()) {
+                            localStorage.setItem('important-note', noteInputValue.trim());
+                            setImportantNote(noteInputValue.trim());
+                            setNoteInputValue('');
+                            setShowNoteInput(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-medium transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={!noteInputValue.trim()}
+                      >
+                        💾 Salvează nota
+                      </motion.button>
+                      <motion.button
+                        onClick={() => {
+                          setShowNoteInput(false);
+                          setNoteInputValue('');
+                        }}
+                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Anulează
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
 
           {/* Tab Content */}
           <motion.div
