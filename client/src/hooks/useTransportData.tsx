@@ -425,9 +425,8 @@ export function useTransportData() {
     console.log('📥 Reîncarcă șoferii din baza de date...');
     await loadDriversFromDatabase();
     
-    // Clear pending mappings since we have new data
-    console.log('🧹 Curăță mapping-urile pendinte...');
-    setPendingMappings([]);
+    // DON'T clear pending mappings - let them persist for remaining unmapped drivers
+    console.log('✅ Menține mapping-urile pendinte pentru șoferii rămași...');
     
     // Force complete state reset for clean reprocessing
     setProcessedData({});
@@ -442,7 +441,7 @@ export function useTransportData() {
     setActiveTab('upload');
     setTimeout(() => setActiveTab(currentTab), 100);
     
-    console.log('✅ Data reprocessed with updated mappings');
+    console.log('✅ Data reprocessed with updated mappings - pending drivers preserved');
   };
 
   // Week functions - DO NOT MODIFY!

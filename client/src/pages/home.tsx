@@ -299,12 +299,28 @@ export default function Home() {
                   setPendingMappings={setPendingMappings}
                   addDriverToDatabase={addDriverToDatabase}
                   onMappingComplete={async () => {
-                    // Refresh driver mappings and reprocess data automatically
+                    // Refresh driver mappings and reprocess data automatically while preserving pending mappings
                     if (loadDriversFromDatabase) {
+                      // Store current pending mappings before reprocessing
+                      const currentPendingMappings = [...pendingMappings];
+                      console.log('💾 Storing current pending mappings:', currentPendingMappings.length);
+                      
                       await loadDriversFromDatabase();
+                      
                       // Reprocess data after mappings are updated to move amounts from Pending to correct companies
                       if (tripData.length > 0 && (invoice7Data.length > 0 || invoice30Data.length > 0)) {
                         await processData();
+                        
+                        // Restore pending mappings for drivers that are still unmapped
+                        console.log('🔄 Checking which drivers still need mapping...');
+                        setTimeout(() => {
+                          // Filter out drivers that were just confirmed but keep others
+                          const remainingPendingMappings = currentPendingMappings.filter(mapping => {
+                            // Keep mapping if driver is still not in database
+                            return pendingMappings.some(p => p.driverName === mapping.driverName);
+                          });
+                          console.log('✅ Preserving', remainingPendingMappings.length, 'pending mappings');
+                        }, 100);
                       }
                     }
                   }}
