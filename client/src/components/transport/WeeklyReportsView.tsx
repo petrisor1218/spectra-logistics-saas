@@ -197,7 +197,34 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       const response = await fetch(`/api/weekly-processing?weekLabel=${encodeURIComponent(selectedReportWeek)}`);
       if (!response.ok) throw new Error('Failed to fetch trip data');
       const data = await response.json();
-      return data.tripData || []; // Raw trip data with driver names
+      
+      // Încercăm să accesăm datele de trip din câmpul tripData sau trip_data
+      console.log('🔍 Frontend trip data check:', {
+        hasData: !!data,
+        hasTripData: !!data.tripData,
+        tripDataType: typeof data.tripData,
+        tripDataIsArray: Array.isArray(data.tripData),
+        availableKeys: Object.keys(data || {})
+      });
+      
+      if (data.tripData && Array.isArray(data.tripData)) {
+        console.log('✅ Found tripData array with', data.tripData.length, 'entries');
+        return data.tripData;
+      }
+      
+      // Fallback: încercăm să parsăm din string dacă este necesar
+      if (typeof data.tripData === 'string') {
+        try {
+          const parsed = JSON.parse(data.tripData);
+          console.log('✅ Parsed tripData string to array with', parsed.length, 'entries');
+          return parsed;
+        } catch (e) {
+          console.error('Failed to parse tripData string:', e);
+          return [];
+        }
+      }
+      
+      return [];
     },
     enabled: !!selectedReportWeek
   });
@@ -256,10 +283,12 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       // Dacă nu am găsit vehiculul în trip data, încercăm să-l mapăm din baza de date
       if (vehicleId === 'N/A' && vehiclesData && Array.isArray(vehiclesData)) {
         const vehicle = vehiclesData.find((v: any) => 
-          vrid.includes(v.vehicle_id) || 
-          v.vehicle_id.includes(vrid.substring(0, 6))
+          v?.vehicle_id && (
+            vrid.includes(v.vehicle_id) || 
+            v.vehicle_id.includes(vrid.substring(0, 6))
+          )
         );
-        if (vehicle) {
+        if (vehicle?.vehicle_id) {
           vehicleId = vehicle.vehicle_id;
         }
       }

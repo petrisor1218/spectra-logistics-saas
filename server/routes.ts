@@ -687,6 +687,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (weekLabel) {
         const processing = await storage.getWeeklyProcessingByWeek(weekLabel as string);
+        
+        // Debug log pentru a vedea ce returnăm
+        console.log('🔍 Weekly processing response:', {
+          weekLabel,
+          hasProcessing: !!processing,
+          hasTripData: !!processing?.tripData,
+          tripDataType: typeof processing?.tripData,
+          tripDataLength: Array.isArray(processing?.tripData) ? processing.tripData.length : 'not array',
+          keys: processing ? Object.keys(processing) : []
+        });
+        
         res.json(processing);
       } else {
         const allProcessing = await storage.getAllWeeklyProcessing();
