@@ -29,12 +29,14 @@ import { SimpleLogin } from "@/components/auth/SimpleLogin";
 export default function Home() {
   const [showUnmatchedModal, setShowUnmatchedModal] = useState(false);
   const [showSmallAmountAlertsModal, setShowSmallAmountAlertsModal] = useState(false);
-  const [importantNote, setImportantNote] = useState(() => {
-    return localStorage.getItem('important-note') || '';
+  const [importantNotes, setImportantNotes] = useState(() => {
+    const saved = localStorage.getItem('important-notes');
+    return saved ? JSON.parse(saved) : [];
   });
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [noteInputValue, setNoteInputValue] = useState('');
-  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteTitleValue, setNoteTitleValue] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
   const { isAuthenticated, isLoading, login } = useAuth();
   
   // Show login screen if not authenticated
@@ -211,157 +213,194 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Important Note Notification */}
-          {importantNote && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-xl p-6 backdrop-blur-lg"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
-                    <span className="text-white text-xs font-bold">!</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-red-300 font-semibold mb-2">NOTĂ IMPORTANTĂ</h3>
-                    {!isEditingNote ? (
-                      <p className="text-white whitespace-pre-wrap">{importantNote}</p>
-                    ) : (
-                      <div className="space-y-3">
-                        <textarea
-                          value={noteInputValue}
-                          onChange={(e) => setNoteInputValue(e.target.value)}
-                          className="w-full h-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 resize-none"
-                        />
-                        <div className="flex items-center space-x-2">
-                          <motion.button
-                            onClick={() => {
-                              if (noteInputValue.trim()) {
-                                localStorage.setItem('important-note', noteInputValue.trim());
-                                setImportantNote(noteInputValue.trim());
-                                setIsEditingNote(false);
-                                setNoteInputValue('');
-                              }
-                            }}
-                            className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black rounded text-sm font-medium transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            disabled={!noteInputValue.trim()}
-                          >
-                            💾 Salvează
-                          </motion.button>
-                          <motion.button
-                            onClick={() => {
-                              setIsEditingNote(false);
-                              setNoteInputValue('');
-                            }}
-                            className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            Anulează
-                          </motion.button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col space-y-2">
-                  {!isEditingNote && (
-                    <motion.button
-                      onClick={() => {
-                        setNoteInputValue(importantNote);
-                        setIsEditingNote(true);
-                      }}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      ✏️ Editează
-                    </motion.button>
-                  )}
-                  <motion.button
-                    onClick={() => {
-                      localStorage.removeItem('important-note');
-                      setImportantNote('');
-                      setIsEditingNote(false);
-                      setNoteInputValue('');
-                    }}
-                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    ✓ Rezolvat
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Add Important Note Button */}
-          {!importantNote && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6"
-            >
-              {!showNoteInput ? (
-                <motion.button
-                  onClick={() => setShowNoteInput(true)}
-                  className="px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-300 hover:bg-yellow-500/30 transition-colors text-sm font-medium"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  📝 Adaugă notă importantă
-                </motion.button>
-              ) : (
+          {/* Important Notes Display */}
+          {importantNotes.length > 0 && (
+            <div className="mb-6 space-y-4">
+              {importantNotes.map((note) => (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-gray-800/50 border border-gray-600 rounded-xl p-4 backdrop-blur-lg"
+                  key={note.id}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-xl p-6 backdrop-blur-lg"
                 >
-                  <div className="space-y-3">
-                    <textarea
-                      value={noteInputValue}
-                      onChange={(e) => setNoteInputValue(e.target.value)}
-                      placeholder="Scrie nota ta importantă aici..."
-                      className="w-full h-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 resize-none"
-                    />
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                      <div className="flex-1">
+                        {editingNoteId === note.id ? (
+                          <div className="space-y-3">
+                            <input
+                              value={noteTitleValue}
+                              onChange={(e) => setNoteTitleValue(e.target.value)}
+                              placeholder="Titlul notei..."
+                              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
+                            />
+                            <textarea
+                              value={noteInputValue}
+                              onChange={(e) => setNoteInputValue(e.target.value)}
+                              placeholder="Conținutul notei..."
+                              className="w-full h-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 resize-none"
+                            />
+                            <div className="flex items-center space-x-2">
+                              <motion.button
+                                onClick={() => {
+                                  if (noteInputValue.trim() && noteTitleValue.trim()) {
+                                    const updatedNotes = importantNotes.map(n => 
+                                      n.id === note.id 
+                                        ? { ...n, title: noteTitleValue.trim(), content: noteInputValue.trim() }
+                                        : n
+                                    );
+                                    setImportantNotes(updatedNotes);
+                                    localStorage.setItem('important-notes', JSON.stringify(updatedNotes));
+                                    setEditingNoteId(null);
+                                    setNoteInputValue('');
+                                    setNoteTitleValue('');
+                                  }
+                                }}
+                                className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black rounded text-sm font-medium transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                disabled={!noteInputValue.trim() || !noteTitleValue.trim()}
+                              >
+                                💾 Salvează
+                              </motion.button>
+                              <motion.button
+                                onClick={() => {
+                                  setEditingNoteId(null);
+                                  setNoteInputValue('');
+                                  setNoteTitleValue('');
+                                }}
+                                className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                Anulează
+                              </motion.button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <h3 className="text-red-300 font-semibold mb-2">{note.title}</h3>
+                            <p className="text-white whitespace-pre-wrap">{note.content}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      {editingNoteId !== note.id && (
+                        <motion.button
+                          onClick={() => {
+                            setNoteTitleValue(note.title);
+                            setNoteInputValue(note.content);
+                            setEditingNoteId(note.id);
+                          }}
+                          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          ✏️ Editează
+                        </motion.button>
+                      )}
                       <motion.button
                         onClick={() => {
-                          if (noteInputValue.trim()) {
-                            localStorage.setItem('important-note', noteInputValue.trim());
-                            setImportantNote(noteInputValue.trim());
-                            setNoteInputValue('');
-                            setShowNoteInput(false);
-                          }
-                        }}
-                        className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-medium transition-colors"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        disabled={!noteInputValue.trim()}
-                      >
-                        💾 Salvează nota
-                      </motion.button>
-                      <motion.button
-                        onClick={() => {
-                          setShowNoteInput(false);
+                          const updatedNotes = importantNotes.filter(n => n.id !== note.id);
+                          setImportantNotes(updatedNotes);
+                          localStorage.setItem('important-notes', JSON.stringify(updatedNotes));
+                          setEditingNoteId(null);
                           setNoteInputValue('');
+                          setNoteTitleValue('');
                         }}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        Anulează
+                        ✓ Rezolvat
                       </motion.button>
                     </div>
                   </div>
                 </motion.div>
-              )}
-            </motion.div>
+              ))}
+            </div>
           )}
+
+          {/* Add Important Note Button - Always visible */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            {!showNoteInput ? (
+              <motion.button
+                onClick={() => setShowNoteInput(true)}
+                className="px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-yellow-300 hover:bg-yellow-500/30 transition-colors text-sm font-medium"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                📝 Adaugă notă nouă {importantNotes.length > 0 && `(${importantNotes.length} active)`}
+              </motion.button>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-gray-800/50 border border-gray-600 rounded-xl p-4 backdrop-blur-lg"
+              >
+                <div className="space-y-3">
+                  <input
+                    value={noteTitleValue}
+                    onChange={(e) => setNoteTitleValue(e.target.value)}
+                    placeholder="Titlul notei importante..."
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
+                  />
+                  <textarea
+                    value={noteInputValue}
+                    onChange={(e) => setNoteInputValue(e.target.value)}
+                    placeholder="Scrie descrierea problemei aici..."
+                    className="w-full h-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 resize-none"
+                  />
+                  <div className="flex items-center space-x-3">
+                    <motion.button
+                      onClick={() => {
+                        if (noteInputValue.trim() && noteTitleValue.trim()) {
+                          const newNote = {
+                            id: Date.now(),
+                            title: noteTitleValue.trim(),
+                            content: noteInputValue.trim(),
+                            createdAt: new Date().toISOString()
+                          };
+                          const updatedNotes = [...importantNotes, newNote];
+                          setImportantNotes(updatedNotes);
+                          localStorage.setItem('important-notes', JSON.stringify(updatedNotes));
+                          setNoteInputValue('');
+                          setNoteTitleValue('');
+                          setShowNoteInput(false);
+                        }
+                      }}
+                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg text-sm font-medium transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      disabled={!noteInputValue.trim() || !noteTitleValue.trim()}
+                    >
+                      💾 Salvează nota
+                    </motion.button>
+                    <motion.button
+                      onClick={() => {
+                        setShowNoteInput(false);
+                        setNoteInputValue('');
+                        setNoteTitleValue('');
+                      }}
+                      className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Anulează
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
 
           {/* Tab Content */}
           <motion.div
