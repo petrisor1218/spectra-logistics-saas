@@ -378,21 +378,42 @@ export function useTransportData() {
       return "Unknown";
     }
     
-    console.log(`🚗 NEW MAPPING SYSTEM: Processing vehicle "${vehicleId}" with driver "${driverName}"`);
+    console.log(`🚗 VEHICLE PRIORITY MAPPING: Processing vehicle "${vehicleId}" with driver "${driverName}"`);
     
-    // 1. PRIORITY: Check vehicle mapping first
+    // 1. PRIORITY: Check vehicle mapping first (ACEST SISTEM ARE PRIORITATE!)
     if (vehicleId && vehicleMapping) {
-      const vehicle = vehicleMapping.vehicles?.find(v => 
+      // Extract clean vehicle ID from formats like "OTHR-TR94FST" → "TR94FST"
+      let cleanVehicleId = vehicleId;
+      if (vehicleId.includes('-')) {
+        const parts = vehicleId.split('-');
+        if (parts.length >= 2) {
+          cleanVehicleId = parts[parts.length - 1]; // Take the last part
+        }
+      }
+      
+      // First try with original vehicle ID
+      let vehicle = vehicleMapping.vehicles?.find(v => 
         v.vehicleId === vehicleId && 
         v.isActive === 'true'
       );
       
+      // If not found, try with cleaned vehicle ID
+      if (!vehicle) {
+        vehicle = vehicleMapping.vehicles?.find(v => 
+          v.vehicleId === cleanVehicleId && 
+          v.isActive === 'true'
+        );
+      }
+      
       if (vehicle) {
         const company = vehicleMapping.companies?.find(c => c.id === vehicle.companyId);
         if (company) {
-          console.log(`✅ VEHICLE MAPPING: ${vehicleId} → ${company.name}`);
-          return company.name === 'Fast & Express S.R.L.' ? 'Fast Express' : company.name;
+          const companyName = company.name === 'Fast & Express S.R.L.' ? 'Fast Express' : company.name;
+          console.log(`🎯 VEHICLE PRIORITY OVERRIDE: ${vehicleId} (${cleanVehicleId}) → ${companyName} (prioritate față de șofer ${driverName})`);
+          return companyName;
         }
+      } else {
+        console.log(`🔍 Vehicle "${vehicleId}" (cleaned: "${cleanVehicleId}") not found in vehicle mapping`);
       }
     }
     

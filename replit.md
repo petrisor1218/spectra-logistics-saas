@@ -42,10 +42,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Features and System Design
 - **File Upload System**: Supports CSV and Excel for trip data, 7-day, and 30-day invoices with drag-and-drop.
+- **Vehicle-Priority Mapping System**: Two-tier mapping with vehicle registration taking priority over driver mappings. Vehicle TR94FST always maps to Fast Express regardless of driver.
+- **Intelligent Historical Suggestions**: System captures historical search results and uses them for intelligent driver-company mapping suggestions in future processing.
 - **Driver-Company Mapping**: Manages driver assignments to companies with company-specific commission rates (e.g., 2% for Fast Express, 4% for others).
 - **Payment Processing**: Weekly cycles (Sunday-Saturday), calendar-based week selection, commission calculations, and payment tracking.
 - **Company Balance Management**: Tracks outstanding payments per company, automatic balance creation during weekly processing, interactive payment recording with status updates, and multi-week support.
 - **Commission Exclusion**: Commissions are accurately excluded from outstanding balance calculations.
+- **Complete Company Lists**: All database companies (including WF SRL, Bis General, Daniel Ontheroad) appear in dropdowns and reports regardless of weekly data availability.
 - **SaaS Monetization**: Single plan model with Stripe integration, modern pricing page, and subscription tracking.
 - **Admin Dashboard**: Management interface for subscriber oversight, user roles, and analytics.
 
