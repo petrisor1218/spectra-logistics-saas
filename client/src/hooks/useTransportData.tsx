@@ -234,8 +234,17 @@ export function useTransportData() {
     return DRIVER_COMPANY_MAP;
   };
 
-  // Auto-suggest company for unmapped drivers
+  // State to store historical VRID findings for intelligent suggestions
+  const [historicalVRIDFindings, setHistoricalVRIDFindings] = useState<Record<string, string>>({});
+
+  // Auto-suggest company for unmapped drivers - enhanced with historical data
   const autoSuggestCompany = (driverName: string, driverMap: Record<string, string>) => {
+    // First check if we have historical data for this specific driver
+    if (historicalVRIDFindings[driverName]) {
+      console.log(`🎯 SUGESTIE ISTORICĂ: ${driverName} → ${historicalVRIDFindings[driverName]}`);
+      return historicalVRIDFindings[driverName];
+    }
+    
     const parts = driverName.toLowerCase().split(' ');
     const companyCount: Record<string, number> = {};
     
@@ -422,7 +431,7 @@ export function useTransportData() {
     // Check if driver already exists in pending mappings - if so, don't add again
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
     if (!isAlreadyPending) {
-      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
+      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL', 'WF SRL', 'Daniel Ontheroad', 'Bis General'];
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
@@ -1078,6 +1087,15 @@ export function useTransportData() {
                   
                   if (foundCompany !== 'Unknown' && foundCompany !== 'Pending' && foundCompany !== 'Unmatched') {
                     console.log(`✅ VRID matcat automat: ${vrid} → ${foundCompany} (din ${historicalTrip.weekLabel})`);
+                    
+                    // Store driver-company mapping for intelligent future suggestions
+                    if (historicalTrip.driverName) {
+                      setHistoricalVRIDFindings(prev => ({
+                        ...prev,
+                        [historicalTrip.driverName]: foundCompany
+                      }));
+                      console.log(`🎯 MEMOREZ SUGESTIE ISTORICĂ: ${historicalTrip.driverName} → ${foundCompany}`);
+                    }
                     
                     // Move from Unmatched to correct company
                     if (results.Unmatched && results.Unmatched.VRID_details[vrid]) {

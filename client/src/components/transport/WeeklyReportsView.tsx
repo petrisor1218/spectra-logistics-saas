@@ -130,9 +130,35 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     }
   }, [weekData]);
 
+  // Load all companies from database for consistent dropdown
+  const { data: allCompaniesData } = useQuery({
+    queryKey: ['/api/companies']
+  });
+
   const companies = useMemo(() => {
-    return processedData ? Object.keys(processedData) : [];
-  }, [processedData]);
+    // First get companies that have data in current week
+    const companiesWithData = processedData ? Object.keys(processedData) : [];
+    
+    // Then add all companies from database to ensure complete list
+    const allDatabaseCompanies = allCompaniesData ? allCompaniesData.map((c: any) => {
+      // Map database names to display names
+      if (c.name === 'Fast & Express S.R.L.') return 'Fast Express';
+      if (c.name === 'Stef Trans S.R.L.') return 'Stef Trans';
+      if (c.name === 'De Cargo Sped S.R.L.') return 'DE Cargo Speed';
+      if (c.name === 'Daniel Ontheroad S.R.L.') return 'Daniel Ontheroad';
+      return c.name;
+    }) : [];
+    
+    // Combine and deduplicate
+    const uniqueCompanies = Array.from(new Set([...companiesWithData, ...allDatabaseCompanies]));
+    console.log('🏢 Companies available:', { 
+      companiesWithData, 
+      allDatabaseCompanies, 
+      uniqueCompanies 
+    });
+    
+    return uniqueCompanies;
+  }, [processedData, allCompaniesData]);
 
   const currentCompanyData: CompanyData | null = useMemo(() => {
     if (!processedData || !selectedCompany) return null;
