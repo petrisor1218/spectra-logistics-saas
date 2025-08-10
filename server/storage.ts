@@ -443,10 +443,67 @@ export class DatabaseStorage implements IStorage {
     if (vrids.length === 0) return [];
     
     const trips: HistoricalTrip[] = [];
+    
+    // First search in historicalTrips table
     for (const vrid of vrids) {
       const trip = await this.getHistoricalTripByVrid(vrid);
       if (trip) trips.push(trip);
     }
+    
+    // Then search in weekly_processing data for VRIDs not found in historicalTrips
+    const foundVrids = trips.map(t => t.vrid);
+    const notFoundVrids = vrids.filter(vrid => !foundVrids.includes(vrid));
+    
+    if (notFoundVrids.length > 0) {
+      console.log(`🔍 Căutare VRID-uri în weekly_processing pentru: ${notFoundVrids.slice(0, 5).join(', ')}${notFoundVrids.length > 5 ? '...' : ''}`);
+      
+      // Search in weekly_processing data
+      const weeklyData = await db.select().from(weeklyProcessing);
+      
+      for (const week of weeklyData) {
+        if (!week.processedData) continue;
+        
+        const processedData = week.processedData as any;
+        
+        // Look through all companies in this week's data
+        Object.keys(processedData).forEach(companyName => {
+          if (companyName === 'Totals' || companyName === 'Unmatched') return;
+          
+          const companyData = processedData[companyName];
+          if (companyData && companyData.VRID_details) {
+            
+            // Check if any of our target VRIDs are in this company's data
+            notFoundVrids.forEach(vrid => {
+              if (companyData.VRID_details[vrid]) {
+                // Found this VRID! Create a historical trip record
+                const syntheticTrip: HistoricalTrip = {
+                  id: parseInt(`${Date.now()}${Math.random().toString().slice(2, 5)}`), // Unique ID
+                  vrid: vrid,
+                  driverName: 'Data istoric găsit', // We don't have driver name in VRID_details
+                  weekLabel: week.weekLabel,
+                  tripDate: null,
+                  route: null,
+                  rawTripData: {
+                    'VR ID': vrid,
+                    'Company': companyName,
+                    'Source': 'weekly_processing_recovery'
+                  },
+                  tenantId: 1,
+                  createdAt: new Date()
+                };
+                
+                // Only add if not already found
+                if (!trips.find(t => t.vrid === vrid)) {
+                  trips.push(syntheticTrip);
+                  console.log(`✅ GĂSIT în ${week.weekLabel}: ${vrid} → ${companyName}`);
+                }
+              }
+            });
+          }
+        });
+      }
+    }
+    
     return trips;
   }
 
