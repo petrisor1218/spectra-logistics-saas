@@ -299,28 +299,18 @@ export default function Home() {
                   setPendingMappings={setPendingMappings}
                   addDriverToDatabase={addDriverToDatabase}
                   onMappingComplete={async () => {
-                    // Refresh driver mappings and reprocess data automatically while preserving pending mappings
+                    // Refresh driver mappings and reprocess data to eliminate Pending Mapping entries
+                    console.log('🔄 onMappingComplete: Starting comprehensive reprocessing...');
+                    
                     if (loadDriversFromDatabase) {
-                      // Store current pending mappings before reprocessing
-                      const currentPendingMappings = [...pendingMappings];
-                      console.log('💾 Storing current pending mappings:', currentPendingMappings.length);
-                      
                       await loadDriversFromDatabase();
+                      console.log('✅ Driver mappings reloaded from database');
                       
-                      // Reprocess data after mappings are updated to move amounts from Pending to correct companies
+                      // Force a complete reprocess to move VRIDs from Pending Mapping to correct companies
                       if (tripData.length > 0 && (invoice7Data.length > 0 || invoice30Data.length > 0)) {
+                        console.log('🔄 Reprocessing all data to resolve Pending Mappings...');
                         await processData();
-                        
-                        // Restore pending mappings for drivers that are still unmapped
-                        console.log('🔄 Checking which drivers still need mapping...');
-                        setTimeout(() => {
-                          // Filter out drivers that were just confirmed but keep others
-                          const remainingPendingMappings = currentPendingMappings.filter(mapping => {
-                            // Keep mapping if driver is still not in database
-                            return pendingMappings.some(p => p.driverName === mapping.driverName);
-                          });
-                          console.log('✅ Preserving', remainingPendingMappings.length, 'pending mappings');
-                        }, 100);
+                        console.log('✅ Data reprocessed - Pending Mappings should be resolved');
                       }
                     }
                   }}

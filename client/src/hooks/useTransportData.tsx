@@ -832,8 +832,11 @@ export function useTransportData() {
             if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
             } else if (foundCompany === 'Pending') {
-              console.log(`VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - verificați mapările pendinte`);
-              company = 'Pending Mapping'; // Special category for pending drivers
+              console.log(`⚠️ VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - POATE MAPAREA ESTE VECHE!`);
+              // Do NOT assign to Pending Mapping - instead put in Unknown to force historical search
+              company = 'Unknown Driver Check'; // Will trigger historical search and possibly resolve
+              console.log(`🔄 VRID ${vrid} - Marchez pentru verificare istorică în loc de Pending Mapping`);
+              unmatchedVrids.push(vrid); // Force historical lookup
             } else {
               console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
             }
