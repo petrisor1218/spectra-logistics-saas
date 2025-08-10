@@ -34,6 +34,7 @@ export default function Home() {
   });
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [noteInputValue, setNoteInputValue] = useState('');
+  const [isEditingNote, setIsEditingNote] = useState(false);
   const { isAuthenticated, isLoading, login } = useAuth();
   
   // Show login screen if not authenticated
@@ -218,26 +219,82 @@ export default function Home() {
               className="mb-6 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-500/30 rounded-xl p-6 backdrop-blur-lg"
             >
               <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3">
+                <div className="flex items-start space-x-3 flex-1">
                   <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
                     <span className="text-white text-xs font-bold">!</span>
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-red-300 font-semibold mb-2">NOTĂ IMPORTANTĂ</h3>
-                    <p className="text-white whitespace-pre-wrap">{importantNote}</p>
+                    {!isEditingNote ? (
+                      <p className="text-white whitespace-pre-wrap">{importantNote}</p>
+                    ) : (
+                      <div className="space-y-3">
+                        <textarea
+                          value={noteInputValue}
+                          onChange={(e) => setNoteInputValue(e.target.value)}
+                          className="w-full h-24 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 resize-none"
+                        />
+                        <div className="flex items-center space-x-2">
+                          <motion.button
+                            onClick={() => {
+                              if (noteInputValue.trim()) {
+                                localStorage.setItem('important-note', noteInputValue.trim());
+                                setImportantNote(noteInputValue.trim());
+                                setIsEditingNote(false);
+                                setNoteInputValue('');
+                              }
+                            }}
+                            className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-black rounded text-sm font-medium transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={!noteInputValue.trim()}
+                          >
+                            💾 Salvează
+                          </motion.button>
+                          <motion.button
+                            onClick={() => {
+                              setIsEditingNote(false);
+                              setNoteInputValue('');
+                            }}
+                            className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm font-medium transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            Anulează
+                          </motion.button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <motion.button
-                  onClick={() => {
-                    localStorage.removeItem('important-note');
-                    setImportantNote('');
-                  }}
-                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  ✓ Rezolvat
-                </motion.button>
+                <div className="flex flex-col space-y-2">
+                  {!isEditingNote && (
+                    <motion.button
+                      onClick={() => {
+                        setNoteInputValue(importantNote);
+                        setIsEditingNote(true);
+                      }}
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      ✏️ Editează
+                    </motion.button>
+                  )}
+                  <motion.button
+                    onClick={() => {
+                      localStorage.removeItem('important-note');
+                      setImportantNote('');
+                      setIsEditingNote(false);
+                      setNoteInputValue('');
+                    }}
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    ✓ Rezolvat
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}
