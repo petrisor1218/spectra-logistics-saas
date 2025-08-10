@@ -395,21 +395,22 @@ export function useTransportData() {
     
     // Check if driver already exists in pending mappings - if so, don't add again
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
-    if (isAlreadyPending) {
-      console.log(`⏳ Șoferul "${driverName}" este deja în așteptare`);
-      return "Pending";
+    if (!isAlreadyPending) {
+      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
+      const alternatives = allCompanies.filter(c => c !== finalSuggestion);
+      
+      setPendingMappings(prev => [...prev, {
+        driverName,
+        suggestedCompany: finalSuggestion,
+        alternatives
+      }]);
+      console.log(`📝 Adăugat în pending mappings: ${driverName} → ${finalSuggestion}`);
+    } else {
+      console.log(`⏳ Șoferul "${driverName}" este deja în lista de pending mappings`);
     }
     
-    const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
-    const alternatives = allCompanies.filter(c => c !== finalSuggestion);
-    
-    setPendingMappings(prev => [...prev, {
-      driverName,
-      suggestedCompany: finalSuggestion,
-      alternatives
-    }]);
-    
-    return "Pending"; // Mark as pending for user decision
+    // Return Unknown instead of Pending to avoid creating problematic categories
+    return "Unknown";
   };
 
   // Reprocess existing data with updated driver mappings
@@ -832,11 +833,34 @@ export function useTransportData() {
             if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
             } else if (foundCompany === 'Pending') {
-              console.log(`⚠️ VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - POATE MAPAREA ESTE VECHE!`);
-              // Do NOT assign to Pending Mapping - instead put in Unknown to force historical search
-              company = 'Unknown Driver Check'; // Will trigger historical search and possibly resolve
-              console.log(`🔄 VRID ${vrid} - Marchez pentru verificare istorică în loc de Pending Mapping`);
-              unmatchedVrids.push(vrid); // Force historical lookup
+              console.log(`⚠️ VRID ${vrid} - Șofer în așteptare: "${tripRecord['Driver']}" - FORȚEZ RECÂUTAREA!`);
+              // Force immediate re-lookup with dynamic driver map to bypass pending state
+              const dynamicMap = getCompleteDriverMap();
+              const driverName = tripRecord['Driver'];
+              const normalized = driverName.toLowerCase().trim().replace(/\s+/g, ' ');
+              
+              // Try all possible variations to find a match
+              if (dynamicMap[normalized]) {
+                company = dynamicMap[normalized];
+                console.log(`✅ VRID ${vrid} - Șofer găsit prin forțare: "${driverName}" → ${company}`);
+              } else {
+                // Try name variants
+                const variants = generateNameVariants(driverName);
+                let found = false;
+                for (const variant of variants) {
+                  if (dynamicMap[variant]) {
+                    company = dynamicMap[variant];
+                    console.log(`✅ VRID ${vrid} - Șofer găsit prin variantă: "${driverName}" (${variant}) → ${company}`);
+                    found = true;
+                    break;
+                  }
+                }
+                if (!found) {
+                  company = 'Unmatched'; // Put in Unmatched for historical search
+                  unmatchedVrids.push(vrid);
+                  console.log(`❌ VRID ${vrid} - Șofer cu adevărat necunoscut: "${driverName}" - pus în Unmatched`);
+                }
+              }
             } else {
               console.log(`VRID ${vrid} - Șofer negăsit: "${tripRecord['Driver']}"`);
             }
