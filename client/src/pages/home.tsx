@@ -216,7 +216,7 @@ export default function Home() {
           {/* Important Notes Display */}
           {importantNotes.length > 0 && (
             <div className="mb-6 space-y-4">
-              {importantNotes.map((note) => (
+              {importantNotes.map((note: any) => (
                 <motion.div
                   key={note.id}
                   initial={{ opacity: 0, y: -20 }}
@@ -247,7 +247,7 @@ export default function Home() {
                               <motion.button
                                 onClick={() => {
                                   if (noteInputValue.trim() && noteTitleValue.trim()) {
-                                    const updatedNotes = importantNotes.map(n => 
+                                    const updatedNotes = importantNotes.map((n: any) => 
                                       n.id === note.id 
                                         ? { ...n, title: noteTitleValue.trim(), content: noteInputValue.trim() }
                                         : n
@@ -305,7 +305,7 @@ export default function Home() {
                       )}
                       <motion.button
                         onClick={() => {
-                          const updatedNotes = importantNotes.filter(n => n.id !== note.id);
+                          const updatedNotes = importantNotes.filter((n: any) => n.id !== note.id);
                           setImportantNotes(updatedNotes);
                           localStorage.setItem('important-notes', JSON.stringify(updatedNotes));
                           setEditingNoteId(null);
