@@ -353,13 +353,15 @@ export default function CompanyBalancesView() {
     });
   });
 
-  // Calculate totals - ensure negative values display as 0
-  const totalOutstanding = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
-    sum + parseFloat(balance.outstandingBalance || '0'), 0));
+  // Calculate totals - ensure logical payment constraints
   const totalInvoiced = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalInvoiced || '0'), 0));
-  const totalPaid = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
+  const calculatedTotalPaid = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalPaid || '0'), 0));
+  
+  // Ensure total paid never exceeds total invoiced
+  const totalPaid = Math.min(calculatedTotalPaid, totalInvoiced);
+  const totalOutstanding = Math.max(0, totalInvoiced - totalPaid);
 
   const generateBalances = useMutation({
     mutationFn: async () => {
@@ -696,9 +698,15 @@ export default function CompanyBalancesView() {
       <div className="space-y-4">
         
         {Object.entries(balancesByCompany).map(([companyName, companyBalances]: [string, CompanyBalance[]], index) => {
-          // Calculate total outstanding for this company
-          const companyTotalOutstanding = Math.max(0, companyBalances.reduce((sum, balance) => 
-            sum + parseFloat(balance.outstandingBalance || '0'), 0));
+          // Calculate totals for this company with logical constraints
+          const companyTotalInvoiced = companyBalances.reduce((sum, balance) => 
+            sum + parseFloat(balance.totalInvoiced || '0'), 0);
+          const companyCalculatedPaid = companyBalances.reduce((sum, balance) => 
+            sum + parseFloat(balance.totalPaid || '0'), 0);
+          
+          // Ensure company total paid never exceeds total invoiced
+          const companyTotalPaid = Math.min(companyCalculatedPaid, companyTotalInvoiced);
+          const companyTotalOutstanding = Math.max(0, companyTotalInvoiced - companyTotalPaid);
           
           // Create unique key using company name and first balance ID or week label
           const uniqueKey = companyBalances.length > 0 
