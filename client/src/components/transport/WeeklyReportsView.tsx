@@ -179,18 +179,69 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     }
   }, [weekOptions, selectedReportWeek]);
 
+  // Încărcăm informațiile despre șoferi și vehicule
+  const { data: driversData } = useQuery({
+    queryKey: ['/api/drivers'],
+    enabled: !!selectedCompany
+  });
+
+  const { data: vehiclesData } = useQuery({
+    queryKey: ['/api/vehicles'],
+    enabled: !!selectedCompany
+  });
+
+  const { data: tripData } = useQuery({
+    queryKey: ['/api/weekly-processing', selectedReportWeek, 'trip-data'],
+    queryFn: async () => {
+      if (!selectedReportWeek) return null;
+      const response = await fetch(`/api/weekly-processing?weekLabel=${encodeURIComponent(selectedReportWeek)}`);
+      if (!response.ok) throw new Error('Failed to fetch trip data');
+      const data = await response.json();
+      return data.tripData || []; // Raw trip data with driver names
+    },
+    enabled: !!selectedReportWeek
+  });
+
   const tableData = useMemo(() => {
     if (!currentCompanyData?.VRID_details) return [];
     
-    return Object.entries(currentCompanyData.VRID_details).map(([vrid, details]) => ({
-      vrid,
-      sum7Days: details['7_days'],
-      sum30Days: details['30_days'],
-      totalInvoice: details['7_days'] + details['30_days'],
-      commission: details.commission,
-      totalNet: (details['7_days'] + details['30_days']) - details.commission
-    }));
-  }, [currentCompanyData]);
+    return Object.entries(currentCompanyData.VRID_details).map(([vrid, details]) => {
+      // Căutăm șoferul în datele de trip
+      let driverName = 'N/A';
+      let vehicleId = 'N/A';
+      
+      if (tripData && Array.isArray(tripData)) {
+        const tripEntry = tripData.find((trip: any) => trip['VR ID'] === vrid);
+        if (tripEntry) {
+          driverName = tripEntry['Driver'] || 'N/A';
+          vehicleId = tripEntry['Vehicle'] || tripEntry['Vehicul'] || vrid.substring(0, 8); // Fallback la VRID
+        }
+      }
+      
+      // Căutăm vehiculul în baza de date pentru a obține informații suplimentare
+      if (vehiclesData && Array.isArray(vehiclesData)) {
+        const vehicle = vehiclesData.find((v: any) => 
+          v.vehicleId === vrid || 
+          v.vehicleId === vehicleId ||
+          vrid.includes(v.vehicleId.replace('OTHR-', ''))
+        );
+        if (vehicle) {
+          vehicleId = vehicle.vehicleId;
+        }
+      }
+      
+      return {
+        vrid,
+        driverName,
+        vehicleId,
+        sum7Days: details['7_days'],
+        sum30Days: details['30_days'],
+        totalInvoice: details['7_days'] + details['30_days'],
+        commission: details.commission,
+        totalNet: (details['7_days'] + details['30_days']) - details.commission
+      };
+    });
+  }, [currentCompanyData, tripData, vehiclesData]);
 
   const totals = useMemo(() => {
     if (!currentCompanyData) return null;
@@ -225,9 +276,11 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     doc.text(`Saptamana: ${selectedReportWeek}`, 148.5, 22, { align: 'center' });
 
     // Prepare table data
-    const headers = ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
+    const headers = ['VRID', 'Șofer', 'Camion', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
     const data = tableData.map(row => [
       row.vrid,
+      row.driverName,
+      row.vehicleId,
       `${row.sum7Days.toFixed(2)} EUR`,
       `${row.sum30Days.toFixed(2)} EUR`,
       `${row.totalInvoice.toFixed(2)} EUR`,
@@ -239,6 +292,8 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     if (totals) {
       data.push([
         'TOTAL',
+        '-',
+        '-',
         `${totals.total7Days.toFixed(2)} EUR`,
         `${totals.total30Days.toFixed(2)} EUR`,
         `${totals.totalInvoice.toFixed(2)} EUR`,
@@ -272,11 +327,13 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       },
       columnStyles: {
         0: { halign: 'left' },
-        1: { halign: 'right' },
-        2: { halign: 'right' },
+        1: { halign: 'left' },
+        2: { halign: 'left' },
         3: { halign: 'right' },
         4: { halign: 'right' },
-        5: { halign: 'right' }
+        5: { halign: 'right' },
+        6: { halign: 'right' },
+        7: { halign: 'right' }
       }
     });
 
@@ -291,16 +348,18 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       [`Raport Curse Săptămânale - ${selectedCompany}`],
       [`Săptămâna: ${selectedReportWeek}`],
       [],
-      ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'],
+      ['VRID', 'Șofer', 'Camion', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'],
       ...tableData.map(row => [
         row.vrid,
+        row.driverName,
+        row.vehicleId,
         row.sum7Days,
         row.sum30Days,
         row.totalInvoice,
         row.commission,
         row.totalNet
       ]),
-      ...(totals ? [['TOTAL', totals.total7Days, totals.total30Days, totals.totalInvoice, totals.totalCommission, totals.totalNet]] : [])
+      ...(totals ? [['TOTAL', '-', '-', totals.total7Days, totals.total30Days, totals.totalInvoice, totals.totalCommission, totals.totalNet]] : [])
     ]);
 
     const wb = XLSX.utils.book_new();
@@ -701,6 +760,8 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                     <TableHeader>
                       <TableRow className="border-white/10">
                         <TableHead className="text-left font-semibold">VRID</TableHead>
+                        <TableHead className="text-left font-semibold">Șofer</TableHead>
+                        <TableHead className="text-left font-semibold">Camion</TableHead>
                         <TableHead className="text-right font-semibold">Total 7 zile</TableHead>
                         <TableHead className="text-right font-semibold">Total 30 zile</TableHead>
                         <TableHead className="text-right font-semibold">Total de facturat</TableHead>
@@ -718,6 +779,8 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                           className="border-white/5 hover:bg-white/5 transition-colors"
                         >
                           <TableCell className="font-mono font-medium">{row.vrid}</TableCell>
+                          <TableCell className="text-left">{row.driverName}</TableCell>
+                          <TableCell className="text-left font-mono text-sm">{row.vehicleId}</TableCell>
                           <TableCell className="text-right">{row.sum7Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right">{row.sum30Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right font-semibold">{row.totalInvoice.toFixed(2)} EUR</TableCell>
@@ -733,6 +796,8 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                       {totals && (
                         <TableRow className="border-t-2 border-white/20 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/20 dark:to-purple-900/20 font-bold">
                           <TableCell className="font-bold text-lg">TOTAL</TableCell>
+                          <TableCell className="text-left font-bold">-</TableCell>
+                          <TableCell className="text-left font-bold">-</TableCell>
                           <TableCell className="text-right font-bold">{totals.total7Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right font-bold">{totals.total30Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right font-bold text-blue-600 dark:text-blue-400">
