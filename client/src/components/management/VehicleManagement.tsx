@@ -123,16 +123,8 @@ export function VehicleManagement() {
   };
 
   const handleEdit = (vehicle: Vehicle) => {
-    console.log('🔧 Editing vehicle:', vehicle);
     setEditingId(vehicle.id);
     setFormData({
-      vehicleId: vehicle.vehicleId,
-      companyId: vehicle.companyId.toString(),
-      vehicleName: vehicle.vehicleName || '',
-      isActive: vehicle.isActive,
-      notes: vehicle.notes || ''
-    });
-    console.log('📝 Form data set:', {
       vehicleId: vehicle.vehicleId,
       companyId: vehicle.companyId.toString(),
       vehicleName: vehicle.vehicleName || '',
