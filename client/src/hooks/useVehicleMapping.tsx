@@ -50,15 +50,27 @@ export function useVehicleMapping() {
     
     // 1. PRIORITY: Check vehicle mapping first
     if (trip["Vehicle ID"]) {
+      let vehicleId = trip["Vehicle ID"];
+      
+      // Extract registration number from Vehicle ID formats like:
+      // "OTHR-TR94FST" → "TR94FST"
+      // "AYGPZ-TR86FEX" → "TR86FEX"
+      if (vehicleId.includes('-')) {
+        const parts = vehicleId.split('-');
+        if (parts.length >= 2) {
+          vehicleId = parts[parts.length - 1]; // Take the last part
+        }
+      }
+      
       const vehicle = vehicles.find(v => 
-        v.vehicleId === trip["Vehicle ID"] && 
+        v.vehicleId === vehicleId && 
         v.isActive === 'true'
       );
       
       if (vehicle) {
         const company = companies.find(c => c.id === vehicle.companyId);
         if (company) {
-          console.log(`✅ VEHICLE MAPPING: ${trip["Vehicle ID"]} → ${company.name}`);
+          console.log(`✅ VEHICLE MAPPING: ${trip["Vehicle ID"]} → ${vehicleId} → ${company.name}`);
           return {
             companyName: company.name,
             companyId: company.id,
