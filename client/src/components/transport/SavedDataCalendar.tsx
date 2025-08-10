@@ -129,7 +129,7 @@ export function SavedDataCalendar({
     const companies = Object.keys(processedData).length;
     
     Object.values(processedData).forEach((companyData: any) => {
-      totalAmount += companyData.Total_7_days + companyData.Total_30_days - companyData.Total_comision;
+      totalAmount += Math.max(0, companyData.Total_7_days + companyData.Total_30_days - companyData.Total_comision);
     });
     
     return { companies, totalAmount };

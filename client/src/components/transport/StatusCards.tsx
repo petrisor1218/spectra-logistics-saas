@@ -24,9 +24,9 @@ export function StatusCards({ processedData, selectedWeek }: StatusCardsProps) {
     balance.paymentStatus === 'pending' || balance.paymentStatus === 'partial'
   );
   
-  const totalOutstanding = outstandingBalances.reduce((acc: number, balance: any) => 
+  const totalOutstanding = Math.max(0, outstandingBalances.reduce((acc: number, balance: any) => 
     acc + parseFloat(balance.outstandingBalance || 0), 0
-  );
+  ));
 
   // Calculate stats from processed data (if available)
   const totalDrivers = processedData ? Object.values(processedData).reduce((acc: number, company: any) => {
@@ -35,9 +35,9 @@ export function StatusCards({ processedData, selectedWeek }: StatusCardsProps) {
 
   const processedPayments = processedData ? Object.keys(processedData).length : 0;
   
-  const totalValue = processedData ? Object.values(processedData).reduce((acc: number, company: any) => {
+  const totalValue = processedData ? Math.max(0, Object.values(processedData).reduce((acc: number, company: any) => {
     return acc + (company.Total_7_days || 0) + (company.Total_30_days || 0) - (company.Total_comision || 0);
-  }, 0) : 0;
+  }, 0)) : 0;
 
   const cards = [
     {

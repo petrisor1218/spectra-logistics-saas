@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 // Temporary local formatter until the file is properly created
 const formatCurrency = (amount: number): string => {
+  // Ensure negative amounts display as 0
+  const displayAmount = Math.max(0, amount);
   return new Intl.NumberFormat('ro-RO', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-  }).format(amount);
+  }).format(displayAmount);
 };
 
 // Helper function to fix Romanian diacritics for PDF generation
@@ -351,13 +353,13 @@ export default function CompanyBalancesView() {
     });
   });
 
-  // Calculate totals
-  const totalOutstanding = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
-    sum + parseFloat(balance.outstandingBalance || '0'), 0);
-  const totalInvoiced = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
-    sum + parseFloat(balance.totalInvoiced || '0'), 0);
-  const totalPaid = (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
-    sum + parseFloat(balance.totalPaid || '0'), 0);
+  // Calculate totals - ensure negative values display as 0
+  const totalOutstanding = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
+    sum + parseFloat(balance.outstandingBalance || '0'), 0));
+  const totalInvoiced = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
+    sum + parseFloat(balance.totalInvoiced || '0'), 0));
+  const totalPaid = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
+    sum + parseFloat(balance.totalPaid || '0'), 0));
 
   const generateBalances = useMutation({
     mutationFn: async () => {
@@ -695,8 +697,8 @@ export default function CompanyBalancesView() {
         
         {Object.entries(balancesByCompany).map(([companyName, companyBalances]: [string, CompanyBalance[]], index) => {
           // Calculate total outstanding for this company
-          const companyTotalOutstanding = companyBalances.reduce((sum, balance) => 
-            sum + parseFloat(balance.outstandingBalance || '0'), 0);
+          const companyTotalOutstanding = Math.max(0, companyBalances.reduce((sum, balance) => 
+            sum + parseFloat(balance.outstandingBalance || '0'), 0));
           
           // Create unique key using company name and first balance ID or week label
           const uniqueKey = companyBalances.length > 0 
