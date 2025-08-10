@@ -479,14 +479,18 @@ export class DatabaseStorage implements IStorage {
                 const syntheticTrip: HistoricalTrip = {
                   id: parseInt(`${Date.now()}${Math.random().toString().slice(2, 5)}`), // Unique ID
                   vrid: vrid,
-                  driverName: 'Data istoric găsit', // We don't have driver name in VRID_details
+                  driverName: `Șofer din ${companyName}`, // We don't have driver name in VRID_details
                   weekLabel: week.weekLabel,
                   tripDate: null,
                   route: null,
                   rawTripData: {
                     'VR ID': vrid,
+                    'Driver': `Șofer din ${companyName}`,
                     'Company': companyName,
-                    'Source': 'weekly_processing_recovery'
+                    'Source': 'weekly_processing_recovery',
+                    'Amount_7_days': companyData.VRID_details[vrid]['7_days'] || 0,
+                    'Amount_30_days': companyData.VRID_details[vrid]['30_days'] || 0,
+                    'Commission': companyData.VRID_details[vrid]['commission'] || 0
                   },
                   tenantId: 1,
                   createdAt: new Date()
@@ -495,7 +499,7 @@ export class DatabaseStorage implements IStorage {
                 // Only add if not already found
                 if (!trips.find(t => t.vrid === vrid)) {
                   trips.push(syntheticTrip);
-                  console.log(`✅ GĂSIT în ${week.weekLabel}: ${vrid} → ${companyName}`);
+                  console.log(`✅ GĂSIT în ${week.weekLabel}: ${vrid} → ${companyName} (€${companyData.VRID_details[vrid]['30_days'] || companyData.VRID_details[vrid]['7_days']})`);
                 }
               }
             });
