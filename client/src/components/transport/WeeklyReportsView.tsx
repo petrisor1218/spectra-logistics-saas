@@ -205,8 +205,23 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
   const tableData = useMemo(() => {
     if (!currentCompanyData?.VRID_details) return [];
     
+    // Debug log pentru a verifica datele disponibile
+    console.log('🚛 Table data generation:', {
+      hasCurrentCompanyData: !!currentCompanyData,
+      hasTripData: !!tripData,
+      tripDataLength: tripData?.length || 0,
+      hasVehiclesData: !!vehiclesData,
+      vehiclesDataLength: vehiclesData?.length || 0,
+      firstVRID: Object.keys(currentCompanyData.VRID_details)[0],
+      firstTripSample: tripData?.[0] ? {
+        vrId: tripData[0]['VR ID'],
+        driver: tripData[0]['Driver'],
+        vehicleId: tripData[0]['Vehicle ID']
+      } : null
+    });
+    
     return Object.entries(currentCompanyData.VRID_details).map(([vrid, details]) => {
-      // Căutăm șoferul în datele de trip
+      // Căutăm șoferul și vehiculul în datele de trip
       let driverName = 'N/A';
       let vehicleId = 'N/A';
       
@@ -214,19 +229,38 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
         const tripEntry = tripData.find((trip: any) => trip['VR ID'] === vrid);
         if (tripEntry) {
           driverName = tripEntry['Driver'] || 'N/A';
-          vehicleId = tripEntry['Vehicle'] || tripEntry['Vehicul'] || vrid.substring(0, 8); // Fallback la VRID
+          // Extragem numarul vehiculului din "Vehicle ID" (ex: OTHR-TR80FST → TR80FST)
+          const rawVehicleId = tripEntry['Vehicle ID'] || tripEntry['Vehicul'] || '';
+          if (rawVehicleId) {
+            // Extragem partea de după OTHR- pentru a obține doar numărul camionului
+            vehicleId = rawVehicleId.replace('OTHR-', '').replace('OTHER-', '');
+          }
+          
+          // Debug pentru primul VRID găsit
+          if (vrid === Object.keys(currentCompanyData.VRID_details)[0]) {
+            console.log('🔍 First VRID mapping sample:', {
+              vrid,
+              driverName,
+              rawVehicleId,
+              cleanVehicleId: vehicleId,
+              tripEntry: {
+                driver: tripEntry['Driver'],
+                vehicleId: tripEntry['Vehicle ID'],
+                allKeys: Object.keys(tripEntry)
+              }
+            });
+          }
         }
       }
       
-      // Căutăm vehiculul în baza de date pentru a obține informații suplimentare
-      if (vehiclesData && Array.isArray(vehiclesData)) {
+      // Dacă nu am găsit vehiculul în trip data, încercăm să-l mapăm din baza de date
+      if (vehicleId === 'N/A' && vehiclesData && Array.isArray(vehiclesData)) {
         const vehicle = vehiclesData.find((v: any) => 
-          v.vehicleId === vrid || 
-          v.vehicleId === vehicleId ||
-          vrid.includes(v.vehicleId.replace('OTHR-', ''))
+          vrid.includes(v.vehicle_id) || 
+          v.vehicle_id.includes(vrid.substring(0, 6))
         );
         if (vehicle) {
-          vehicleId = vehicle.vehicleId;
+          vehicleId = vehicle.vehicle_id;
         }
       }
       
