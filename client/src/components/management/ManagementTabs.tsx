@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building, User } from 'lucide-react';
+import { Building, User, Truck } from 'lucide-react';
 import { CompanyManagement } from './CompanyManagement';
 import { DriverManagement } from './DriverManagement';
+import { VehicleManagement } from './VehicleManagement';
 
 interface ManagementTabsProps {
   loadDriversFromDatabase?: () => Promise<any>;
 }
 
 export function ManagementTabs({ loadDriversFromDatabase }: ManagementTabsProps) {
-  const [activeTab, setActiveTab] = useState<'companies' | 'drivers'>('companies');
+  const [activeTab, setActiveTab] = useState<'companies' | 'drivers' | 'vehicles'>('companies');
 
   const tabs = [
     {
@@ -21,6 +22,11 @@ export function ManagementTabs({ loadDriversFromDatabase }: ManagementTabsProps)
       id: 'drivers' as const,
       label: 'Șoferi',
       icon: User,
+    },
+    {
+      id: 'vehicles' as const,
+      label: 'Vehicule',
+      icon: Truck,
     },
   ];
 
@@ -71,6 +77,7 @@ export function ManagementTabs({ loadDriversFromDatabase }: ManagementTabsProps)
       >
         {activeTab === 'companies' && <CompanyManagement />}
         {activeTab === 'drivers' && <DriverManagement loadDriversFromDatabase={loadDriversFromDatabase} />}
+        {activeTab === 'vehicles' && <VehicleManagement />}
       </motion.div>
     </div>
   );

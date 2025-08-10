@@ -50,6 +50,21 @@ export const drivers = pgTable("drivers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// New table for vehicle-to-company mapping (priority mapping)
+export const vehicles = pgTable("vehicles", {
+  id: serial("id").primaryKey(),
+  vehicleId: varchar("vehicle_id", { length: 100 }).notNull().unique(), // e.g., "OTHR-TR94FST"
+  companyId: integer("company_id").references(() => companies.id).notNull(),
+  vehicleName: varchar("vehicle_name", { length: 200 }), // Optional human-readable name
+  isActive: varchar("is_active", { length: 10 }).default("true"), // "true" or "false"
+  notes: text("notes"), // For any additional information
+  tenantId: integer("tenant_id").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueVehicleTenant: unique().on(table.vehicleId, table.tenantId)
+}));
+
 export const weeklyProcessing = pgTable("weekly_processing", {
   id: serial("id").primaryKey(),
   weekLabel: varchar("week_label", { length: 100 }).notNull(),
@@ -139,11 +154,19 @@ export const orderSequence = pgTable("order_sequence", {
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   drivers: many(drivers),
+  vehicles: many(vehicles),
 }));
 
 export const driversRelations = relations(drivers, ({ one }) => ({
   company: one(companies, {
     fields: [drivers.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const vehiclesRelations = relations(vehicles, ({ one }) => ({
+  company: one(companies, {
+    fields: [vehicles.companyId],
     references: [companies.id],
   }),
 }));
@@ -210,6 +233,12 @@ export const insertOrderSequenceSchema = createInsertSchema(orderSequence).omit(
   lastUpdated: true,
 });
 
+export const insertVehicleSchema = createInsertSchema(vehicles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -240,6 +269,9 @@ export type OrderSequence = typeof orderSequence.$inferSelect;
 
 export type InsertCompanyBalance = z.infer<typeof insertCompanyBalanceSchema>;
 export type CompanyBalance = typeof companyBalances.$inferSelect;
+
+export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
+export type Vehicle = typeof vehicles.$inferSelect;
 
 // Tenants table for multi-tenant management
 export const tenants = pgTable("tenants", {

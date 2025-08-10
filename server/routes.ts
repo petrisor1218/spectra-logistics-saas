@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { tenantStorage } from "./storage-tenant";
 import { tenantMiddleware, requireTenantAuth } from "./middleware/tenant";
-import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema, insertTenantSchema, tenants, companyBalances, weeklyProcessing, payments, type InsertCompanyBalance, type CompanyBalance } from "@shared/schema";
+import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertVehicleSchema, insertUserSchema, insertTenantSchema, tenants, companyBalances, weeklyProcessing, payments, type InsertCompanyBalance, type CompanyBalance } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import bcrypt from 'bcryptjs';
@@ -2328,6 +2328,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   
   setTimeout(initializeBackup, 2000);
+
+  // Vehicle management routes
+  app.get("/api/vehicles", async (req, res) => {
+    try {
+      const vehicles = await storage.getAllVehicles();
+      res.json(vehicles);
+    } catch (error) {
+      console.error("Error fetching vehicles:", error);
+      res.status(500).json({ error: "Failed to fetch vehicles" });
+    }
+  });
+
+  app.get("/api/vehicles/company/:companyId", async (req, res) => {
+    try {
+      const companyId = parseInt(req.params.companyId);
+      const vehicles = await storage.getVehiclesByCompany(companyId);
+      res.json(vehicles);
+    } catch (error) {
+      console.error("Error fetching vehicles by company:", error);
+      res.status(500).json({ error: "Failed to fetch vehicles by company" });
+    }
+  });
+
+  app.post("/api/vehicles", async (req, res) => {
+    try {
+      const vehicleData = insertVehicleSchema.parse(req.body);
+      const vehicle = await storage.createVehicle(vehicleData);
+      res.status(201).json(vehicle);
+    } catch (error) {
+      console.error("Error creating vehicle:", error);
+      res.status(500).json({ error: "Failed to create vehicle" });
+    }
+  });
+
+  app.put("/api/vehicles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const vehicleData = insertVehicleSchema.partial().parse(req.body);
+      const vehicle = await storage.updateVehicle(id, vehicleData);
+      res.json(vehicle);
+    } catch (error) {
+      console.error("Error updating vehicle:", error);
+      res.status(500).json({ error: "Failed to update vehicle" });
+    }
+  });
+
+  app.delete("/api/vehicles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteVehicle(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting vehicle:", error);
+      res.status(500).json({ error: "Failed to delete vehicle" });
+    }
+  });
 
   const httpServer = createServer(app);
 

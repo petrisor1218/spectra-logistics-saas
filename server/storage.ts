@@ -2,6 +2,7 @@ import {
   users, 
   companies, 
   drivers, 
+  vehicles,
   weeklyProcessing, 
   payments, 
   paymentHistory,
@@ -14,6 +15,8 @@ import {
   type InsertCompany,
   type Driver,
   type InsertDriver,
+  type Vehicle,
+  type InsertVehicle,
   type WeeklyProcessing,
   type InsertWeeklyProcessing,
   type Payment,
@@ -52,6 +55,14 @@ export interface IStorage {
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver>;
   deleteDriver(id: number): Promise<void>;
+  
+  // Vehicle methods  
+  getAllVehicles(): Promise<Vehicle[]>;
+  getVehicleByVehicleId(vehicleId: string): Promise<Vehicle | undefined>;
+  getVehiclesByCompany(companyId: number): Promise<Vehicle[]>;
+  createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
+  updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle>;
+  deleteVehicle(id: number): Promise<void>;
   
   // Weekly processing methods
   getWeeklyProcessing(weekLabel: string): Promise<WeeklyProcessing | undefined>;
@@ -199,6 +210,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDriver(id: number): Promise<void> {
     await db.delete(drivers).where(eq(drivers.id, id));
+  }
+
+  // Vehicle methods implementation
+  async getAllVehicles(): Promise<Vehicle[]> {
+    return db.select().from(vehicles).orderBy(vehicles.vehicleId);
+  }
+
+  async getVehicleByVehicleId(vehicleId: string): Promise<Vehicle | undefined> {
+    const result = await db.select().from(vehicles).where(eq(vehicles.vehicleId, vehicleId)).limit(1);
+    return result[0];
+  }
+
+  async getVehiclesByCompany(companyId: number): Promise<Vehicle[]> {
+    return db.select().from(vehicles).where(eq(vehicles.companyId, companyId));
+  }
+
+  async createVehicle(vehicle: InsertVehicle): Promise<Vehicle> {
+    const result = await db.insert(vehicles).values(vehicle).returning();
+    return result[0];
+  }
+
+  async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle> {
+    const result = await db.update(vehicles).set(vehicle).where(eq(vehicles.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteVehicle(id: number): Promise<void> {
+    await db.delete(vehicles).where(eq(vehicles.id, id));
   }
 
   // Weekly processing methods

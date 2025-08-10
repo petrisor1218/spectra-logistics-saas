@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
+import { useVehicleMapping } from './useVehicleMapping';
 
 // Company details from transport orders system
 const COMPANY_DETAILS = {
@@ -136,6 +137,9 @@ export function useTransportData() {
 
   // Load drivers from database and combine with static mapping
   const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
+  
+  // Hook pentru vehicule (sistemul de prioritate)
+  const vehicleMapping = useVehicleMapping();
   
   const loadDriversFromDatabase = async () => {
     try {
@@ -356,12 +360,34 @@ export function useTransportData() {
     return null;
   };
 
-  const extractAndFindDriver = (driverName: string) => {
+  const extractAndFindDriver = (trip: any) => {
+    const driverName = trip.Driver;
+    const vehicleId = trip["Vehicle ID"];
+    
     if (!driverName || typeof driverName !== 'string') {
       console.log('Driver name invalid:', driverName);
       return "Unknown";
     }
     
+    console.log(`🚗 NEW MAPPING SYSTEM: Processing vehicle "${vehicleId}" with driver "${driverName}"`);
+    
+    // 1. PRIORITY: Check vehicle mapping first
+    if (vehicleId && vehicleMapping) {
+      const vehicle = vehicleMapping.vehicles?.find(v => 
+        v.vehicleId === vehicleId && 
+        v.isActive === 'true'
+      );
+      
+      if (vehicle) {
+        const company = vehicleMapping.companies?.find(c => c.id === vehicle.companyId);
+        if (company) {
+          console.log(`✅ VEHICLE MAPPING: ${vehicleId} → ${company.name}`);
+          return company.name === 'Fast & Express S.R.L.' ? 'Fast Express' : company.name;
+        }
+      }
+    }
+    
+    // 2. FALLBACK: Check driver mapping
     const DRIVER_COMPANY_MAP = getCompleteDriverMap();
     const drivers = driverName.split(',').map(d => d.trim());
     
@@ -371,21 +397,21 @@ export function useTransportData() {
       const normalized = driver.toLowerCase().trim().replace(/\s+/g, ' ');
       
       if (DRIVER_COMPANY_MAP[normalized]) {
-        console.log(`Driver găsit: "${driver}" -> ${DRIVER_COMPANY_MAP[normalized]}`);
+        console.log(`✅ DRIVER MAPPING (exact): "${driver}" -> ${DRIVER_COMPANY_MAP[normalized]}`);
         return DRIVER_COMPANY_MAP[normalized];
       }
       
       const variants = generateNameVariants(driver);
       for (const variant of variants) {
         if (DRIVER_COMPANY_MAP[variant]) {
-          console.log(`Driver găsit prin variantă: "${driver}" (${variant}) -> ${DRIVER_COMPANY_MAP[variant]}`);
+          console.log(`✅ DRIVER MAPPING (variant): "${driver}" (${variant}) -> ${DRIVER_COMPANY_MAP[variant]}`);
           return DRIVER_COMPANY_MAP[variant];
         }
       }
     }
     
-    // Driver not found - add to pending mappings for user confirmation
-    console.log(`💡 Șofer nou detectat: "${driverName}"`);
+    // 3. No mapping found - add to pending mappings for user confirmation
+    console.log(`❌ NO MAPPING: Vehicle ${vehicleId} and Driver ${driverName} not found`);
     
     // Try to suggest a company based on similar drivers
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
@@ -829,7 +855,8 @@ export function useTransportData() {
 
           let company = 'Unmatched';
           if (tripRecord && tripRecord['Driver']) {
-            const foundCompany = extractAndFindDriver(tripRecord['Driver']);
+            // NEW SYSTEM: Send entire trip record for vehicle-priority mapping
+            const foundCompany = extractAndFindDriver(tripRecord);
             if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
             } else if (foundCompany === 'Pending') {
@@ -874,7 +901,7 @@ export function useTransportData() {
             );
             if (alternativeSearch) {
               console.log(`🕵️ VRID ${vrid} găsit în trip data prin căutare alternativă:`, alternativeSearch);
-              const foundCompany = extractAndFindDriver(alternativeSearch['Driver']);
+              const foundCompany = extractAndFindDriver(alternativeSearch);
               console.log(`🎯 VRID ${vrid} ar trebui să fie la: ${foundCompany}`);
             } else {
               console.log(`❌ VRID ${vrid} absolut negăsit în trip data`);
