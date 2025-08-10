@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent System Completion - August 9, 2025
 
+### ✅ Critical Driver Mapping Bug Fix - FULLY RESOLVED - August 10, 2025
+- **CRITICAL BUG**: Tiberiu Iulian Ivan had conflicting mappings between static code (Fast Express) and database (WF SRL)
+- **DATABASE WINS Rule**: Static mapping removed to ensure database mappings take priority  
+- **Root Cause**: Static code mapping `"Tiberiu Iulian  Ivan": "Fast Express"` conflicted with DB record (WF SRL)
+- **Solution**: Commented out static mapping to let database mapping take precedence
+- **Result**: Tiberiu Ivan's trips now correctly assigned to WF SRL instead of Fast Express
+
 ### ✅ Financial Display Logic Corrections - FULLY RESOLVED - August 10, 2025
 - **Critical Constraint**: Total Încasat can never exceed Total Facturat (logical business rule)
 - **Negative Amount Clamping**: All negative balances now display as €0.00 across entire system

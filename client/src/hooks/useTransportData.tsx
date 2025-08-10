@@ -52,7 +52,7 @@ const DRIVER_COMPANY_MAP_ORIGINAL = {
   "Olteanu Ionut": "Fast Express",
   "Marius Condila": "Fast Express",
   "Teodor Petrișor Chiar": "Fast Express",
-  "Tiberiu Iulian  Ivan": "Fast Express",
+  // "Tiberiu Iulian  Ivan": "Fast Express", // MOVED TO DATABASE - ACUM LA WF SRL
   "Marius Adrian Badea": "Fast Express",
   "Florin Oprea": "Fast Express",
   "George Mihaita Butnaru": "Fast Express",
