@@ -167,7 +167,7 @@ export function useTransportData() {
               } else if (company.name === 'De Cargo Sped S.R.L.') {
                 mappedCompanyName = 'DE Cargo Speed';
               } else if (company.name === 'Stef Trans S.R.L.') {
-                mappedCompanyName = 'Stef Trans';
+                mappedCompanyName = 'Stef Trans S.R.L.';
               } else if (company.name === 'Toma SRL') {
                 mappedCompanyName = 'Toma SRL';
               } else if (company.name === 'Daniel Ontheroad S.R.L.') {
@@ -408,7 +408,8 @@ export function useTransportData() {
       if (vehicle) {
         const company = vehicleMapping.companies?.find(c => c.id === vehicle.companyId);
         if (company) {
-          const companyName = company.name === 'Fast & Express S.R.L.' ? 'Fast Express' : company.name;
+          const companyName = company.name === 'Fast & Express S.R.L.' ? 'Fast Express' : 
+                              company.name === 'Stef Trans S.R.L.' ? 'Stef Trans S.R.L.' : company.name;
           console.log(`🎯 VEHICLE PRIORITY OVERRIDE: ${vehicleId} (${cleanVehicleId}) → ${companyName} (prioritate față de șofer ${driverName})`);
           return companyName;
         }
@@ -452,7 +453,7 @@ export function useTransportData() {
     // Check if driver already exists in pending mappings - if so, don't add again
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
     if (!isAlreadyPending) {
-      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL', 'WF SRL', 'Daniel Ontheroad', 'Bis General'];
+      const allCompanies = ['Fast Express', 'Stef Trans S.R.L.', 'DE Cargo Speed', 'Toma SRL', 'WF SRL', 'Daniel Ontheroad', 'Bis General'];
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
