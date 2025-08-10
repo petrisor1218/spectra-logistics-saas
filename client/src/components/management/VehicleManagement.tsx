@@ -54,7 +54,15 @@ export function VehicleManagement() {
 
   // Create vehicle mutation
   const createVehicleMutation = useMutation({
-    mutationFn: (vehicleData: any) => apiRequest('/api/vehicles', { method: 'POST', body: vehicleData }),
+    mutationFn: async (vehicleData: any) => {
+      const response = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicleData)
+      });
+      if (!response.ok) throw new Error('Failed to create vehicle');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       setIsCreating(false);
@@ -68,7 +76,15 @@ export function VehicleManagement() {
 
   // Update vehicle mutation
   const updateVehicleMutation = useMutation({
-    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/vehicles/${id}`, { method: 'PUT', body: data }),
+    mutationFn: async ({ id, ...data }: any) => {
+      const response = await fetch(`/api/vehicles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update vehicle');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       setEditingId(null);
@@ -82,7 +98,11 @@ export function VehicleManagement() {
 
   // Delete vehicle mutation
   const deleteVehicleMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/vehicles/${id}`, { method: 'DELETE' }),
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete vehicle');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vehicles'] });
       toast({ title: "Vehicul șters cu succes!" });
@@ -138,7 +158,7 @@ export function VehicleManagement() {
   };
 
   const getCompanyName = (companyId: number) => {
-    const company = companies.find((c: Company) => c.id === companyId);
+    const company = (companies as Company[]).find((c: Company) => c.id === companyId);
     return company?.name || 'N/A';
   };
 
@@ -194,7 +214,7 @@ export function VehicleManagement() {
                     <SelectValue placeholder="Selectează compania" />
                   </SelectTrigger>
                   <SelectContent>
-                    {companies.map((company: Company) => (
+                    {(companies as Company[]).map((company: Company) => (
                       <SelectItem key={company.id} value={company.id.toString()}>
                         {company.name}
                       </SelectItem>
@@ -249,7 +269,7 @@ export function VehicleManagement() {
 
       {/* Vehicles List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {vehicles.map((vehicle: Vehicle) => (
+        {(vehicles as Vehicle[]).map((vehicle: Vehicle) => (
           <Card key={vehicle.id} className="relative">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -296,7 +316,7 @@ export function VehicleManagement() {
         ))}
       </div>
 
-      {vehicles.length === 0 && (
+      {(vehicles as Vehicle[]).length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
             <Truck className="h-12 w-12 mx-auto text-gray-400 mb-4" />
