@@ -575,7 +575,11 @@ export default function Home() {
                         <tbody className="divide-y divide-white/10">
                           {Object.entries(processedData).map(([company, data]: [string, any], index) => {
                             const total = data.Total_7_days + data.Total_30_days - data.Total_comision;
-                            const paid = payments[company] || 0;
+                            // Only show payments for current processed week, not all historical payments
+                            const currentWeekPayments = weeklyPaymentHistory[selectedWeek || processingWeek || ''] || [];
+                            const paid = currentWeekPayments
+                              .filter((payment: any) => payment.company === company)
+                              .reduce((sum: number, payment: any) => sum + payment.amount, 0);
                             const remaining = Math.max(0, total - paid);
                             
                             return (
