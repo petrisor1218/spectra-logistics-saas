@@ -1034,18 +1034,91 @@ export function useTransportData() {
       console.log(`💰 Total procesat toate: €${(finalTotal7Days + finalTotal30Days).toFixed(2)}`);
       console.log(`💸 Total comisioane: €${finalTotalCommission.toFixed(2)}`);
       
-      // Check for discrepancy
+      // 📊 VERIFICARE DETALIATĂ TOTALE FACTURI vs. SUME PROCESATE
       const expectedTotal = invoice7Total + invoice30Total;
       const actualTotal = finalTotal7Days + finalTotal30Days;
       const discrepancy = expectedTotal - actualTotal;
+      const discrepancy7Days = invoice7Total - finalTotal7Days;
+      const discrepancy30Days = invoice30Total - finalTotal30Days;
+      
+      console.log('');
+      console.log('🔍 VERIFICARE FINALĂ TOTALE FACTURI vs. PROCESARE:');
+      console.log('═══════════════════════════════════════════════════');
+      console.log(`📋 FACTURI ÎNCĂRCATE:`);
+      console.log(`   • 7 zile: €${invoice7Total.toFixed(2)} (${invoice7Data.length} facturi)`);
+      console.log(`   • 30 zile: €${invoice30Total.toFixed(2)} (${invoice30Data.length} facturi)`);
+      console.log(`   • TOTAL FACTURI: €${expectedTotal.toFixed(2)}`);
+      console.log(``);
+      console.log(`⚙️ PROCESARE SISTEM:`);
+      console.log(`   • 7 zile: €${finalTotal7Days.toFixed(2)}`);
+      console.log(`   • 30 zile: €${finalTotal30Days.toFixed(2)}`);
+      console.log(`   • TOTAL PROCESAT: €${actualTotal.toFixed(2)}`);
+      console.log(`   • Total comisioane: €${finalTotalCommission.toFixed(2)}`);
       
       if (Math.abs(discrepancy) > 0.01) {
-        console.log('🚨 DIFERENȚĂ DETECTATĂ:');
-        console.log(`📊 Total așteptat din facturi: €${expectedTotal.toFixed(2)}`);
-        console.log(`📊 Total calculat în sistem: €${actualTotal.toFixed(2)}`);
-        console.log(`⚠️ DIFERENȚĂ: €${Math.abs(discrepancy).toFixed(2)} ${discrepancy > 0 ? '(lipsesc din sistem)' : '(în plus în sistem)'}`);
-        alert(`🚨 DIFERENȚĂ DETECTATĂ: €${Math.abs(discrepancy).toFixed(2)}\nTotal facturi: €${expectedTotal.toFixed(2)}\nTotal procesat: €${actualTotal.toFixed(2)}\nVerificați consola pentru detalii.`);
+        console.log('');
+        console.log('🚨🚨🚨 AVERTIZARE - DIFERENȚĂ DETECTATĂ! 🚨🚨🚨');
+        console.log('═══════════════════════════════════════════════════');
+        console.log(`⚠️ DIFERENȚĂ TOTALĂ: €${Math.abs(discrepancy).toFixed(2)} ${discrepancy > 0 ? '(LIPSESC din procesare)' : '(ÎN PLUS în procesare)'}`);
+        
+        if (Math.abs(discrepancy7Days) > 0.01) {
+          console.log(`   • Diferență 7 zile: €${Math.abs(discrepancy7Days).toFixed(2)} ${discrepancy7Days > 0 ? '(lipsesc)' : '(în plus)'}`);
+        }
+        if (Math.abs(discrepancy30Days) > 0.01) {
+          console.log(`   • Diferență 30 zile: €${Math.abs(discrepancy30Days).toFixed(2)} ${discrepancy30Days > 0 ? '(lipsesc)' : '(în plus)'}`);
+        }
+        
+        console.log('═══════════════════════════════════════════════════');
+        console.log('📝 VERIFICĂRI RECOMANDATE:');
+        console.log('   1. Verifică dacă toate VRID-urile din facturi au fost procesate');
+        console.log('   2. Controlează dacă există facturi duplicate');
+        console.log('   3. Verifică formatul datelor în fișiere Excel/CSV');
+        console.log('   4. Controlează numele coloanelor în facturi');
+        
+        // Alertă detaliată cu informații practice
+        const alertMessage = `🚨 ATENȚIE - DIFERENȚĂ ÎN TOTALE!
+
+💰 TOTALURILE NU SE POTRIVESC:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Din facturi: €${expectedTotal.toFixed(2)}
+⚙️ Procesat: €${actualTotal.toFixed(2)}
+⚠️ Diferență: €${Math.abs(discrepancy).toFixed(2)} ${discrepancy > 0 ? '(LIPSESC din procesare)' : '(ÎN PLUS în procesare)'}
+
+📋 DETALII:
+${Math.abs(discrepancy7Days) > 0.01 ? `• Facturi 7 zile: diferență €${Math.abs(discrepancy7Days).toFixed(2)} ${discrepancy7Days > 0 ? '(lipsesc)' : '(în plus)'}\n` : ''}${Math.abs(discrepancy30Days) > 0.01 ? `• Facturi 30 zile: diferență €${Math.abs(discrepancy30Days).toFixed(2)} ${discrepancy30Days > 0 ? '(lipsesc)' : '(în plus)'}\n` : ''}
+🔍 Verifică consola pentru informații complete!
+
+ACȚIUNI RECOMANDATE:
+1️⃣ Verifică dacă toate VRID-urile sunt procesate
+2️⃣ Controlează facturile duplicate
+3️⃣ Verifică formatul datelor`;
+        
+        alert(alertMessage);
+        
+        // Salvare date pentru debugging avansat
+        (window as any).invoiceValidationDetails = {
+          timestamp: new Date().toISOString(),
+          expectedTotal,
+          actualTotal,
+          discrepancy,
+          breakdown: {
+            invoice7Days: { expected: invoice7Total, actual: finalTotal7Days, diff: discrepancy7Days },
+            invoice30Days: { expected: invoice30Total, actual: finalTotal30Days, diff: discrepancy30Days }
+          },
+          fileCount: {
+            invoice7: invoice7Data.length,
+            invoice30: invoice30Data.length,
+            tripData: tripData.length
+          },
+          commission: finalTotalCommission
+        };
+        
+      } else {
+        console.log('✅ VERIFICARE TOTALE: Perfect! Totalurile se potrivesc exact.');
+        console.log(`   💰 Total verificat și confirmat: €${expectedTotal.toFixed(2)}`);
+        console.log(`   ✨ Nu există discrepanțe între facturi și procesare.`);
       }
+      console.log('═══════════════════════════════════════════════════');
 
       setProcessedData(results);
       setSelectedWeek(processingWeek);
