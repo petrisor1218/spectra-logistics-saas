@@ -29,6 +29,8 @@ export function SavedDataCalendar({
     setLoading(true);
     try {
       const data = await loadAllWeeklyProcessing();
+      console.log('🗓️ SavedDataCalendar - Raw data from API:', data);
+      console.log('🗓️ September weeks found:', data.filter((w: any) => w.weekLabel.includes('sept')));
       setSavedWeeks(data);
     } catch (error) {
       console.error('Error loading saved data:', error);
@@ -83,7 +85,7 @@ export function SavedDataCalendar({
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
       'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
-      'iul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'noi': 10, 'dec': 11
+      'iul': 6, 'aug': 7, 'sep': 8, 'sept': 8, 'oct': 9, 'noi': 10, 'dec': 11
     };
     
     const parts = startDateStr.split(' ');
@@ -92,15 +94,18 @@ export function SavedDataCalendar({
     const month = monthMap[monthStr] ?? 0;
     
     // Check if year is present in the string
-    let year = 2025; // Default to current year
+    let year = 2024; // Default to 2024 since most data is from 2024
     if (parts.length >= 3) {
       const yearPart = parseInt(parts[2]);
       if (!isNaN(yearPart) && yearPart > 2000) {
         year = yearPart;
       }
     } else {
-      // If no year is specified and month is February, it's likely 2024 data
-      if (monthStr === 'feb') {
+      // For months after July 2024, assume 2024 data
+      if (['aug', 'sep', 'sept', 'oct', 'noi', 'dec'].includes(monthStr)) {
+        year = 2024;
+      } else if (['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul'].includes(monthStr)) {
+        // Could be 2024 or 2025, but most likely 2024 for historical data
         year = 2024;
       }
     }
@@ -112,6 +117,12 @@ export function SavedDataCalendar({
   const sortedSavedWeeks = [...savedWeeks].sort((a, b) => {
     const dateA = parseRomanianWeekDate(a.weekLabel);
     const dateB = parseRomanianWeekDate(b.weekLabel);
+    
+    // Debug parsing for September weeks
+    if (a.weekLabel.includes('sept') || b.weekLabel.includes('sept')) {
+      console.log('🗓️ Parsing September week:', a.weekLabel, '→', dateA);
+      console.log('🗓️ Compared with:', b.weekLabel, '→', dateB);
+    }
     
     if (sortOrder === 'recent') {
       // Recent first: newer dates first (default)
