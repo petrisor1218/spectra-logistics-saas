@@ -69,3 +69,16 @@ Preferred communication style: Simple, everyday language.
 ### Services/APIs
 - Brevo SMTP Service (for email delivery)
 - Stripe (for payment processing and subscriptions)
+
+## Recent System Corrections and Updates
+
+### ✅ Company Data Unification - FULLY RESOLVED - August 11, 2025
+- **Issue**: Duplicate company entries "Stef Trans" and "Stef Trans S.R.L." causing data fragmentation
+- **Solution**: Complete data migration and unification under "Stef Trans S.R.L." as official company name
+- **Actions Taken**:
+  - Migrated 28 payment records from "Stef Trans" to "Stef Trans S.R.L."
+  - Migrated 1 company balance record to unified name
+  - Updated 1 weekly processing JSON data structure
+  - Updated static code mappings in useTransportData.tsx
+- **Result**: All Stef Trans data now unified under single official company name "Stef Trans S.R.L."
+- **Data Verification**: 59 total payments, 29 company balances, €404,532.75 total payments processed
