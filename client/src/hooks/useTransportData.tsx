@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { useVehicleMapping } from './useVehicleMapping';
 
 // Company details from transport orders system
 const COMPANY_DETAILS = {
@@ -138,9 +137,6 @@ export function useTransportData() {
   // Load drivers from database and combine with static mapping
   const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
   
-  // Hook pentru vehicule (sistemul de prioritate)
-  const vehicleMapping = useVehicleMapping();
-  
   const loadDriversFromDatabase = async () => {
     try {
       console.log('🔄 Loading drivers from database...');
@@ -167,7 +163,7 @@ export function useTransportData() {
               } else if (company.name === 'De Cargo Sped S.R.L.') {
                 mappedCompanyName = 'DE Cargo Speed';
               } else if (company.name === 'Stef Trans S.R.L.') {
-                mappedCompanyName = 'Stef Trans S.R.L.';
+                mappedCompanyName = 'Stef Trans';
               } else if (company.name === 'Toma SRL') {
                 mappedCompanyName = 'Toma SRL';
               } else if (company.name === 'Daniel Ontheroad S.R.L.') {
@@ -234,17 +230,8 @@ export function useTransportData() {
     return DRIVER_COMPANY_MAP;
   };
 
-  // State to store historical VRID findings for intelligent suggestions
-  const [historicalVRIDFindings, setHistoricalVRIDFindings] = useState<Record<string, string>>({});
-
-  // Auto-suggest company for unmapped drivers - enhanced with historical data
+  // Auto-suggest company for unmapped drivers
   const autoSuggestCompany = (driverName: string, driverMap: Record<string, string>) => {
-    // First check if we have historical data for this specific driver
-    if (historicalVRIDFindings[driverName]) {
-      console.log(`🎯 SUGESTIE ISTORICĂ: ${driverName} → ${historicalVRIDFindings[driverName]}`);
-      return historicalVRIDFindings[driverName];
-    }
-    
     const parts = driverName.toLowerCase().split(' ');
     const companyCount: Record<string, number> = {};
     
@@ -369,56 +356,12 @@ export function useTransportData() {
     return null;
   };
 
-  const extractAndFindDriver = (trip: any) => {
-    const driverName = trip.Driver;
-    const vehicleId = trip["Vehicle ID"];
-    
+  const extractAndFindDriver = (driverName: string) => {
     if (!driverName || typeof driverName !== 'string') {
       console.log('Driver name invalid:', driverName);
       return "Unknown";
     }
     
-    console.log(`🚗 VEHICLE PRIORITY MAPPING: Processing vehicle "${vehicleId}" with driver "${driverName}"`);
-    
-    // 1. PRIORITY: Check vehicle mapping first (ACEST SISTEM ARE PRIORITATE!)
-    if (vehicleId && vehicleMapping) {
-      // Extract clean vehicle ID from formats like "OTHR-TR94FST" → "TR94FST"
-      let cleanVehicleId = vehicleId;
-      if (vehicleId.includes('-')) {
-        const parts = vehicleId.split('-');
-        if (parts.length >= 2) {
-          cleanVehicleId = parts[parts.length - 1]; // Take the last part
-        }
-      }
-      
-      // First try with original vehicle ID
-      let vehicle = vehicleMapping.vehicles?.find(v => 
-        v.vehicleId === vehicleId && 
-        v.isActive === 'true'
-      );
-      
-      // If not found, try with cleaned vehicle ID
-      if (!vehicle) {
-        vehicle = vehicleMapping.vehicles?.find(v => 
-          v.vehicleId === cleanVehicleId && 
-          v.isActive === 'true'
-        );
-      }
-      
-      if (vehicle) {
-        const company = vehicleMapping.companies?.find(c => c.id === vehicle.companyId);
-        if (company) {
-          const companyName = company.name === 'Fast & Express S.R.L.' ? 'Fast Express' : 
-                              company.name === 'Stef Trans S.R.L.' ? 'Stef Trans S.R.L.' : company.name;
-          console.log(`🎯 VEHICLE PRIORITY OVERRIDE: ${vehicleId} (${cleanVehicleId}) → ${companyName} (prioritate față de șofer ${driverName})`);
-          return companyName;
-        }
-      } else {
-        console.log(`🔍 Vehicle "${vehicleId}" (cleaned: "${cleanVehicleId}") not found in vehicle mapping`);
-      }
-    }
-    
-    // 2. FALLBACK: Check driver mapping
     const DRIVER_COMPANY_MAP = getCompleteDriverMap();
     const drivers = driverName.split(',').map(d => d.trim());
     
@@ -428,21 +371,21 @@ export function useTransportData() {
       const normalized = driver.toLowerCase().trim().replace(/\s+/g, ' ');
       
       if (DRIVER_COMPANY_MAP[normalized]) {
-        console.log(`✅ DRIVER MAPPING (exact): "${driver}" -> ${DRIVER_COMPANY_MAP[normalized]}`);
+        console.log(`Driver găsit: "${driver}" -> ${DRIVER_COMPANY_MAP[normalized]}`);
         return DRIVER_COMPANY_MAP[normalized];
       }
       
       const variants = generateNameVariants(driver);
       for (const variant of variants) {
         if (DRIVER_COMPANY_MAP[variant]) {
-          console.log(`✅ DRIVER MAPPING (variant): "${driver}" (${variant}) -> ${DRIVER_COMPANY_MAP[variant]}`);
+          console.log(`Driver găsit prin variantă: "${driver}" (${variant}) -> ${DRIVER_COMPANY_MAP[variant]}`);
           return DRIVER_COMPANY_MAP[variant];
         }
       }
     }
     
-    // 3. No mapping found - add to pending mappings for user confirmation
-    console.log(`❌ NO MAPPING: Vehicle ${vehicleId} and Driver ${driverName} not found`);
+    // Driver not found - add to pending mappings for user confirmation
+    console.log(`💡 Șofer nou detectat: "${driverName}"`);
     
     // Try to suggest a company based on similar drivers
     const suggestedCompany = autoSuggestCompany(driverName, dynamicDriverMap);
@@ -453,7 +396,7 @@ export function useTransportData() {
     // Check if driver already exists in pending mappings - if so, don't add again
     const isAlreadyPending = pendingMappings.some(p => p.driverName === driverName);
     if (!isAlreadyPending) {
-      const allCompanies = ['Fast Express', 'Stef Trans S.R.L.', 'DE Cargo Speed', 'Toma SRL', 'WF SRL', 'Daniel Ontheroad', 'Bis General'];
+      const allCompanies = ['Fast Express', 'Stef Trans', 'DE Cargo Speed', 'Toma SRL'];
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
@@ -886,8 +829,7 @@ export function useTransportData() {
 
           let company = 'Unmatched';
           if (tripRecord && tripRecord['Driver']) {
-            // NEW SYSTEM: Send entire trip record for vehicle-priority mapping
-            const foundCompany = extractAndFindDriver(tripRecord);
+            const foundCompany = extractAndFindDriver(tripRecord['Driver']);
             if (foundCompany !== 'Unknown' && foundCompany !== 'Pending') {
               company = foundCompany;
             } else if (foundCompany === 'Pending') {
@@ -932,7 +874,7 @@ export function useTransportData() {
             );
             if (alternativeSearch) {
               console.log(`🕵️ VRID ${vrid} găsit în trip data prin căutare alternativă:`, alternativeSearch);
-              const foundCompany = extractAndFindDriver(alternativeSearch);
+              const foundCompany = extractAndFindDriver(alternativeSearch['Driver']);
               console.log(`🎯 VRID ${vrid} ar trebui să fie la: ${foundCompany}`);
             } else {
               console.log(`❌ VRID ${vrid} absolut negăsit în trip data`);
@@ -1109,15 +1051,6 @@ export function useTransportData() {
                   
                   if (foundCompany !== 'Unknown' && foundCompany !== 'Pending' && foundCompany !== 'Unmatched') {
                     console.log(`✅ VRID matcat automat: ${vrid} → ${foundCompany} (din ${historicalTrip.weekLabel})`);
-                    
-                    // Store driver-company mapping for intelligent future suggestions
-                    if (historicalTrip.driverName) {
-                      setHistoricalVRIDFindings(prev => ({
-                        ...prev,
-                        [historicalTrip.driverName]: foundCompany
-                      }));
-                      console.log(`🎯 MEMOREZ SUGESTIE ISTORICĂ: ${historicalTrip.driverName} → ${foundCompany}`);
-                    }
                     
                     // Move from Unmatched to correct company
                     if (results.Unmatched && results.Unmatched.VRID_details[vrid]) {

@@ -2,7 +2,6 @@ import {
   users, 
   companies, 
   drivers, 
-  vehicles,
   weeklyProcessing, 
   payments, 
   paymentHistory,
@@ -15,8 +14,6 @@ import {
   type InsertCompany,
   type Driver,
   type InsertDriver,
-  type Vehicle,
-  type InsertVehicle,
   type WeeklyProcessing,
   type InsertWeeklyProcessing,
   type Payment,
@@ -55,14 +52,6 @@ export interface IStorage {
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver>;
   deleteDriver(id: number): Promise<void>;
-  
-  // Vehicle methods  
-  getAllVehicles(): Promise<Vehicle[]>;
-  getVehicleByVehicleId(vehicleId: string): Promise<Vehicle | undefined>;
-  getVehiclesByCompany(companyId: number): Promise<Vehicle[]>;
-  createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
-  updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle>;
-  deleteVehicle(id: number): Promise<void>;
   
   // Weekly processing methods
   getWeeklyProcessing(weekLabel: string): Promise<WeeklyProcessing | undefined>;
@@ -212,34 +201,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(drivers).where(eq(drivers.id, id));
   }
 
-  // Vehicle methods implementation
-  async getAllVehicles(): Promise<Vehicle[]> {
-    return db.select().from(vehicles).orderBy(vehicles.vehicleId);
-  }
-
-  async getVehicleByVehicleId(vehicleId: string): Promise<Vehicle | undefined> {
-    const result = await db.select().from(vehicles).where(eq(vehicles.vehicleId, vehicleId)).limit(1);
-    return result[0];
-  }
-
-  async getVehiclesByCompany(companyId: number): Promise<Vehicle[]> {
-    return db.select().from(vehicles).where(eq(vehicles.companyId, companyId));
-  }
-
-  async createVehicle(vehicle: InsertVehicle): Promise<Vehicle> {
-    const result = await db.insert(vehicles).values(vehicle).returning();
-    return result[0];
-  }
-
-  async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle> {
-    const result = await db.update(vehicles).set(vehicle).where(eq(vehicles.id, id)).returning();
-    return result[0];
-  }
-
-  async deleteVehicle(id: number): Promise<void> {
-    await db.delete(vehicles).where(eq(vehicles.id, id));
-  }
-
   // Weekly processing methods
   async getWeeklyProcessing(weekLabel: string): Promise<WeeklyProcessing | undefined> {
     const [processing] = await db.select().from(weeklyProcessing).where(eq(weeklyProcessing.weekLabel, weekLabel));
@@ -295,21 +256,6 @@ export class DatabaseStorage implements IStorage {
       .insert(payments)
       .values(insertPayment)
       .returning();
-    
-    // Actualizează automat soldul companiei după adăugarea plății
-    if (payment.companyName && payment.weekLabel && payment.amount) {
-      try {
-        await this.updateCompanyBalancePayment(
-          payment.companyName, 
-          payment.weekLabel, 
-          parseFloat(payment.amount)
-        );
-        console.log(`✅ Company balance updated for ${payment.companyName} - ${payment.weekLabel}`);
-      } catch (error) {
-        console.error(`❌ Failed to update company balance for ${payment.companyName}:`, error);
-      }
-    }
-    
     return payment;
   }
 
@@ -458,71 +404,10 @@ export class DatabaseStorage implements IStorage {
     if (vrids.length === 0) return [];
     
     const trips: HistoricalTrip[] = [];
-    
-    // First search in historicalTrips table
     for (const vrid of vrids) {
       const trip = await this.getHistoricalTripByVrid(vrid);
       if (trip) trips.push(trip);
     }
-    
-    // Then search in weekly_processing data for VRIDs not found in historicalTrips
-    const foundVrids = trips.map(t => t.vrid);
-    const notFoundVrids = vrids.filter(vrid => !foundVrids.includes(vrid));
-    
-    if (notFoundVrids.length > 0) {
-      console.log(`🔍 Căutare VRID-uri în weekly_processing pentru: ${notFoundVrids.slice(0, 5).join(', ')}${notFoundVrids.length > 5 ? '...' : ''}`);
-      
-      // Search in weekly_processing data
-      const weeklyData = await db.select().from(weeklyProcessing);
-      
-      for (const week of weeklyData) {
-        if (!week.processedData) continue;
-        
-        const processedData = week.processedData as any;
-        
-        // Look through all companies in this week's data
-        Object.keys(processedData).forEach(companyName => {
-          if (companyName === 'Totals' || companyName === 'Unmatched') return;
-          
-          const companyData = processedData[companyName];
-          if (companyData && companyData.VRID_details) {
-            
-            // Check if any of our target VRIDs are in this company's data
-            notFoundVrids.forEach(vrid => {
-              if (companyData.VRID_details[vrid]) {
-                // Found this VRID! Create a historical trip record
-                const syntheticTrip: HistoricalTrip = {
-                  id: parseInt(`${Date.now()}${Math.random().toString().slice(2, 5)}`), // Unique ID
-                  vrid: vrid,
-                  driverName: `Șofer din ${companyName}`, // We don't have driver name in VRID_details
-                  weekLabel: week.weekLabel,
-                  tripDate: null,
-                  route: null,
-                  rawTripData: {
-                    'VR ID': vrid,
-                    'Driver': `Șofer din ${companyName}`,
-                    'Company': companyName,
-                    'Source': 'weekly_processing_recovery',
-                    'Amount_7_days': companyData.VRID_details[vrid]['7_days'] || 0,
-                    'Amount_30_days': companyData.VRID_details[vrid]['30_days'] || 0,
-                    'Commission': companyData.VRID_details[vrid]['commission'] || 0
-                  },
-                  tenantId: 1,
-                  createdAt: new Date()
-                };
-                
-                // Only add if not already found
-                if (!trips.find(t => t.vrid === vrid)) {
-                  trips.push(syntheticTrip);
-                  console.log(`✅ GĂSIT în ${week.weekLabel}: ${vrid} → ${companyName} (€${companyData.VRID_details[vrid]['30_days'] || companyData.VRID_details[vrid]['7_days']})`);
-                }
-              }
-            });
-          }
-        });
-      }
-    }
-    
     return trips;
   }
 
@@ -701,51 +586,52 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Funcție pentru recalcularea soldurilor pe baza plăților existente
-  async recalculateCompanyBalance(companyName: string, weekLabel: string): Promise<CompanyBalance> {
+  async updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance> {
     const existing = await this.getCompanyBalanceByWeek(companyName, weekLabel);
     if (!existing) {
       throw new Error(`No balance found for ${companyName} in week ${weekLabel}`);
     }
 
-    // Calculează suma totală plătită pe baza plăților reale din tabel
-    const payments = await this.getPaymentsByCompanyAndWeek(companyName, weekLabel);
-    const totalPaid = payments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
-    
+    // IMPORTANT: Save the payment in the payments table so it persists through synchronization
+    const paymentData: InsertPayment = {
+      companyName: companyName,
+      weekLabel: weekLabel,
+      amount: paidAmount.toString(),
+      description: `Plată manuală adăugată prin bilanțe`
+    };
+
+    await db.insert(payments).values(paymentData);
+    console.log(`💾 Plată salvată în tabelul payments: ${companyName} - ${weekLabel} - ${paidAmount} EUR`);
+
+    const newTotalPaid = parseFloat(existing.totalPaid || '0') + paidAmount;
     const totalInvoiced = parseFloat(existing.totalInvoiced || '0');
-    let outstandingBalance = totalInvoiced - totalPaid;
+    let newOutstandingBalance = totalInvoiced - newTotalPaid;
     
-    // Dacă diferența este mai mică de 1 EUR, consideră plătit complet
-    let status: 'pending' | 'partial' | 'paid' = 'pending';
-    if (totalPaid === 0) {
-      status = 'pending';
-    } else if (totalPaid >= totalInvoiced || Math.abs(outstandingBalance) < 1) {
-      status = 'paid';
-      if (Math.abs(outstandingBalance) < 1) {
-        outstandingBalance = 0;
+    // If difference is less than 1 EUR, consider it paid and set balance to 0
+    let newStatus: 'pending' | 'partial' | 'paid' = 'pending';
+    if (newTotalPaid === 0) {
+      newStatus = 'pending';
+    } else if (newTotalPaid >= totalInvoiced || Math.abs(newOutstandingBalance) < 1) {
+      newStatus = 'paid';
+      if (Math.abs(newOutstandingBalance) < 1) {
+        newOutstandingBalance = 0;
       }
     } else {
-      status = 'partial';
+      newStatus = 'partial';
     }
 
     const [updated] = await db
       .update(companyBalances)
       .set({
-        totalPaid: totalPaid.toString(),
-        outstandingBalance: outstandingBalance.toString(),
-        paymentStatus: status,
+        totalPaid: newTotalPaid.toString(),
+        outstandingBalance: newOutstandingBalance.toString(),
+        paymentStatus: newStatus,
         lastUpdated: new Date()
       })
       .where(eq(companyBalances.id, existing.id))
       .returning();
-
-    console.log(`✅ Recalculated balance for ${companyName} - ${weekLabel}: paid ${totalPaid}/${totalInvoiced}`);
+    
     return updated;
-  }
-
-  async updateCompanyBalancePayment(companyName: string, weekLabel: string, paidAmount: number): Promise<CompanyBalance> {
-    // Nu mai creăm plată duplicată - doar recalculăm pe baza plăților existente
-    return this.recalculateCompanyBalance(companyName, weekLabel);
   }
 
   async deleteCompanyBalancePayment(companyName: string, weekLabel: string, paymentAmount: number): Promise<CompanyBalance> {

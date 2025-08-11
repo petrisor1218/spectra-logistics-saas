@@ -130,35 +130,9 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     }
   }, [weekData]);
 
-  // Load all companies from database for consistent dropdown
-  const { data: allCompaniesData } = useQuery({
-    queryKey: ['/api/companies']
-  });
-
   const companies = useMemo(() => {
-    // First get companies that have data in current week
-    const companiesWithData = processedData ? Object.keys(processedData) : [];
-    
-    // Then add all companies from database to ensure complete list
-    const allDatabaseCompanies = allCompaniesData ? allCompaniesData.map((c: any) => {
-      // Map database names to display names
-      if (c.name === 'Fast & Express S.R.L.') return 'Fast Express';
-      if (c.name === 'Stef Trans S.R.L.') return 'Stef Trans';
-      if (c.name === 'De Cargo Sped S.R.L.') return 'DE Cargo Speed';
-      if (c.name === 'Daniel Ontheroad S.R.L.') return 'Daniel Ontheroad';
-      return c.name;
-    }) : [];
-    
-    // Combine and deduplicate
-    const uniqueCompanies = Array.from(new Set([...companiesWithData, ...allDatabaseCompanies]));
-    console.log('🏢 Companies available:', { 
-      companiesWithData, 
-      allDatabaseCompanies, 
-      uniqueCompanies 
-    });
-    
-    return uniqueCompanies;
-  }, [processedData, allCompaniesData]);
+    return processedData ? Object.keys(processedData) : [];
+  }, [processedData]);
 
   const currentCompanyData: CompanyData | null = useMemo(() => {
     if (!processedData || !selectedCompany) return null;
@@ -179,132 +153,18 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     }
   }, [weekOptions, selectedReportWeek]);
 
-  // Încărcăm informațiile despre șoferi și vehicule
-  const { data: driversData } = useQuery({
-    queryKey: ['/api/drivers'],
-    enabled: !!selectedCompany
-  });
-
-  const { data: vehiclesData } = useQuery({
-    queryKey: ['/api/vehicles'],
-    enabled: !!selectedCompany
-  });
-
-  const { data: tripData } = useQuery({
-    queryKey: ['/api/weekly-processing', selectedReportWeek, 'trip-data'],
-    queryFn: async () => {
-      if (!selectedReportWeek) return null;
-      const response = await fetch(`/api/weekly-processing?weekLabel=${encodeURIComponent(selectedReportWeek)}`);
-      if (!response.ok) throw new Error('Failed to fetch trip data');
-      const data = await response.json();
-      
-      // Încercăm să accesăm datele de trip din câmpul tripData sau trip_data
-      console.log('🔍 Frontend trip data check:', {
-        hasData: !!data,
-        hasTripData: !!data.tripData,
-        tripDataType: typeof data.tripData,
-        tripDataIsArray: Array.isArray(data.tripData),
-        availableKeys: Object.keys(data || {})
-      });
-      
-      if (data.tripData && Array.isArray(data.tripData)) {
-        console.log('✅ Found tripData array with', data.tripData.length, 'entries');
-        return data.tripData;
-      }
-      
-      // Fallback: încercăm să parsăm din string dacă este necesar
-      if (typeof data.tripData === 'string') {
-        try {
-          const parsed = JSON.parse(data.tripData);
-          console.log('✅ Parsed tripData string to array with', parsed.length, 'entries');
-          return parsed;
-        } catch (e) {
-          console.error('Failed to parse tripData string:', e);
-          return [];
-        }
-      }
-      
-      return [];
-    },
-    enabled: !!selectedReportWeek
-  });
-
   const tableData = useMemo(() => {
     if (!currentCompanyData?.VRID_details) return [];
     
-    // Debug log pentru a verifica datele disponibile
-    console.log('🚛 Table data generation:', {
-      hasCurrentCompanyData: !!currentCompanyData,
-      hasTripData: !!tripData,
-      tripDataLength: tripData?.length || 0,
-      hasVehiclesData: !!vehiclesData,
-      vehiclesDataLength: vehiclesData?.length || 0,
-      firstVRID: Object.keys(currentCompanyData.VRID_details)[0],
-      firstTripSample: tripData?.[0] ? {
-        vrId: tripData[0]['VR ID'],
-        driver: tripData[0]['Driver'],
-        vehicleId: tripData[0]['Vehicle ID']
-      } : null
-    });
-    
-    return Object.entries(currentCompanyData.VRID_details).map(([vrid, details]) => {
-      // Căutăm șoferul și vehiculul în datele de trip
-      let driverName = 'N/A';
-      let vehicleId = 'N/A';
-      
-      if (tripData && Array.isArray(tripData)) {
-        const tripEntry = tripData.find((trip: any) => trip['VR ID'] === vrid);
-        if (tripEntry) {
-          driverName = tripEntry['Driver'] || 'N/A';
-          // Extragem numarul vehiculului din "Vehicle ID" (ex: OTHR-TR80FST → TR80FST)
-          const rawVehicleId = tripEntry['Vehicle ID'] || tripEntry['Vehicul'] || '';
-          if (rawVehicleId) {
-            // Extragem partea de după OTHR- pentru a obține doar numărul camionului
-            vehicleId = rawVehicleId.replace('OTHR-', '').replace('OTHER-', '');
-          }
-          
-          // Debug pentru primul VRID găsit
-          if (vrid === Object.keys(currentCompanyData.VRID_details)[0]) {
-            console.log('🔍 First VRID mapping sample:', {
-              vrid,
-              driverName,
-              rawVehicleId,
-              cleanVehicleId: vehicleId,
-              tripEntry: {
-                driver: tripEntry['Driver'],
-                vehicleId: tripEntry['Vehicle ID'],
-                allKeys: Object.keys(tripEntry)
-              }
-            });
-          }
-        }
-      }
-      
-      // Dacă nu am găsit vehiculul în trip data, încercăm să-l mapăm din baza de date
-      if (vehicleId === 'N/A' && vehiclesData && Array.isArray(vehiclesData)) {
-        const vehicle = vehiclesData.find((v: any) => 
-          v?.vehicle_id && (
-            vrid.includes(v.vehicle_id) || 
-            v.vehicle_id.includes(vrid.substring(0, 6))
-          )
-        );
-        if (vehicle?.vehicle_id) {
-          vehicleId = vehicle.vehicle_id;
-        }
-      }
-      
-      return {
-        vrid,
-        driverName,
-        vehicleId,
-        sum7Days: details['7_days'],
-        sum30Days: details['30_days'],
-        totalInvoice: details['7_days'] + details['30_days'],
-        commission: details.commission,
-        totalNet: (details['7_days'] + details['30_days']) - details.commission
-      };
-    });
-  }, [currentCompanyData, tripData, vehiclesData]);
+    return Object.entries(currentCompanyData.VRID_details).map(([vrid, details]) => ({
+      vrid,
+      sum7Days: details['7_days'],
+      sum30Days: details['30_days'],
+      totalInvoice: details['7_days'] + details['30_days'],
+      commission: details.commission,
+      totalNet: (details['7_days'] + details['30_days']) - details.commission
+    }));
+  }, [currentCompanyData]);
 
   const totals = useMemo(() => {
     if (!currentCompanyData) return null;
@@ -339,11 +199,9 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     doc.text(`Saptamana: ${selectedReportWeek}`, 148.5, 22, { align: 'center' });
 
     // Prepare table data
-    const headers = ['VRID', 'Șofer', 'Camion', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
+    const headers = ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'];
     const data = tableData.map(row => [
       row.vrid,
-      row.driverName,
-      row.vehicleId,
       `${row.sum7Days.toFixed(2)} EUR`,
       `${row.sum30Days.toFixed(2)} EUR`,
       `${row.totalInvoice.toFixed(2)} EUR`,
@@ -355,8 +213,6 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
     if (totals) {
       data.push([
         'TOTAL',
-        '-',
-        '-',
         `${totals.total7Days.toFixed(2)} EUR`,
         `${totals.total30Days.toFixed(2)} EUR`,
         `${totals.totalInvoice.toFixed(2)} EUR`,
@@ -390,13 +246,11 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       },
       columnStyles: {
         0: { halign: 'left' },
-        1: { halign: 'left' },
-        2: { halign: 'left' },
+        1: { halign: 'right' },
+        2: { halign: 'right' },
         3: { halign: 'right' },
         4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right' },
-        7: { halign: 'right' }
+        5: { halign: 'right' }
       }
     });
 
@@ -411,18 +265,16 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
       [`Raport Curse Săptămânale - ${selectedCompany}`],
       [`Săptămâna: ${selectedReportWeek}`],
       [],
-      ['VRID', 'Șofer', 'Camion', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'],
+      ['VRID', 'Total 7 zile', 'Total 30 zile', 'Total de facturat', 'Comision', 'Total net'],
       ...tableData.map(row => [
         row.vrid,
-        row.driverName,
-        row.vehicleId,
         row.sum7Days,
         row.sum30Days,
         row.totalInvoice,
         row.commission,
         row.totalNet
       ]),
-      ...(totals ? [['TOTAL', '-', '-', totals.total7Days, totals.total30Days, totals.totalInvoice, totals.totalCommission, totals.totalNet]] : [])
+      ...(totals ? [['TOTAL', totals.total7Days, totals.total30Days, totals.totalInvoice, totals.totalCommission, totals.totalNet]] : [])
     ]);
 
     const wb = XLSX.utils.book_new();
@@ -823,8 +675,6 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                     <TableHeader>
                       <TableRow className="border-white/10">
                         <TableHead className="text-left font-semibold">VRID</TableHead>
-                        <TableHead className="text-left font-semibold">Șofer</TableHead>
-                        <TableHead className="text-left font-semibold">Camion</TableHead>
                         <TableHead className="text-right font-semibold">Total 7 zile</TableHead>
                         <TableHead className="text-right font-semibold">Total 30 zile</TableHead>
                         <TableHead className="text-right font-semibold">Total de facturat</TableHead>
@@ -842,8 +692,6 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                           className="border-white/5 hover:bg-white/5 transition-colors"
                         >
                           <TableCell className="font-mono font-medium">{row.vrid}</TableCell>
-                          <TableCell className="text-left">{row.driverName}</TableCell>
-                          <TableCell className="text-left font-mono text-sm">{row.vehicleId}</TableCell>
                           <TableCell className="text-right">{row.sum7Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right">{row.sum30Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right font-semibold">{row.totalInvoice.toFixed(2)} EUR</TableCell>
@@ -859,8 +707,6 @@ const WeeklyReportsView: React.FC<WeeklyReportsViewProps> = ({
                       {totals && (
                         <TableRow className="border-t-2 border-white/20 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/20 dark:to-purple-900/20 font-bold">
                           <TableCell className="font-bold text-lg">TOTAL</TableCell>
-                          <TableCell className="text-left font-bold">-</TableCell>
-                          <TableCell className="text-left font-bold">-</TableCell>
                           <TableCell className="text-right font-bold">{totals.total7Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right font-bold">{totals.total30Days.toFixed(2)} EUR</TableCell>
                           <TableCell className="text-right font-bold text-blue-600 dark:text-blue-400">

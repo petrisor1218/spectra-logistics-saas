@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { tenantStorage } from "./storage-tenant";
 import { tenantMiddleware, requireTenantAuth } from "./middleware/tenant";
-import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertVehicleSchema, insertUserSchema, insertTenantSchema, tenants, companyBalances, weeklyProcessing, payments, type InsertCompanyBalance, type CompanyBalance } from "@shared/schema";
+import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema, insertTenantSchema, tenants, companyBalances, weeklyProcessing, payments, type InsertCompanyBalance, type CompanyBalance } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import bcrypt from 'bcryptjs';
@@ -687,17 +687,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (weekLabel) {
         const processing = await storage.getWeeklyProcessingByWeek(weekLabel as string);
-        
-        // Debug log pentru a vedea ce returnăm
-        console.log('🔍 Weekly processing response:', {
-          weekLabel,
-          hasProcessing: !!processing,
-          hasTripData: !!processing?.tripData,
-          tripDataType: typeof processing?.tripData,
-          tripDataLength: Array.isArray(processing?.tripData) ? processing.tripData.length : 'not array',
-          keys: processing ? Object.keys(processing) : []
-        });
-        
         res.json(processing);
       } else {
         const allProcessing = await storage.getAllWeeklyProcessing();
@@ -1495,40 +1484,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting payment:", error);
       res.status(500).json({ message: "Failed to delete payment" });
-    }
-  });
-
-  // POST route to recalculate all company balances for a specific week
-  app.post("/api/company-balances/recalculate", async (req, res) => {
-    try {
-      const { weekLabel } = req.body;
-      
-      console.log(`🔄 Recalculating all company balances for week: ${weekLabel}`);
-      
-      // Găsește toate soldurile pentru săptămâna specificată
-      const allBalances = await storage.getCompanyBalances();
-      const weekBalances = allBalances.filter(balance => balance.weekLabel === weekLabel);
-      
-      const recalculatedBalances = [];
-      for (const balance of weekBalances) {
-        try {
-          const updated = await storage.recalculateCompanyBalance(balance.companyName, weekLabel);
-          recalculatedBalances.push(updated);
-        } catch (error) {
-          console.error(`Failed to recalculate balance for ${balance.companyName}:`, error);
-        }
-      }
-      
-      console.log(`✅ Recalculated ${recalculatedBalances.length} company balances for week ${weekLabel}`);
-      res.json({ 
-        success: true, 
-        recalculated: recalculatedBalances.length, 
-        weekLabel,
-        balances: recalculatedBalances 
-      });
-    } catch (error) {
-      console.error("Error recalculating company balances:", error);
-      res.status(500).json({ error: "Failed to recalculate company balances" });
     }
   });
 
@@ -2373,62 +2328,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   
   setTimeout(initializeBackup, 2000);
-
-  // Vehicle management routes
-  app.get("/api/vehicles", async (req, res) => {
-    try {
-      const vehicles = await storage.getAllVehicles();
-      res.json(vehicles);
-    } catch (error) {
-      console.error("Error fetching vehicles:", error);
-      res.status(500).json({ error: "Failed to fetch vehicles" });
-    }
-  });
-
-  app.get("/api/vehicles/company/:companyId", async (req, res) => {
-    try {
-      const companyId = parseInt(req.params.companyId);
-      const vehicles = await storage.getVehiclesByCompany(companyId);
-      res.json(vehicles);
-    } catch (error) {
-      console.error("Error fetching vehicles by company:", error);
-      res.status(500).json({ error: "Failed to fetch vehicles by company" });
-    }
-  });
-
-  app.post("/api/vehicles", async (req, res) => {
-    try {
-      const vehicleData = insertVehicleSchema.parse(req.body);
-      const vehicle = await storage.createVehicle(vehicleData);
-      res.status(201).json(vehicle);
-    } catch (error) {
-      console.error("Error creating vehicle:", error);
-      res.status(500).json({ error: "Failed to create vehicle" });
-    }
-  });
-
-  app.put("/api/vehicles/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const vehicleData = insertVehicleSchema.partial().parse(req.body);
-      const vehicle = await storage.updateVehicle(id, vehicleData);
-      res.json(vehicle);
-    } catch (error) {
-      console.error("Error updating vehicle:", error);
-      res.status(500).json({ error: "Failed to update vehicle" });
-    }
-  });
-
-  app.delete("/api/vehicles/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteVehicle(id);
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting vehicle:", error);
-      res.status(500).json({ error: "Failed to delete vehicle" });
-    }
-  });
 
   const httpServer = createServer(app);
 
