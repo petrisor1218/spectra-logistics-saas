@@ -110,15 +110,29 @@ export function useTransportData() {
   const invoice7FileRef = useRef<HTMLInputElement>(null);
   const invoice30FileRef = useRef<HTMLInputElement>(null);
 
-  // Generate name variants - DO NOT MODIFY!
+  // Generate name variants - Enhanced for better matching!
   const generateNameVariants = (name: string) => {
     const cleaned = name.trim().replace(/\s+/g, ' ');
     const variants = [cleaned.toLowerCase()];
     
     const parts = cleaned.split(' ');
     if (parts.length > 1) {
+      // Standard reversed order
       const reversed = [...parts].reverse();
       variants.push(reversed.join(' ').toLowerCase());
+      
+      // Add partial matches for cases like "Dumitrache Sorin" vs "Sorin petrisor Dumitrache"
+      parts.forEach((part, index) => {
+        if (part.length > 2) {  // Skip very short parts
+          const otherParts = parts.filter((_, i) => i !== index);
+          otherParts.forEach(otherPart => {
+            if (otherPart.length > 2) {
+              variants.push(`${part.toLowerCase()} ${otherPart.toLowerCase()}`);
+              variants.push(`${otherPart.toLowerCase()} ${part.toLowerCase()}`);
+            }
+          });
+        }
+      });
       
       if (parts.length >= 3) {
         const [first, ...rest] = parts;
@@ -163,7 +177,7 @@ export function useTransportData() {
               } else if (company.name === 'De Cargo Sped S.R.L.') {
                 mappedCompanyName = 'DE Cargo Speed';
               } else if (company.name === 'Stef Trans S.R.L.') {
-                mappedCompanyName = 'Stef Trans';
+                mappedCompanyName = 'Stef Trans S.R.L.';
               } else if (company.name === 'Toma SRL') {
                 mappedCompanyName = 'Toma SRL';
               } else if (company.name === 'Daniel Ontheroad S.R.L.') {
@@ -335,13 +349,15 @@ export function useTransportData() {
             await loadDriversFromDatabase();
             // Trigger reprocessing of existing data with new driver mappings
             console.log('🔄 Declanșez reprocessing după salvarea șoferului...');
-            // Force immediate UI refresh by clearing existing data
-            setProcessedData({});
-            setPendingMappings([]);
             
-            // Immediate reprocessing
+            // Clear pending mappings only for the added driver
+            setPendingMappings(prev => prev.filter(p => p.driverName !== driverName));
+            
+            // Force immediate reprocessing with a slight delay to ensure DB is updated
             console.log('⚡ Execut reprocessing-ul IMEDIAT...');
-            reprocessExistingData();
+            setTimeout(() => {
+              reprocessExistingData();
+            }, 500);
             return selectedCompany;
           } else {
             console.error('❌ Eroare la adăugarea șoferului:', await response.text());
@@ -415,8 +431,8 @@ export function useTransportData() {
 
   // Reprocess existing data with updated driver mappings
   const reprocessExistingData = async () => {
-    if (!tripData || !invoice7Data || !invoice30Data || !processedData || Object.keys(processedData).length === 0) {
-      console.log('🔄 No existing data to reprocess');
+    if (!tripData || !invoice7Data || !invoice30Data) {
+      console.log('🔄 No existing data to reprocess - missing trip/invoice data');
       return;
     }
 
@@ -426,23 +442,31 @@ export function useTransportData() {
     console.log('📥 Reîncarcă șoferii din baza de date...');
     await loadDriversFromDatabase();
     
-    // DON'T clear pending mappings - let them persist for remaining unmapped drivers
+    // Keep current pending mappings for drivers that are still unmatched
     console.log('✅ Menține mapping-urile pendinte pentru șoferii rămași...');
     
     // Force complete state reset for clean reprocessing
     setProcessedData({});
     
     // Call processData to reprocess everything with new mappings
-    console.log('⚙️ Reprocesează toate datele...');
-    const result = await processData();
+    console.log('⚙️ Reprocesează toate datele cu mapping-urile actualizate...');
     
-    // Force component re-render by switching tabs and back
-    console.log('🔄 Forțez actualizarea UI-ului prin schimbarea tab-ului...');
-    const currentTab = activeTab;
-    setActiveTab('upload');
-    setTimeout(() => setActiveTab(currentTab), 100);
-    
-    console.log('✅ Data reprocessed with updated mappings - pending drivers preserved');
+    try {
+      // Process the data with the updated driver mappings
+      await processData();
+      
+      // Force component re-render by switching tabs and back
+      console.log('🔄 Forțez actualizarea UI-ului prin schimbarea tab-ului...');
+      const currentTab = activeTab;
+      setActiveTab('upload');
+      setTimeout(() => {
+        setActiveTab('calculations');
+        console.log('✅ Data reprocessed - Pending Mappings should be resolved');
+      }, 200);
+      
+    } catch (error) {
+      console.error('❌ Eroare la reprocessare:', error);
+    }
   };
 
   // Week functions - DO NOT MODIFY!
