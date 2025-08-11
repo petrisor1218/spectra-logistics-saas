@@ -118,6 +118,13 @@ export function ResultsDisplay({
             const totalAmount = data.Total_7_days + data.Total_30_days - data.Total_comision;
             const driversCount = Object.keys(data.VRID_details || {}).length;
             const commissionRate = company === "Fast Express" ? "2%" : "4%";
+            
+            // Check if company has been paid for current week
+            const currentWeekPayments = paymentHistory.filter(payment => 
+              payment.company === company && payment.week === selectedWeek
+            );
+            const totalPaidThisWeek = currentWeekPayments.reduce((sum, payment) => sum + payment.amount, 0);
+            const hasBeenPaid = totalPaidThisWeek > 0;
 
             return (
               <motion.div
@@ -144,14 +151,21 @@ export function ResultsDisplay({
                       <p className="text-gray-400 text-sm">Comision {commissionRate}</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => openPaymentModal(company)}
-                        className="px-3 py-2 gradient-primary rounded-lg text-white text-sm font-medium hover-glow"
-                      >
-                        Plătește
-                      </motion.button>
+                      {hasBeenPaid ? (
+                        <div className="px-3 py-2 bg-green-600/20 border-2 border-green-500/30 rounded-lg text-green-400 text-sm font-medium flex items-center space-x-1" title={`Plătit: €${totalPaidThisWeek.toFixed(2)} în această săptămână`}>
+                          <CheckCircle className="w-4 h-4" />
+                          <span className="text-xs">Plătit</span>
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => openPaymentModal(company)}
+                          className="px-3 py-2 gradient-primary rounded-lg text-white text-sm font-medium hover-glow"
+                        >
+                          Plătește
+                        </motion.button>
+                      )}
                       {hasExistingOrder(company) ? (
                         <div className="px-3 py-2 bg-green-600/20 border-2 border-green-500/30 rounded-lg text-green-400 text-sm font-medium flex items-center space-x-1" title="Comandă deja generată">
                           <CheckCircle className="w-4 h-4" />
