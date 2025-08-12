@@ -127,6 +127,64 @@ export function useTransportData() {
     }
   };
 
+  // Check and auto-resolve alerts with real amounts
+  const checkForAutoResolve = async (processedData: any, processingWeek: string) => {
+    if (!smallAmountAlerts || smallAmountAlerts.length === 0) return;
+
+    let resolvedCount = 0;
+    
+    try {
+      for (const alert of smallAmountAlerts) {
+        if (alert.status !== 'pending') continue;
+        
+        // Search for this VRID in the processed data with a higher amount
+        const initialAmount = parseFloat(alert.initialAmount);
+        let foundRealAmount = null;
+        
+        // Check in all company results for this VRID
+        Object.values(processedData).forEach((companyData: any) => {
+          if (companyData.VRID_details && companyData.VRID_details[alert.vrid]) {
+            const vridData = companyData.VRID_details[alert.vrid];
+            const totalAmount = (vridData['7_days'] || 0) + (vridData['30_days'] || 0);
+            
+            if (totalAmount > initialAmount && totalAmount > 5) {
+              foundRealAmount = totalAmount;
+            }
+          }
+        });
+        
+        // If found a real amount, auto-resolve the alert
+        if (foundRealAmount) {
+          const resolveData = {
+            realAmount: foundRealAmount.toString(),
+            weekResolved: processingWeek,
+            status: 'resolved',
+            notes: `${alert.notes} | Rezolvată automat: €${initialAmount.toFixed(2)} → €${foundRealAmount.toFixed(2)}`
+          };
+          
+          const response = await fetch(`/api/small-amount-alerts/${alert.id}/resolve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(resolveData)
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Auto-resolved alert ${alert.id}: VRID ${alert.vrid} - €${initialAmount.toFixed(2)} → €${foundRealAmount.toFixed(2)}`);
+            resolvedCount++;
+          }
+        }
+      }
+      
+      if (resolvedCount > 0) {
+        await loadSmallAmountAlerts(); // Reload alerts
+        alert(`🎯 ${resolvedCount} alerte rezolvate automat prin imperechere cu sume reale!`);
+      }
+      
+    } catch (error) {
+      console.error('Error in auto-resolve process:', error);
+    }
+  };
+
   // All useEffect hooks
   useEffect(() => {
     loadAllWeeklyProcessing();
@@ -937,6 +995,18 @@ export function useTransportData() {
             currentAlerts.push(alert);
             console.log(`⚠️ SUMĂ MICĂ DETECTATĂ: VRID ${vrid} - €${amount.toFixed(2)} (${company} - ${invoiceType === '7_days' ? '7 zile' : '30 zile'})`);
           }
+          
+          // 🔍 VERIFICARE IMPERECHERE CU ALERTE EXISTENTE (pentru rezolvare automată)
+          const existingAlert = smallAmountAlerts.find(alert => 
+            alert.vrid === vrid && alert.status === 'pending'
+          );
+          
+          if (existingAlert) {
+            const initialAmount = parseFloat(existingAlert.initialAmount);
+            if (amount > initialAmount && amount > 5) {
+              console.log(`🎯 IMPERECHERE GĂSITĂ: VRID ${vrid} - €${initialAmount.toFixed(2)} → €${amount.toFixed(2)} (creștere de €${(amount - initialAmount).toFixed(2)})`);
+            }
+          }
 
           if (!results[company]) {
             results[company] = {
@@ -1239,6 +1309,9 @@ ACȚIUNI RECOMANDATE:
       console.log(`   🏢 ${Object.keys(results).length} companii identificate`);
       console.log(`💡 Pentru a salva datele în baza de date, folosește butonul "Salvează în DB" din tab-ul Management`);
       
+      // Check for auto-resolve opportunities after processing
+      await checkForAutoResolve(results, processingWeek);
+      
       // Nu mai salvăm automat - utilizatorul controlează când se salvează
 
     } catch (error: any) {
@@ -1276,7 +1349,7 @@ ACȚIUNI RECOMANDATE:
           await loadSmallAmountAlerts();
           
           // Afișare notificare
-          const alertMessage = `⚠️ ATENȚIE! Am găsit și salvat ${currentAlerts.length} VRID-uri cu sume foarte mici (≤10 EUR). Verificați secțiunea "Alerte Sume Mici" pentru detalii.`;
+          const alertMessage = `⚠️ ATENȚIE! Am găsit și salvat ${currentAlerts.length} VRID-uri cu sume foarte mici (≤5 EUR). Verificați secțiunea "Alerte Sume Mici" pentru detalii.`;
           alert(alertMessage);
           
         } catch (error) {
@@ -1285,6 +1358,8 @@ ACȚIUNI RECOMANDATE:
           setSmallAmountAlerts(currentAlerts);
         }
       }
+      
+
       
       setLoading(false);
     }
