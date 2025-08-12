@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Target
+  Target,
+  Calendar
 } from "lucide-react";
 import {
   BarChart,
@@ -168,6 +169,9 @@ export default function AnalyticsDashboard() {
   
   console.log('📊 DEBUG: Company totals before display:', Array.from(companyTotals.entries()).slice(0, 7));
   console.log('📊 DEBUG: Top 5 companies for chart:', companyPerformanceData);
+  console.log('📊 DEBUG: Yearly data breakdown:');
+  console.log('   2024 data:', dataBy2024.length, 'months, total:', total2024.toFixed(2));
+  console.log('   2025 data:', dataBy2025.length, 'months, total:', total2025.toFixed(2));
 
   const pieColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -225,15 +229,33 @@ export default function AnalyticsDashboard() {
     }
   });
 
-  // Calculate monthly data for analysis using company balances data - the authoritative source
-  // Group balances by month extracted from weekLabel
+  // Enhanced yearly and monthly analysis with automatic year detection
   const monthlyDataFromBalances = balances.reduce((acc: any[], balance) => {
     const weekLabel = balance.weekLabel;
     let weekDate = new Date();
+    let year = 2024; // default
     
     try {
-      // Parse week label to extract month like "11 feb. - 17 feb."
+      // Parse week label like "11 feb. - 17 feb." or "5 ian. - 11 ian. 2025"
       const monthMatch = weekLabel.match(/(\d+)\s+(\w+)/);
+      // Check if year is explicitly mentioned in the label
+      const yearMatch = weekLabel.match(/(\d{4})/);
+      
+      if (yearMatch) {
+        year = parseInt(yearMatch[1]);
+      } else {
+        // Smart year detection based on month and processing date
+        if (balance.createdAt) {
+          const createdDate = new Date(balance.createdAt);
+          year = createdDate.getFullYear();
+        } else {
+          // If weekLabel contains "ian" (January), it's likely 2025 data
+          if (weekLabel.toLowerCase().includes('ian')) {
+            year = 2025;
+          }
+        }
+      }
+      
       if (monthMatch) {
         const day = parseInt(monthMatch[1]);
         const monthStr = monthMatch[2].toLowerCase();
@@ -246,8 +268,7 @@ export default function AnalyticsDashboard() {
         
         const monthNum = monthMap[monthStr.substring(0, 3)];
         if (monthNum !== undefined) {
-          // Use 2024 as the year since data is from February 2024
-          weekDate = new Date(2024, monthNum, day);
+          weekDate = new Date(year, monthNum, day);
         }
       }
     } catch (error) {
@@ -268,6 +289,7 @@ export default function AnalyticsDashboard() {
         monthKey,
         monthName,
         fullMonthName,
+        year: weekDate.getFullYear(),
         totalInvoiced: Number(balance.totalInvoiced || 0),
         weekCount: 1,
         date: weekDate
@@ -276,6 +298,17 @@ export default function AnalyticsDashboard() {
     return acc;
   }, []).sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
 
+  // Separate data by year for yearly analysis
+  const dataBy2024 = monthlyDataFromBalances.filter(month => month.year === 2024);
+  const dataBy2025 = monthlyDataFromBalances.filter(month => month.year === 2025);
+  
+  // Combined monthly analysis with year indicators
+  const yearlyMonthlyData = monthlyDataFromBalances.map(month => ({
+    ...month,
+    displayName: `${month.monthName} ${month.year}`,
+    colorByYear: month.year === 2025 ? '#10b981' : '#3b82f6' // Green for 2025, Blue for 2024
+  }));
+
   // Use this data for monthly analysis instead of weekly processing data
   const monthlyData = monthlyDataFromBalances;
 
@@ -283,6 +316,12 @@ export default function AnalyticsDashboard() {
   const sortedMonths = [...monthlyData].sort((a, b) => b.totalInvoiced - a.totalInvoiced);
   const bestMonth = sortedMonths[0];
   const worstMonth = sortedMonths[sortedMonths.length - 1];
+  
+  // Year comparison data
+  const total2024 = dataBy2024.reduce((sum, month) => sum + month.totalInvoiced, 0);
+  const total2025 = dataBy2025.reduce((sum, month) => sum + month.totalInvoiced, 0);
+  const avg2024 = dataBy2024.length > 0 ? total2024 / dataBy2024.length : 0;
+  const avg2025 = dataBy2025.length > 0 ? total2025 / dataBy2025.length : 0;
 
   // Payment trend data (last 30 days simulation)
   const paymentTrendData = payments
@@ -568,6 +607,95 @@ export default function AnalyticsDashboard() {
                       })}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Yearly Analysis Section */}
+      {(dataBy2024.length > 0 || dataBy2025.length > 0) && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-purple-600" />
+                Analiză Anuală - 2024 vs 2025
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Comparație între anii 2024 și 2025 cu identificarea lunilor de vârf
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={yearlyMonthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="displayName"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    fontSize={12}
+                  />
+                  <YAxis formatter={(value: number) => `€${(value / 1000).toFixed(0)}k`} />
+                  <Tooltip 
+                    formatter={(value: number) => [
+                      `€${value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}`,
+                      'Total Facturat'
+                    ]}
+                    labelFormatter={(label: string) => `Perioada: ${label}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    labelStyle={{
+                      color: 'hsl(var(--foreground))',
+                      fontWeight: '600'
+                    }}
+                  />
+                  <Bar dataKey="totalInvoiced" radius={[4, 4, 0, 0]}>
+                    {yearlyMonthlyData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.colorByYear} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              
+              {/* Year Comparison Cards */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center border-2 border-blue-200 dark:border-blue-800">
+                  <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">📅 ANUL 2024</div>
+                  <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                    {dataBy2024.length} luni procesate
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600 mt-2">
+                    €{total2024.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Media: €{avg2024.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}/lună
+                  </div>
+                </div>
+                
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center border-2 border-green-200 dark:border-green-800">
+                  <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">🚀 ANUL 2025</div>
+                  <div className="text-xl font-bold text-green-700 dark:text-green-300">
+                    {dataBy2025.length} luni procesate
+                  </div>
+                  <div className="text-2xl font-bold text-green-600 mt-2">
+                    €{total2025.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Media: €{avg2025.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}/lună
+                    {avg2025 > avg2024 && (
+                      <span className="text-green-600 ml-2">
+                        (+{((avg2025 - avg2024) / avg2024 * 100).toFixed(1)}%)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
