@@ -33,7 +33,7 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
   // Function to parse week label to date for sorting
   const parseWeekLabelToDate = (weekLabel: string): Date => {
     try {
-      // Extract first date from "4 feb. 2024 - 10 feb. 2024" format
+      // Handle different formats: "29 dec. 2024 - 4 ian. 2025" or "4 feb. 2024 - 10 feb. 2024"
       const firstDateStr = weekLabel.split(' - ')[0];
       const parts = firstDateStr.split(' ');
       
@@ -50,28 +50,30 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
         const month = romanianMonths[monthStr] ?? 0;
         
         // Enhanced year detection logic
-        let year = new Date().getFullYear(); // Default to current year
+        let year = 2024; // Safe default
         if (parts.length >= 3) {
           const yearPart = parseInt(parts[2]);
           if (!isNaN(yearPart) && yearPart > 2000) {
             year = yearPart;
           }
         } else {
-          // Smart year detection based on month and current context
-          const currentYear = new Date().getFullYear();
-          const currentMonth = new Date().getMonth();
-          
-          // If it's early months (Jan-Mar) and we're in a later part of the year, assume previous year data
-          if (month <= 2 && currentMonth > 6) {
-            year = currentYear - 1;
-          } else if (month <= 2) {
-            year = 2024; // Most data is from 2024
+          // Legacy handling for data without explicit years
+          console.warn('Week without explicit year:', weekLabel);
+          // For January, check if we're dealing with cross-year weeks
+          if (monthStr === 'ian') {
+            // If January appears in a week label, it's likely 2025
+            year = 2025;
+          } else if (monthStr === 'dec') {
+            // December could be 2024 or part of a cross-year week
+            year = 2024;
           } else {
-            year = 2024; // Default to 2024 for historical data
+            year = 2024; // Default for most historical data
           }
         }
         
-        return new Date(year, month, day);
+        const parsedDate = new Date(year, month, day);
+        console.log(`📅 Parsed "${weekLabel}" → ${parsedDate.toISOString().split('T')[0]}`);
+        return parsedDate;
       }
     } catch (e) {
       console.error('Error parsing date:', weekLabel, e);

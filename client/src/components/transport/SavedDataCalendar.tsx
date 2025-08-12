@@ -83,7 +83,7 @@ export function SavedDataCalendar({
 
   // Parse Romanian date format "DD mmm. YYYY - DD mmm. YYYY" to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
-    // Extract start date from "DD mmm. YYYY - DD mmm. YYYY" format
+    // Extract start date from "DD mmm. YYYY - DD mmm. YYYY" format (handle cross-year weeks)
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
       'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
@@ -95,7 +95,7 @@ export function SavedDataCalendar({
     const monthStr = parts[1].replace('.', '');
     const month = monthMap[monthStr] ?? 0;
     
-    // Enhanced year detection - now all data should have explicit years
+    // Enhanced year detection for cross-year weeks like "29 dec. 2024 - 4 ian. 2025"
     let year = 2024; // Default fallback
     if (parts.length >= 3) {
       const yearPart = parseInt(parts[2]);
@@ -103,16 +103,29 @@ export function SavedDataCalendar({
         year = yearPart;
       }
     } else {
-      // Legacy handling for old data without years (should be rare now)
+      // Legacy handling for old data without years
       console.warn('⚠️ Week label without explicit year found:', weekLabel);
-      if (['ian'].includes(monthStr)) {
+      
+      // Special handling for cross-year scenarios
+      if (weekLabel.includes('ian. 2025') || weekLabel.includes('2025')) {
+        year = weekLabel.includes('dec.') ? 2024 : 2025; // Start date determines year
+      } else if (monthStr === 'ian') {
         year = 2025; // January is likely 2025
+      } else if (monthStr === 'dec') {
+        year = 2024; // December is likely 2024
       } else {
         year = 2024; // Everything else defaults to 2024
       }
     }
     
-    return new Date(year, month, day);
+    const parsedDate = new Date(year, month, day);
+    
+    // Debug cross-year weeks
+    if (weekLabel.includes('2025') || weekLabel.includes('ian')) {
+      console.log(`🗓️ Cross-year week parsed: "${weekLabel}" → ${parsedDate.toISOString().split('T')[0]}`);
+    }
+    
+    return parsedDate;
   };
 
   // Default to newest first (recent), but allow user to change

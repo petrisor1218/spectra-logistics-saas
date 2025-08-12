@@ -242,16 +242,25 @@ export default function AnalyticsDashboard() {
       if (yearMatch) {
         year = parseInt(yearMatch[1]);
       } else {
-        // Smart year detection based on month and processing date
+        // Smart year detection for cross-year weeks and processing dates
         if (balance.createdAt) {
           const createdDate = new Date(balance.createdAt);
           year = createdDate.getFullYear();
         } else {
-          // Default to 2024 since most data is historical, except January which might be 2025
-          if (weekLabel.toLowerCase().includes('ian')) {
-            year = 2025;
+          // Enhanced logic for cross-year weeks like "29 dec. 2024 - 4 ian. 2025"
+          if (weekLabel.includes('2025')) {
+            // If anywhere in the week label we see 2025, use start date's year
+            if (weekLabel.toLowerCase().includes('dec')) {
+              year = 2024; // December start = 2024
+            } else {
+              year = 2025; // January start = 2025
+            }
+          } else if (weekLabel.toLowerCase().includes('ian')) {
+            year = 2025; // January weeks are likely 2025
+          } else if (weekLabel.toLowerCase().includes('dec')) {
+            year = 2024; // December weeks are likely 2024
           } else {
-            year = 2024;
+            year = 2024; // Default for most historical data
           }
         }
       }
