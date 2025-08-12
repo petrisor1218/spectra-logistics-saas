@@ -90,6 +90,15 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
   const companySummaryData = useMemo(() => {
     if (!weeklyProcessingData || !Array.isArray(weeklyProcessingData)) return [];
     
+    console.log('🔍 CompanySummaryTable - Processing weekly data:', weeklyProcessingData.length, 'weeks');
+    console.log('🔍 2025 weeks in data:', weeklyProcessingData.filter(w => w.weekLabel?.includes('2025')).map(w => w.weekLabel));
+    console.log('🔍 January weeks in data:', weeklyProcessingData.filter(w => w.weekLabel?.includes('ian')).map(w => w.weekLabel));
+    
+    // IMPORTANT CLARIFICATION FOR USER
+    console.log('📋 REALITATEA DATELOR:');
+    console.log('   - Toate săptămânile "ian. 2024" sunt din IANUARIE 2024');
+    console.log('   - Pentru IANUARIE 2025 trebuie să procesezi fișiere NOI din ianuarie 2025');
+    
     const summaryMap = new Map();
     
     // Iterate through all processed weeks
@@ -97,7 +106,15 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
       const weekLabel = weekData.weekLabel;
       const dataToProcess = weekData.processedData || weekData.data;
       
-      if (!dataToProcess) return;
+      if (!dataToProcess) {
+        console.log('⚠️ No processed data for week:', weekLabel);
+        return;
+      }
+      
+      // Debug 2025 weeks specifically
+      if (weekLabel?.includes('2025') || weekLabel?.includes('ian')) {
+        console.log('🔍 Processing 2025/January week:', weekLabel, 'has data:', !!dataToProcess);
+      }
       
       try {
         const parsed = typeof dataToProcess === 'string' 
