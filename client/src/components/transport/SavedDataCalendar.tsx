@@ -108,9 +108,9 @@ export function SavedDataCalendar({
         year = 2024;
       } else if (['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul'].includes(monthStr)) {
         // Check if it's likely 2025 data by looking at the current date
-        // If we're in 2025 and the month is January, it's likely 2025 data
+        // If we're in 2025 and the month is January OR February, it's likely 2025 data
         const currentYear = new Date().getFullYear();
-        if (currentYear >= 2025 && monthStr === 'ian') {
+        if (currentYear >= 2025 && (monthStr === 'ian' || monthStr === 'feb')) {
           year = 2025;
         } else {
           year = 2024;
