@@ -85,7 +85,7 @@ export function SavedDataCalendar({
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
       'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
-      'iul': 6, 'aug': 7, 'sep': 8, 'sept': 8, 'oct': 9, 'noi': 10, 'dec': 11
+      'iul': 6, 'aug': 7, 'sep': 8, 'sept': 8, 'oct': 9, 'noi': 10, 'nov': 10, 'dec': 11
     };
     
     const parts = startDateStr.split(' ');
@@ -102,7 +102,7 @@ export function SavedDataCalendar({
       }
     } else {
       // For months after July 2024, assume 2024 data
-      if (['aug', 'sep', 'sept', 'oct', 'noi', 'dec'].includes(monthStr)) {
+      if (['aug', 'sep', 'sept', 'oct', 'noi', 'nov', 'dec'].includes(monthStr)) {
         year = 2024;
       } else if (['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul'].includes(monthStr)) {
         // Could be 2024 or 2025, but most likely 2024 for historical data
@@ -118,9 +118,9 @@ export function SavedDataCalendar({
     const dateA = parseRomanianWeekDate(a.weekLabel);
     const dateB = parseRomanianWeekDate(b.weekLabel);
     
-    // Debug parsing for September weeks
-    if (a.weekLabel.includes('sept') || b.weekLabel.includes('sept')) {
-      console.log('🗓️ Parsing September week:', a.weekLabel, '→', dateA);
+    // Debug parsing for November weeks
+    if (a.weekLabel.includes('nov') || b.weekLabel.includes('nov')) {
+      console.log('🗓️ Parsing November week:', a.weekLabel, '→', dateA);
       console.log('🗓️ Compared with:', b.weekLabel, '→', dateB);
     }
     

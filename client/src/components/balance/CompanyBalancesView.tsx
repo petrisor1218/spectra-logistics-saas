@@ -8,13 +8,11 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 // Temporary local formatter until the file is properly created
 const formatCurrency = (amount: number): string => {
-  // Ensure negative amounts display as 0
-  const displayAmount = Math.max(0, amount);
   return new Intl.NumberFormat('ro-RO', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-  }).format(displayAmount);
+  }).format(amount);
 };
 
 // Helper function to fix Romanian diacritics for PDF generation
