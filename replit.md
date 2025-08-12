@@ -144,3 +144,18 @@ Preferred communication style: Simple, everyday language.
   - Visual separation between historical (locked) and active fiscal years
   - Prevention of cross-year calculation mixing that caused financial discrepancies
 - **Financial Impact**: Resolves "€2,928,965.20 collected vs €2,513,929.87 invoiced" discrepancy by proper fiscal year separation
+
+### ✅ Duplicate Payment Cleanup & Data Correction - COMPLETED - August 12, 2025
+- **Issue**: Year-end closure incorrectly included 2025 data in 2024 summary, creating 75 duplicate payments and unrealistic income figures
+- **Root Cause**: Overly broad isYear2024() logic and duplicate payment creation during closure process
+- **Solution**: Complete duplicate payment cleanup and proper year separation
+- **Actions Taken**:
+  - Identified and deleted 75 duplicate payments causing inflated revenue figures
+  - Removed 8 associated payment history records to maintain referential integrity
+  - Reset all historical flags and properly separated 2024 vs 2025 data
+  - Corrected fiscal year logic to prevent cross-year contamination
+- **Final Results**:
+  - 2024 (Historical): 254 payments, €2,211,293.48, 6 companies, 47 weeks
+  - 2025 (Current): 60 payments, €582,826.91, 6 companies, 13 weeks
+  - Eliminated unrealistic income figures and restored data integrity
+- **Data Protection**: Enhanced separation prevents future cross-year corruption and ensures accurate financial reporting
