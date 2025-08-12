@@ -99,10 +99,10 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
     // Force cache refresh for updated data
     console.log('🔄 Checking data freshness - looking for 2025 corrections...');
     
-    // USER CLARIFICATION: January weeks are from 2025
+    // USER CLARIFICATION: January AND February weeks are from 2025
     console.log('📋 CORECTARE APLICATĂ:');
-    console.log('   - Săptămânile din ianuarie au fost corectate să reflecte anul 2025');
-    console.log('   - Datele vor apărea acum în tabelul "Sume pe Companii" pentru 2025');
+    console.log('   - Săptămânile din ianuarie ȘI februarie au fost corectate să reflecte anul 2025');
+    console.log('   - Toate datele 2025 vor apărea acum în tabelul "Sume pe Companii"');
     
     const summaryMap = new Map();
     
