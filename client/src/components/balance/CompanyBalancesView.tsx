@@ -351,15 +351,15 @@ export default function CompanyBalancesView() {
     });
   });
 
-  // Calculate totals - ensure logical payment constraints
+  // Calculate totals using outstanding_balance from database (more accurate than calculation)
   const totalInvoiced = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalInvoiced || '0'), 0));
-  const calculatedTotalPaid = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
+  const totalPaid = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
     sum + parseFloat(balance.totalPaid || '0'), 0));
   
-  // Ensure total paid never exceeds total invoiced
-  const totalPaid = Math.min(calculatedTotalPaid, totalInvoiced);
-  const totalOutstanding = Math.max(0, totalInvoiced - totalPaid);
+  // Use outstanding_balance from database instead of calculating difference
+  const totalOutstanding = Math.max(0, (balances as CompanyBalance[]).reduce((sum: number, balance: CompanyBalance) => 
+    sum + Math.max(0, parseFloat(balance.outstandingBalance || '0')), 0));
 
   const generateBalances = useMutation({
     mutationFn: async () => {
