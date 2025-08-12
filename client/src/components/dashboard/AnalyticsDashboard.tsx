@@ -510,25 +510,25 @@ export default function AnalyticsDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3 font-medium text-muted-foreground">Poziție</th>
-                        <th className="text-left p-3 font-medium text-muted-foreground">Luna</th>
-                        <th className="text-right p-3 font-medium text-muted-foreground">Sumă Facturată</th>
-                        <th className="text-center p-3 font-medium text-muted-foreground">Rating</th>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-3 font-medium text-foreground/80">Poziție</th>
+                        <th className="text-left p-3 font-medium text-foreground/80">Luna</th>
+                        <th className="text-right p-3 font-medium text-foreground/80">Sumă Facturată</th>
+                        <th className="text-center p-3 font-medium text-foreground/80">Rating</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedMonths.slice(0, 5).map((month: any, index: number) => {
                         const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-                        const colors = ['text-yellow-600', 'text-gray-500', 'text-amber-600', 'text-blue-600', 'text-purple-600'];
+                        const colors = ['text-yellow-600 dark:text-yellow-400', 'text-gray-500 dark:text-gray-400', 'text-amber-600 dark:text-amber-400', 'text-blue-600 dark:text-blue-400', 'text-purple-600 dark:text-purple-400'];
                         
                         return (
-                          <tr key={month.monthKey} className={`border-b hover:bg-muted/50 transition-colors ${
+                          <tr key={month.monthKey} className={`border-b border-border hover:bg-muted/50 transition-colors ${
                             index === 0 ? 'bg-green-50 dark:bg-green-900/20' : ''
                           }`}>
-                            <td className="p-3 font-bold text-xl">{medals[index]}</td>
-                            <td className="p-3 font-medium">{month.fullMonthName}</td>
-                            <td className="p-3 text-right font-mono text-lg">
+                            <td className="p-3 font-bold text-xl text-foreground">{medals[index]}</td>
+                            <td className="p-3 font-medium text-foreground">{month.fullMonthName}</td>
+                            <td className="p-3 text-right font-mono text-lg text-foreground">
                               €{month.totalInvoiced.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="p-3 text-center">
@@ -641,11 +641,11 @@ export default function AnalyticsDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-3 font-medium text-muted-foreground">Săptămână</th>
-                      <th className="text-right p-3 font-medium text-muted-foreground">Sumă Facturată</th>
-                      <th className="text-right p-3 font-medium text-muted-foreground">Tendință</th>
-                      <th className="text-right p-3 font-medium text-muted-foreground">Schimbare</th>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 font-medium text-foreground/80">Săptămână</th>
+                      <th className="text-right p-3 font-medium text-foreground/80">Sumă Facturată</th>
+                      <th className="text-right p-3 font-medium text-foreground/80">Tendință</th>
+                      <th className="text-right p-3 font-medium text-foreground/80">Schimbare</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -655,14 +655,14 @@ export default function AnalyticsDashboard() {
                       .map((week: any, index: number) => {
                         const isIncreasing = week.trend > 0;
                         const isDecreasing = week.trend < 0;
-                        const trendColor = isIncreasing ? 'text-green-600' : isDecreasing ? 'text-red-600' : 'text-muted-foreground';
+                        const trendColor = isIncreasing ? 'text-green-600 dark:text-green-400' : isDecreasing ? 'text-red-600 dark:text-red-400' : 'text-foreground/60';
                         const trendIcon = isIncreasing ? '↗️' : isDecreasing ? '↘️' : '→';
                         
                         return (
-                          <tr key={week.weekLabel} className={`border-b hover:bg-muted/50 transition-colors ${
+                          <tr key={week.weekLabel} className={`border-b border-border hover:bg-muted/50 transition-colors ${
                             index === 0 ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                           }`}>
-                            <td className="p-3 font-medium">
+                            <td className="p-3 font-medium text-foreground">
                               {week.weekLabel}
                               {index === 0 && (
                                 <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full">
@@ -670,7 +670,7 @@ export default function AnalyticsDashboard() {
                                 </span>
                               )}
                             </td>
-                            <td className="p-3 text-right font-mono text-lg">
+                            <td className="p-3 text-right font-mono text-lg text-foreground">
                               €{week.totalInvoiced.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
                             <td className="p-3 text-right">
@@ -683,13 +683,13 @@ export default function AnalyticsDashboard() {
                                 <>
                                   {week.trend > 0 ? '+' : ''}{week.trend.toFixed(1)}%
                                   {isDecreasing && (
-                                    <div className="text-xs text-muted-foreground mt-1">
+                                    <div className="text-xs text-foreground/60 mt-1">
                                       Scădere detecată!
                                     </div>
                                   )}
                                 </>
                               ) : (
-                                <span className="text-muted-foreground">Prima săptămână</span>
+                                <span className="text-foreground/60">Prima săptămână</span>
                               )}
                             </td>
                           </tr>
