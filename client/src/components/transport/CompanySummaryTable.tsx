@@ -72,7 +72,12 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
         }
         
         const parsedDate = new Date(year, month, day);
-        console.log(`📅 Parsed "${weekLabel}" → ${parsedDate.toISOString().split('T')[0]}`);
+        
+        // Standard parsing without excessive debugging
+        if (weekLabel.includes('2025')) {
+          console.log(`📅 Cross-year week: "${weekLabel}" → ${parsedDate.toISOString().split('T')[0]}`);
+        }
+        
         return parsedDate;
       }
     } catch (e) {
