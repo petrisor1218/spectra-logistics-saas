@@ -59,11 +59,11 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
         } else {
           // Legacy handling for data without explicit years
           console.warn('Week without explicit year:', weekLabel);
-          // For January, it's 2025 (user confirmed this)
+          // SPECIFIC 2025 weeks only (user confirmed specific dates)
           if (monthStr === 'ian') {
-            year = 2025;
-          } else if (monthStr === 'feb' && weekLabel.includes('ian')) {
-            // February in a week that also includes January is 2025
+            year = 2025; // All January weeks are 2025
+          } else if (monthStr === 'feb' && weekLabel === '2 feb. - 8 feb.') {
+            // Only the specific February week that user uploaded for 2025
             year = 2025;
           } else if (monthStr === 'dec') {
             // December could be 2024 or part of a cross-year week
@@ -99,10 +99,11 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
     // Force cache refresh for updated data
     console.log('🔄 Checking data freshness - looking for 2025 corrections...');
     
-    // USER CLARIFICATION: January AND February weeks are from 2025
-    console.log('📋 CORECTARE APLICATĂ:');
-    console.log('   - Săptămânile din ianuarie ȘI februarie au fost corectate să reflecte anul 2025');
-    console.log('   - Toate datele 2025 vor apărea acum în tabelul "Sume pe Companii"');
+    // USER CLARIFICATION: Only specific weeks are 2025
+    console.log('📋 CORECTARE SPECIFICĂ:');
+    console.log('   - Ianuarie 2025: TOATE săptămânile');
+    console.log('   - Februarie 2025: DOAR săptămâna "2 feb. 2025 - 8 feb. 2025"');
+    console.log('   - Restul februarie rămân 2024!');
     
     const summaryMap = new Map();
     
