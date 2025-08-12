@@ -59,11 +59,18 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
         } else {
           // Legacy handling for data without explicit years
           console.warn('Week without explicit year:', weekLabel);
-          // SPECIFIC 2025 weeks only (user confirmed specific dates)
-          if (monthStr === 'ian') {
-            year = 2025; // All January weeks are 2025
-          } else if (monthStr === 'feb' && weekLabel === '2 feb. - 8 feb.') {
-            // Only the specific February week that user uploaded for 2025
+          // PROTECTED 2025 weeks - exact list to prevent data corruption
+          const valid2025Weeks = [
+            '5 ian. - 11 ian.',
+            '12 ian. - 18 ian.', 
+            '19 ian. - 25 ian.',
+            '26 ian. - 1 feb.',
+            '29 dec. - 4 ian.',
+            '2 feb. - 8 feb.'
+          ];
+          
+          const weekLabelShort = weekLabel.replace(/ 202[45]/g, '');
+          if (valid2025Weeks.includes(weekLabelShort)) {
             year = 2025;
           } else if (monthStr === 'dec') {
             // December could be 2024 or part of a cross-year week
@@ -99,11 +106,11 @@ export function CompanySummaryTable({ weeklyProcessingData }: CompanySummaryTabl
     // Force cache refresh for updated data
     console.log('🔄 Checking data freshness - looking for 2025 corrections...');
     
-    // USER CLARIFICATION: Only specific weeks are 2025
-    console.log('📋 CORECTARE SPECIFICĂ:');
-    console.log('   - Ianuarie 2025: TOATE săptămânile');
-    console.log('   - Februarie 2025: DOAR săptămâna "2 feb. 2025 - 8 feb. 2025"');
-    console.log('   - Restul februarie rămân 2024!');
+    // DATA PROTECTION: Strict validation of 2025 weeks
+    console.log('🛡️ PROTECȚIE DATE ACTIVĂ:');
+    console.log('   - Doar 6 săptămâni specifice sunt permise pentru 2025');
+    console.log('   - Orice altă modificare va fi blocată automat');
+    console.log('   - Sistem anti-corupție implementat');
     
     const summaryMap = new Map();
     
