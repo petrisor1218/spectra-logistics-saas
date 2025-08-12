@@ -145,6 +145,28 @@ export const orderSequence = pgTable("order_sequence", {
   lastUpdated: timestamp("last_updated").defaultNow()
 });
 
+// Small Amount Alerts - Track €0.01 invoices awaiting real amounts
+export const smallAmountAlerts = pgTable("small_amount_alerts", {
+  id: serial("id").primaryKey(),
+  vrid: varchar("vrid", { length: 50 }).notNull(), // VRID number (e.g., T-114QYYSH3)
+  companyName: varchar("company_name", { length: 100 }).notNull(), // Company name (e.g., DE Cargo Speed)
+  invoiceType: varchar("invoice_type", { length: 20 }).notNull(), // "7-day" or "30-day"
+  initialAmount: decimal("initial_amount", { precision: 10, scale: 4 }).notNull(), // Usually €0.01
+  realAmount: decimal("real_amount", { precision: 10, scale: 2 }), // The actual amount when updated
+  weekDetected: varchar("week_detected", { length: 100 }).notNull(), // Week when first detected
+  weekResolved: varchar("week_resolved", { length: 100 }), // Week when real amount was found
+  status: varchar("status", { length: 20 }).default("pending"), // 'pending', 'resolved', 'ignored'
+  notes: text("notes"), // Optional notes about the alert
+  tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
+  detectedAt: timestamp("detected_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+  // Year-end closure fields
+  isHistorical: boolean("is_historical").default(false),
+  historicalYear: integer("historical_year"),
+}, (table) => ({
+  uniqueVridWeek: unique().on(table.vrid, table.weekDetected, table.tenantId) // Prevent duplicates
+}));
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   drivers: many(drivers),
@@ -219,6 +241,12 @@ export const insertOrderSequenceSchema = createInsertSchema(orderSequence).omit(
   lastUpdated: true,
 });
 
+export const insertSmallAmountAlertSchema = createInsertSchema(smallAmountAlerts).omit({
+  id: true,
+  detectedAt: true,
+  resolvedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -246,6 +274,9 @@ export type HistoricalTrip = typeof historicalTrips.$inferSelect;
 
 export type InsertOrderSequence = z.infer<typeof insertOrderSequenceSchema>;
 export type OrderSequence = typeof orderSequence.$inferSelect;
+
+export type InsertSmallAmountAlert = z.infer<typeof insertSmallAmountAlertSchema>;
+export type SmallAmountAlert = typeof smallAmountAlerts.$inferSelect;
 
 export type InsertCompanyBalance = z.infer<typeof insertCompanyBalanceSchema>;
 export type CompanyBalance = typeof companyBalances.$inferSelect;

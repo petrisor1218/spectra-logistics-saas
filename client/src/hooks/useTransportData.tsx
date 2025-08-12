@@ -101,7 +101,7 @@ export function useTransportData() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
-  const [smallAmountAlerts, setSmallAmountAlerts] = useState<Array<{vrid: string, amount: number, company: string, invoiceType: string}>>([]);
+  const [smallAmountAlerts, setSmallAmountAlerts] = useState<any[]>([]);
   const [pendingMappings, setPendingMappings] = useState<Array<{
     vrid: string;
     driverName: string;
@@ -113,10 +113,25 @@ export function useTransportData() {
   const invoice7FileRef = useRef<HTMLInputElement>(null);
   const invoice30FileRef = useRef<HTMLInputElement>(null);
   
+  // Load small amount alerts from API
+  const loadSmallAmountAlerts = async () => {
+    try {
+      const response = await fetch('/api/small-amount-alerts/status/pending');
+      if (response.ok) {
+        const alerts = await response.json();
+        setSmallAmountAlerts(alerts);
+        console.log(`🚨 Loaded ${alerts.length} pending small amount alerts`);
+      }
+    } catch (error) {
+      console.error('Error loading small amount alerts:', error);
+    }
+  };
+
   // All useEffect hooks
   useEffect(() => {
     loadAllWeeklyProcessing();
     loadDriversFromDatabase();
+    loadSmallAmountAlerts();
   }, []);
 
   // Generate name variants - Enhanced for better matching!

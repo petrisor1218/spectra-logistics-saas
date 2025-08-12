@@ -2388,6 +2388,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== SMALL AMOUNT ALERTS ENDPOINTS =====
+  
+  // Get all small amount alerts
+  app.get('/api/small-amount-alerts', async (req, res) => {
+    try {
+      const alerts = await storage.getAllSmallAmountAlerts();
+      res.json(alerts);
+    } catch (error: any) {
+      console.error('Error fetching small amount alerts:', error);
+      res.status(500).json({ error: 'Failed to fetch small amount alerts' });
+    }
+  });
+
+  // Get alerts by status
+  app.get('/api/small-amount-alerts/status/:status', async (req, res) => {
+    try {
+      const { status } = req.params;
+      const alerts = await storage.getSmallAmountAlertsByStatus(status);
+      res.json(alerts);
+    } catch (error: any) {
+      console.error('Error fetching alerts by status:', error);
+      res.status(500).json({ error: 'Failed to fetch alerts by status' });
+    }
+  });
+
+  // Create new small amount alert
+  app.post('/api/small-amount-alerts', async (req, res) => {
+    try {
+      const alertData = req.body;
+      
+      // Check if alert already exists for this VRID and week
+      const existing = await storage.getSmallAmountAlertByVrid(alertData.vrid, alertData.weekDetected);
+      if (existing) {
+        return res.status(409).json({ error: 'Alert already exists for this VRID and week' });
+      }
+
+      const alert = await storage.createSmallAmountAlert(alertData);
+      res.json(alert);
+    } catch (error: any) {
+      console.error('Error creating small amount alert:', error);
+      res.status(500).json({ error: 'Failed to create small amount alert' });
+    }
+  });
+
+  // Update small amount alert
+  app.put('/api/small-amount-alerts/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = req.body;
+      const alert = await storage.updateSmallAmountAlert(id, updateData);
+      res.json(alert);
+    } catch (error: any) {
+      console.error('Error updating small amount alert:', error);
+      res.status(500).json({ error: 'Failed to update small amount alert' });
+    }
+  });
+
+  // Resolve small amount alert with real amount
+  app.post('/api/small-amount-alerts/:id/resolve', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { realAmount, weekResolved } = req.body;
+      
+      if (!realAmount || !weekResolved) {
+        return res.status(400).json({ error: 'Real amount and week resolved are required' });
+      }
+
+      const alert = await storage.resolveSmallAmountAlert(id, parseFloat(realAmount), weekResolved);
+      res.json(alert);
+    } catch (error: any) {
+      console.error('Error resolving small amount alert:', error);
+      res.status(500).json({ error: 'Failed to resolve small amount alert' });
+    }
+  });
+
+  // Delete small amount alert
+  app.delete('/api/small-amount-alerts/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteSmallAmountAlert(id);
+      res.json({ success: true, message: 'Alert deleted successfully' });
+    } catch (error: any) {
+      console.error('Error deleting small amount alert:', error);
+      res.status(500).json({ error: 'Failed to delete small amount alert' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

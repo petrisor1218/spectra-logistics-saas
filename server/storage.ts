@@ -8,6 +8,7 @@ import {
   historicalTrips,
   orderSequence,
   companyBalances,
+  smallAmountAlerts,
   type User, 
   type InsertUser,
   type Company,
@@ -28,7 +29,9 @@ import {
   type OrderSequence,
   type InsertOrderSequence,
   type CompanyBalance,
-  type InsertCompanyBalance
+  type InsertCompanyBalance,
+  type SmallAmountAlert,
+  type InsertSmallAmountAlert
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -98,6 +101,15 @@ export interface IStorage {
   // Order numbering methods
   getNextOrderNumber(): Promise<number>;
   initializeOrderSequence(): Promise<void>;
+  
+  // Small Amount Alerts methods
+  getAllSmallAmountAlerts(): Promise<SmallAmountAlert[]>;
+  getSmallAmountAlertsByStatus(status: string): Promise<SmallAmountAlert[]>;
+  getSmallAmountAlertByVrid(vrid: string, weekDetected: string): Promise<SmallAmountAlert | undefined>;
+  createSmallAmountAlert(alert: InsertSmallAmountAlert): Promise<SmallAmountAlert>;
+  updateSmallAmountAlert(id: number, alert: Partial<InsertSmallAmountAlert>): Promise<SmallAmountAlert>;
+  resolveSmallAmountAlert(id: number, realAmount: number, weekResolved: string): Promise<SmallAmountAlert>;
+  deleteSmallAmountAlert(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -799,6 +811,68 @@ export class DatabaseStorage implements IStorage {
       .set({ contact: newEmail })
       .where(eq(companies.name, companyName));
     console.log(`📧 Updated email for ${companyName} to ${newEmail}`);
+  }
+
+  // Small Amount Alerts methods
+  async getAllSmallAmountAlerts(): Promise<SmallAmountAlert[]> {
+    return await db.select().from(smallAmountAlerts).orderBy(desc(smallAmountAlerts.detectedAt));
+  }
+
+  async getSmallAmountAlertsByStatus(status: string): Promise<SmallAmountAlert[]> {
+    return await db.select().from(smallAmountAlerts)
+      .where(eq(smallAmountAlerts.status, status))
+      .orderBy(desc(smallAmountAlerts.detectedAt));
+  }
+
+  async getSmallAmountAlertByVrid(vrid: string, weekDetected: string): Promise<SmallAmountAlert | undefined> {
+    const [alert] = await db.select().from(smallAmountAlerts)
+      .where(
+        and(
+          eq(smallAmountAlerts.vrid, vrid),
+          eq(smallAmountAlerts.weekDetected, weekDetected)
+        )
+      );
+    return alert || undefined;
+  }
+
+  async createSmallAmountAlert(alert: InsertSmallAmountAlert): Promise<SmallAmountAlert> {
+    const [created] = await db
+      .insert(smallAmountAlerts)
+      .values(alert)
+      .returning();
+    console.log(`🚨 Created small amount alert: ${alert.vrid} - ${alert.companyName} (${alert.initialAmount} EUR)`);
+    return created;
+  }
+
+  async updateSmallAmountAlert(id: number, alert: Partial<InsertSmallAmountAlert>): Promise<SmallAmountAlert> {
+    const [updated] = await db
+      .update(smallAmountAlerts)
+      .set(alert)
+      .where(eq(smallAmountAlerts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async resolveSmallAmountAlert(id: number, realAmount: number, weekResolved: string): Promise<SmallAmountAlert> {
+    const [updated] = await db
+      .update(smallAmountAlerts)
+      .set({
+        realAmount: realAmount.toString(),
+        weekResolved,
+        status: 'resolved',
+        resolvedAt: new Date()
+      })
+      .where(eq(smallAmountAlerts.id, id))
+      .returning();
+    console.log(`✅ Resolved small amount alert ID ${id}: Real amount ${realAmount} EUR in week ${weekResolved}`);
+    return updated;
+  }
+
+  async deleteSmallAmountAlert(id: number): Promise<void> {
+    await db
+      .delete(smallAmountAlerts)
+      .where(eq(smallAmountAlerts.id, id));
+    console.log(`🗑️ Deleted small amount alert ID ${id}`);
   }
 }
 

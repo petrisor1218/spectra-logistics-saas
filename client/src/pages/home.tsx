@@ -19,7 +19,7 @@ import { PendingDriverMappings } from "@/components/processing/PendingDriverMapp
 import CompanyBalancesView from "@/components/balance/CompanyBalancesView";
 import PaymentHistoryView from "@/components/payment/PaymentHistoryView";
 import { CompanySummaryTable } from "@/components/transport/CompanySummaryTable";
-import SmallAmountAlertsModal from "@/components/transport/SmallAmountAlertsModal";
+import { SmallAmountAlertsModal } from "@/components/admin/SmallAmountAlertsModal";
 import { TruckEmptyState } from "@/components/transport/TruckEmptyState";
 import { TruckBackground } from "@/components/transport/TruckBackground";
 import { YearEndClosurePanel } from "@/components/admin/YearEndClosurePanel";
@@ -812,7 +812,6 @@ export default function Home() {
 
       {/* Small Amount Alerts Modal */}
       <SmallAmountAlertsModal
-        alerts={smallAmountAlerts}
         isOpen={showSmallAmountAlertsModal}
         onClose={() => setShowSmallAmountAlertsModal(false)}
       />
