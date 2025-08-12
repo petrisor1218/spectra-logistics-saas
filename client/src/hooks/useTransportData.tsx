@@ -1005,6 +1005,30 @@ export function useTransportData() {
             const initialAmount = parseFloat(existingAlert.initialAmount);
             if (amount > initialAmount && amount > 5) {
               console.log(`🎯 IMPERECHERE GĂSITĂ: VRID ${vrid} - €${initialAmount.toFixed(2)} → €${amount.toFixed(2)} (creștere de €${(amount - initialAmount).toFixed(2)})`);
+              
+              // Rezolvare automată imediată
+              const resolveData = {
+                realAmount: amount.toString(),
+                weekResolved: processingWeek,
+                status: 'resolved',
+                notes: `${existingAlert.notes} | Rezolvată automat: €${initialAmount.toFixed(2)} → €${amount.toFixed(2)}`
+              };
+              
+              fetch(`/api/small-amount-alerts/${existingAlert.id}/resolve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(resolveData)
+              }).then(async response => {
+                if (response.ok) {
+                  console.log(`✅ ALERTĂ REZOLVATĂ AUTOMAT: ${existingAlert.id} - VRID ${vrid}`);
+                  // Reîncarcă alertele pentru a reflecta schimbarea
+                  await loadSmallAmountAlerts();
+                } else {
+                  console.error(`❌ Eroare la rezolvarea automată: ${existingAlert.id}`);
+                }
+              }).catch(error => {
+                console.error('Eroare la rezolvarea automată:', error);
+              });
             }
           }
 
