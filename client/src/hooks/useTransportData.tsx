@@ -482,15 +482,17 @@ export function useTransportData() {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     
-    // Check if we need to add year info (cross-year weeks or different from current year)
+    // ALWAYS include year for clarity in 2025 to avoid confusion with 2024 data
     const currentYear = now.getFullYear();
     const startYear = startOfWeek.getFullYear();
     const endYear = endOfWeek.getFullYear();
     
     let label;
-    if (startYear !== currentYear || endYear !== currentYear || startYear !== endYear) {
-      // Include year when it's not current year or crosses years
+    // Always include year starting from 2025 to distinguish from 2024 data
+    if (currentYear >= 2025 || startYear !== currentYear || endYear !== currentYear || startYear !== endYear) {
+      // Include year for clarity
       label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      console.log(`📅 Week label with year: "${label}" (current year: ${currentYear})`);
     } else {
       label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`;
     }
@@ -511,15 +513,17 @@ export function useTransportData() {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     
-    // Check if we need to add year info (cross-year weeks or different from current year)
+    // ALWAYS include year for clarity in 2025 to avoid confusion with 2024 data
     const currentYear = new Date().getFullYear();
     const startYear = startOfWeek.getFullYear();
     const endYear = endOfWeek.getFullYear();
     
     let label;
-    if (startYear !== currentYear || endYear !== currentYear || startYear !== endYear) {
-      // Include year when it's not current year or crosses years
+    // Always include year starting from 2025 to distinguish from 2024 data
+    if (currentYear >= 2025 || startYear !== currentYear || endYear !== currentYear || startYear !== endYear) {
+      // Include year for clarity
       label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      console.log(`📅 Week range for date: "${label}" (current year: ${currentYear})`);
     } else {
       label = `${startOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('ro-RO', { month: 'short', day: 'numeric' })}`;
     }
