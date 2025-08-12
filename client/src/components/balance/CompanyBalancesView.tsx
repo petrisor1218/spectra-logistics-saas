@@ -31,7 +31,7 @@ const fixRomanianText = (text: string): string => {
 };
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw, Trash2, AlertTriangle, FileText } from "lucide-react";
+import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarSign, RefreshCw, Trash2, AlertTriangle, FileText, ChevronDown, ChevronUp, Eye, EyeOff, Filter } from "lucide-react";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion } from "framer-motion";
@@ -301,7 +301,25 @@ export default function CompanyBalancesView() {
   const [selectedBalance, setSelectedBalance] = useState<CompanyBalance | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showZeroBalances, setShowZeroBalances] = useState(false);
+  const [expandedCompanies, setExpandedCompanies] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
+
+  // Helper function to toggle company expansion
+  const toggleCompanyExpansion = (companyName: string) => {
+    setExpandedCompanies(prev => ({
+      ...prev,
+      [companyName]: !prev[companyName]
+    }));
+  };
+
+  // Helper function to filter balances by zero amounts
+  const filterBalancesByOutstanding = (balances: CompanyBalance[]) => {
+    if (showZeroBalances) {
+      return balances; // Show all balances
+    }
+    return balances.filter(balance => parseFloat(balance.outstandingBalance || '0') > 0);
+  };
 
   const { data: balances = [], isLoading } = useQuery({
     queryKey: ['/api/company-balances'],
@@ -689,6 +707,15 @@ export default function CompanyBalancesView() {
         <h3 className="text-lg font-semibold">Bilanțuri pe Companii</h3>
         <div className="flex gap-2">
           <Button
+            onClick={() => setShowZeroBalances(!showZeroBalances)}
+            variant={showZeroBalances ? "default" : "outline"}
+            size="sm"
+            className={showZeroBalances ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+          >
+            {showZeroBalances ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+            {showZeroBalances ? "Ascunde sold 0" : "Vezi sold 0"}
+          </Button>
+          <Button
             onClick={generatePDF}
             className="bg-red-600 hover:bg-red-700 text-white"
             size="sm"
@@ -721,6 +748,14 @@ export default function CompanyBalancesView() {
       <div className="space-y-4">
         
         {Object.entries(balancesByCompany).map(([companyName, companyBalances]: [string, CompanyBalance[]], index) => {
+          // Apply filter for zero balances
+          const filteredBalances = filterBalancesByOutstanding(companyBalances);
+          
+          // Skip company entirely if no balances to show and not expanded
+          if (filteredBalances.length === 0 && !expandedCompanies[companyName]) {
+            return null;
+          }
+          
           // Calculate totals for this company with logical constraints
           const companyTotalInvoiced = companyBalances.reduce((sum, balance) => 
             sum + parseFloat(balance.totalInvoiced || '0'), 0);
@@ -746,14 +781,33 @@ export default function CompanyBalancesView() {
             <Card className="overflow-hidden">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      {companyName}
-                    </CardTitle>
-                    <CardDescription>
-                      {companyBalances.length} săptămână{companyBalances.length !== 1 ? 'i' : ''}
-                    </CardDescription>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <DollarSign className="h-5 w-5" />
+                        {companyName}
+                      </CardTitle>
+                      <CardDescription>
+                        {filteredBalances.length} de încasat
+                        {companyBalances.length - filteredBalances.length > 0 && 
+                          ` • ${companyBalances.length - filteredBalances.length} cu sold 0`
+                        }
+                      </CardDescription>
+                    </div>
+                    {companyBalances.length - filteredBalances.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleCompanyExpansion(companyName)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        {expandedCompanies[companyName] ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-muted-foreground mb-1">Total de încasat</div>
@@ -769,8 +823,9 @@ export default function CompanyBalancesView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {companyBalances.map((balance) => (
-                    <div key={`${balance.companyName}-${balance.weekLabel}`} 
+                  {/* Show filtered balances (with outstanding amounts) */}
+                  {filteredBalances.map((balance) => (
+                    <div key={`${balance.companyName}-${balance.weekLabel}-outstanding`} 
                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         {getStatusIcon(balance.paymentStatus || 'pending')}
@@ -800,6 +855,45 @@ export default function CompanyBalancesView() {
                               Înregistrează plată
                             </Button>
                           )}
+                          {parseFloat(balance.totalPaid || '0') > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteClick(balance)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Șterge plată
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Show zero balance entries if expanded or showZeroBalances is true */}
+                  {(expandedCompanies[companyName] || showZeroBalances) && 
+                   companyBalances.filter(balance => parseFloat(balance.outstandingBalance || '0') === 0).map((balance) => (
+                    <div key={`${balance.companyName}-${balance.weekLabel}-zero`} 
+                         className="flex items-center justify-between p-3 bg-green-50/50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(balance.paymentStatus || 'pending')}
+                        <div>
+                          <div className="font-medium text-green-700 dark:text-green-300">{balance.weekLabel}</div>
+                          <div className="text-sm text-green-600 dark:text-green-400">
+                            Facturat: {formatCurrency(parseFloat(balance.totalInvoiced || '0'))} | 
+                            Plătit: {formatCurrency(parseFloat(balance.totalPaid || '0'))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="font-semibold text-green-600 dark:text-green-400">
+                            {formatCurrency(parseFloat(balance.outstandingBalance || '0'))}
+                          </div>
+                          {getStatusBadge(balance.paymentStatus || 'pending')}
+                        </div>
+                        <div className="flex gap-2">
                           {parseFloat(balance.totalPaid || '0') > 0 && (
                             <Button
                               size="sm"
