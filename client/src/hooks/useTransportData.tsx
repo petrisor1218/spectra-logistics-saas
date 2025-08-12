@@ -83,6 +83,7 @@ const DRIVER_COMPANY_MAP_ORIGINAL = {
 };
 
 export function useTransportData() {
+  // All useState hooks first - IMPORTANT: Keep all in fixed order for React Rules of Hooks
   const [tripData, setTripData] = useState<any>(null);
   const [invoice7Data, setInvoice7Data] = useState<any>(null);
   const [invoice30Data, setInvoice30Data] = useState<any>(null);
@@ -97,18 +98,26 @@ export function useTransportData() {
   const [selectedWeek, setSelectedWeek] = useState('');
   const [processingWeek, setProcessingWeek] = useState('');
   const [weeklyProcessingData, setWeeklyProcessingData] = useState<any[]>([]);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
+  const [smallAmountAlerts, setSmallAmountAlerts] = useState<Array<{vrid: string, amount: number, company: string, invoiceType: string}>>([]);
+  const [pendingMappings, setPendingMappings] = useState<Array<{
+    vrid: string;
+    driverName: string;
+    suggestedCompanies: string[];
+  }>>([]);
   
-  // Load weekly processing data on mount
+  // All useRef hooks
+  const tripFileRef = useRef<HTMLInputElement>(null);
+  const invoice7FileRef = useRef<HTMLInputElement>(null);
+  const invoice30FileRef = useRef<HTMLInputElement>(null);
+  
+  // All useEffect hooks
   useEffect(() => {
     loadAllWeeklyProcessing();
     loadDriversFromDatabase();
   }, []);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarDate, setCalendarDate] = useState(new Date());
-  
-  const tripFileRef = useRef<HTMLInputElement>(null);
-  const invoice7FileRef = useRef<HTMLInputElement>(null);
-  const invoice30FileRef = useRef<HTMLInputElement>(null);
 
   // Generate name variants - Enhanced for better matching!
   const generateNameVariants = (name: string) => {
@@ -149,7 +158,6 @@ export function useTransportData() {
   };
 
   // Load drivers from database and combine with static mapping
-  const [dynamicDriverMap, setDynamicDriverMap] = useState<Record<string, string>>({});
   
   const loadDriversFromDatabase = async () => {
     try {
@@ -270,13 +278,7 @@ export function useTransportData() {
     return sortedCompanies.length > 0 && sortedCompanies[0][1] >= 1 ? sortedCompanies[0][0] : null;
   };
 
-  // State for pending driver mappings
-  const [smallAmountAlerts, setSmallAmountAlerts] = useState<Array<{vrid: string, amount: number, company: string, invoiceType: string}>>([]);
-  const [pendingMappings, setPendingMappings] = useState<Array<{
-    driverName: string;
-    suggestedCompany: string;
-    alternatives: string[];
-  }>>([]);
+  // State for pending driver mappings - now declared at the top
 
   // Add driver to database after user confirmation
   const addDriverToDatabase = async (driverName: string, selectedCompany: string) => {
