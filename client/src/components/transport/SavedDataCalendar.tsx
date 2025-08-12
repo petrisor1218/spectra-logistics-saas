@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Calendar, Database, Eye, TrendingUp, FileText, Loader2, AlertCircle, SortDesc, SortAsc } from "lucide-react";
+import { Calendar, Database, Eye, TrendingUp, FileText, Loader2, AlertCircle, SortDesc, SortAsc, RefreshCw } from "lucide-react";
 
 interface SavedDataCalendarProps {
   loadAllWeeklyProcessing: () => Promise<any[]>;
@@ -101,12 +101,18 @@ export function SavedDataCalendar({
         year = yearPart;
       }
     } else {
-      // For months after July 2024, assume 2024 data
+      // Smart year detection based on context
       if (['aug', 'sep', 'sept', 'oct', 'noi', 'nov', 'dec'].includes(monthStr)) {
         year = 2024;
       } else if (['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul'].includes(monthStr)) {
-        // Could be 2024 or 2025, but most likely 2024 for historical data
-        year = 2024;
+        // Check if it's likely 2025 data by looking at the current date
+        // If we're in 2025 and the month is January, it's likely 2025 data
+        const currentYear = new Date().getFullYear();
+        if (currentYear >= 2025 && monthStr === 'ian') {
+          year = 2025;
+        } else {
+          year = 2024;
+        }
       }
     }
     
@@ -118,9 +124,9 @@ export function SavedDataCalendar({
     const dateA = parseRomanianWeekDate(a.weekLabel);
     const dateB = parseRomanianWeekDate(b.weekLabel);
     
-    // Debug parsing for November weeks
-    if (a.weekLabel.includes('nov') || b.weekLabel.includes('nov')) {
-      console.log('🗓️ Parsing November week:', a.weekLabel, '→', dateA);
+    // Debug parsing for 2025 weeks and recent data
+    if (a.weekLabel.includes('ian') || b.weekLabel.includes('ian') || a.weekLabel.includes('2025') || b.weekLabel.includes('2025')) {
+      console.log('🗓️ Parsing 2025 week:', a.weekLabel, '→', dateA);
       console.log('🗓️ Compared with:', b.weekLabel, '→', dateB);
     }
     
@@ -201,8 +207,8 @@ export function SavedDataCalendar({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <TrendingUp className="w-4 h-4" />
-            <span>Reîncarcă</span>
+            <RefreshCw className="w-4 h-4" />
+            <span>Reîncarcă Date</span>
           </motion.button>
         </div>
       </div>
