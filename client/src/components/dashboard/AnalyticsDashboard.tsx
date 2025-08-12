@@ -234,7 +234,7 @@ export default function AnalyticsDashboard() {
     let year = 2024; // default
     
     try {
-      // Parse week label like "11 feb. - 17 feb." or "5 ian. - 11 ian. 2025"
+      // Parse week label like "11 feb. 2024 - 17 feb. 2024" or "5 ian. 2024 - 11 ian. 2024"
       const monthMatch = weekLabel.match(/(\d+)\s+(\w+)/);
       // Check if year is explicitly mentioned in the label
       const yearMatch = weekLabel.match(/(\d{4})/);
@@ -247,9 +247,11 @@ export default function AnalyticsDashboard() {
           const createdDate = new Date(balance.createdAt);
           year = createdDate.getFullYear();
         } else {
-          // If weekLabel contains "ian" (January), it's likely 2025 data
+          // Default to 2024 since most data is historical, except January which might be 2025
           if (weekLabel.toLowerCase().includes('ian')) {
             year = 2025;
+          } else {
+            year = 2024;
           }
         }
       }

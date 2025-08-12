@@ -81,9 +81,9 @@ export function SavedDataCalendar({
     setSortOrder(sortOrder === 'recent' ? 'oldest' : 'recent');
   };
 
-  // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
+  // Parse Romanian date format "DD mmm. YYYY - DD mmm. YYYY" to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
-    // Extract start date from "DD mmm. - DD mmm." or "DD mmm. YYYY - DD mmm. YYYY" format
+    // Extract start date from "DD mmm. YYYY - DD mmm. YYYY" format
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
       'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
@@ -95,26 +95,20 @@ export function SavedDataCalendar({
     const monthStr = parts[1].replace('.', '');
     const month = monthMap[monthStr] ?? 0;
     
-    // Check if year is present in the string
-    let year = 2024; // Default to 2024 since most data is from 2024
+    // Enhanced year detection - now all data should have explicit years
+    let year = 2024; // Default fallback
     if (parts.length >= 3) {
       const yearPart = parseInt(parts[2]);
       if (!isNaN(yearPart) && yearPart > 2000) {
         year = yearPart;
       }
     } else {
-      // Smart year detection based on context
-      if (['aug', 'sep', 'sept', 'oct', 'noi', 'nov', 'dec'].includes(monthStr)) {
-        year = 2024;
-      } else if (['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul'].includes(monthStr)) {
-        // Check if it's likely 2025 data by looking at the current date
-        // If we're in 2025 and the month is January OR February, it's likely 2025 data
-        const currentYear = new Date().getFullYear();
-        if (currentYear >= 2025 && (monthStr === 'ian' || monthStr === 'feb')) {
-          year = 2025;
-        } else {
-          year = 2024;
-        }
+      // Legacy handling for old data without years (should be rare now)
+      console.warn('⚠️ Week label without explicit year found:', weekLabel);
+      if (['ian'].includes(monthStr)) {
+        year = 2025; // January is likely 2025
+      } else {
+        year = 2024; // Everything else defaults to 2024
       }
     }
     
