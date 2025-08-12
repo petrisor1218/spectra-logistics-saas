@@ -317,7 +317,7 @@ export default function CompanyBalancesView() {
 
   // Parse Romanian date format "DD mmm. - DD mmm." to comparable date
   const parseRomanianWeekDate = (weekLabel: string): Date => {
-    // Extract start date from "DD mmm. - DD mmm." format
+    // Extract start date from "DD mmm. - DD mmm." or "DD mmm. YYYY - DD mmm. YYYY" format
     const startDateStr = weekLabel.split(' - ')[0];
     const monthMap: Record<string, number> = {
       'ian': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'iun': 5,
@@ -328,7 +328,29 @@ export default function CompanyBalancesView() {
     const day = parseInt(parts[0]);
     const monthStr = parts[1].replace('.', '');
     const month = monthMap[monthStr] ?? 0;
-    const year = 2025; // Assuming current year
+    
+    // Check if year is present in the string
+    let year = 2024; // Default to 2024
+    if (parts.length >= 3) {
+      const yearPart = parseInt(parts[2]);
+      if (!isNaN(yearPart) && yearPart > 2000) {
+        year = yearPart;
+      }
+    } else {
+      // Smart year detection based on context
+      if (['aug', 'sep', 'sept', 'oct', 'noi', 'nov', 'dec'].includes(monthStr)) {
+        year = 2024;
+      } else if (['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul'].includes(monthStr)) {
+        // Check if it's likely 2025 data by looking at the current date
+        // If we're in 2025 and the month is January, it's likely 2025 data
+        const currentYear = new Date().getFullYear();
+        if (currentYear >= 2025 && monthStr === 'ian') {
+          year = 2025;
+        } else {
+          year = 2024;
+        }
+      }
+    }
     
     return new Date(year, month, day);
   };
@@ -347,6 +369,12 @@ export default function CompanyBalancesView() {
     balancesByCompany[companyName].sort((a, b) => {
       const dateA = parseRomanianWeekDate(a.weekLabel);
       const dateB = parseRomanianWeekDate(b.weekLabel);
+      
+      // Debug parsing for 2025 weeks
+      if (a.weekLabel.includes('ian') || b.weekLabel.includes('ian')) {
+        console.log('💰 CompanyBalances parsing:', a.weekLabel, '→', dateA, 'vs', b.weekLabel, '→', dateB);
+      }
+      
       return dateB.getTime() - dateA.getTime(); // Newest first (inverse chronological)
     });
   });
