@@ -169,9 +169,6 @@ export default function AnalyticsDashboard() {
   
   console.log('📊 DEBUG: Company totals before display:', Array.from(companyTotals.entries()).slice(0, 7));
   console.log('📊 DEBUG: Top 5 companies for chart:', companyPerformanceData);
-  console.log('📊 DEBUG: Yearly data breakdown:');
-  console.log('   2024 data:', dataBy2024.length, 'months, total:', total2024.toFixed(2));
-  console.log('   2025 data:', dataBy2025.length, 'months, total:', total2025.toFixed(2));
 
   const pieColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -322,6 +319,10 @@ export default function AnalyticsDashboard() {
   const total2025 = dataBy2025.reduce((sum, month) => sum + month.totalInvoiced, 0);
   const avg2024 = dataBy2024.length > 0 ? total2024 / dataBy2024.length : 0;
   const avg2025 = dataBy2025.length > 0 ? total2025 / dataBy2025.length : 0;
+  
+  console.log('📊 DEBUG: Yearly data breakdown:');
+  console.log('   2024 data:', dataBy2024.length, 'months, total:', total2024.toFixed(2));
+  console.log('   2025 data:', dataBy2025.length, 'months, total:', total2025.toFixed(2));
 
   // Payment trend data (last 30 days simulation)
   const paymentTrendData = payments
