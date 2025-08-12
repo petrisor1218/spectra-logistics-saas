@@ -56,9 +56,19 @@ export function YearEndClosurePanel() {
   // Perform year-end closure mutation
   const closureMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/year-end-closure', {
+      const response = await fetch('/api/year-end-closure', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to perform year-end closure');
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -270,19 +280,23 @@ export function YearEndClosurePanel() {
               <AlertTriangle className="h-5 w-5 text-amber-500" />
               Confirmare Închidere Anuală
             </DialogTitle>
-            <DialogDescription className="space-y-2">
-              <p>
-                Ești pe cale să efectuezi închiderea anuală pentru 2024. Această acțiune va:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Sigila toate datele din 2024 ca fiind "istorice" și nemodificabile</li>
-                <li>Reseta contoarele pentru anul fiscal 2025</li>
-                <li>Separa calculele financiare între anii fiscali</li>
-                <li>Rezolva problema "mai mult încasat decât facturat"</li>
-              </ul>
-              <p className="text-amber-600 font-medium">
-                ⚠️ Această acțiune nu poate fi anulată!
-              </p>
+            <DialogDescription>
+              <div className="space-y-3">
+                <p>
+                  Ești pe cale să efectuezi închiderea anuală pentru 2024. Această acțiune va:
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Sigila toate datele din 2024 ca fiind "istorice" și nemodificabile</li>
+                    <li>Reseta contoarele pentru anul fiscal 2025</li>
+                    <li>Separa calculele financiare între anii fiscali</li>
+                    <li>Rezolva problema "mai mult încasat decât facturat"</li>
+                  </ul>
+                </div>
+                <div className="text-amber-600 font-medium bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                  ⚠️ Această acțiune nu poate fi anulată!
+                </div>
+              </div>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

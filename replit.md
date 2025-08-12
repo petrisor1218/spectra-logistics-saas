@@ -125,3 +125,22 @@ Preferred communication style: Simple, everyday language.
   - Updated data protection list to include "9 feb. 2025 - 15 feb. 2025"
   - Corrected existing "9 feb. - 15 feb." record to include 2025
 - **Result**: All uploads now properly assign year, preventing future corruption
+
+### ✅ Year-End Closure System Implementation - COMPLETED - August 12, 2025
+- **Issue**: Cross-year data mixing causing "more collected than invoiced" financial discrepancies
+- **Root Cause**: 2024 and 2025 fiscal year data being calculated together without proper separation
+- **Solution**: Complete year-end closure system with data sealing and fiscal year separation
+- **Actions Taken**:
+  - Added `isHistorical` flags to all database tables (payments, company_balances, weekly_processing, invoices, drivers, companies)
+  - Created YearClosureSystem class with seal2024Data() and resetFiscalCounters() methods
+  - Implemented comprehensive year-end closure API endpoints (/api/year-end-closure, /api/year-end-closure/status)
+  - Built YearEndClosurePanel React component with confirmation dialog and status monitoring
+  - Added "Închidere Anuală" tab to main navigation for fiscal year management
+  - Implemented fiscal year summary endpoints for 2024 (historical) and 2025 (active) reporting
+- **Key Features**:
+  - One-click year-end closure with irreversible data sealing
+  - Real-time status monitoring with 5-second refresh intervals
+  - Comprehensive fiscal year summaries showing payments, amounts, companies, and weeks processed
+  - Visual separation between historical (locked) and active fiscal years
+  - Prevention of cross-year calculation mixing that caused financial discrepancies
+- **Financial Impact**: Resolves "€2,928,965.20 collected vs €2,513,929.87 invoiced" discrepancy by proper fiscal year separation
