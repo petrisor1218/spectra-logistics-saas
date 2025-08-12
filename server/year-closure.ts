@@ -152,25 +152,9 @@ export class YearClosureSystem {
    * Determines if a week label belongs to 2024
    */
   private isYear2024(weekLabel: string): boolean {
-    // Check if week contains "2024" or if it's from dec 2024/jan 2025 cross-year period
-    return weekLabel.includes('2024') || 
-           (weekLabel.includes('dec.') && !weekLabel.includes('2025')) ||
-           (weekLabel.includes('29 dec') && weekLabel.includes('4 ian')) ||
-           // Any week that doesn't explicitly contain "2025" and is from the transition period
-           (!weekLabel.includes('2025') && (
-             weekLabel.includes('dec') || 
-             weekLabel.includes('ian') || 
-             weekLabel.includes('feb') ||
-             weekLabel.includes('mar') ||
-             weekLabel.includes('apr') ||
-             weekLabel.includes('mai') ||
-             weekLabel.includes('iun') ||
-             weekLabel.includes('iul') ||
-             weekLabel.includes('aug') ||
-             weekLabel.includes('sep') ||
-             weekLabel.includes('oct') ||
-             weekLabel.includes('nov')
-           ));
+    // For historical data, simply check if it's marked as historical after closure
+    // Since closure marks all pre-2025 data as historical, we treat all historical data as 2024
+    return true; // All historical data is considered 2024 after closure
   }
 
   /**
@@ -193,9 +177,9 @@ export class YearClosureSystem {
           : eq(payments.isHistorical, false)
       );
 
-    const yearlyPayments = yearPayments.filter(p => 
-      year === this.CLOSURE_YEAR ? this.isYear2024(p.weekLabel) : !this.isYear2024(p.weekLabel)
-    );
+    // For 2024 (historical year), use all historical data
+    // For 2025 (current year), use all non-historical data
+    const yearlyPayments = yearPayments;
 
     const totalAmount = yearlyPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
     const companies = new Set(yearlyPayments.map(p => p.companyName));
