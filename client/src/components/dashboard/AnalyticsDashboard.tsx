@@ -136,29 +136,37 @@ export default function AnalyticsDashboard() {
   // Debug info - confirm we're using the correct data source
   console.log('✅ Using Company Balances as authoritative source:', totalInvoiced.toFixed(2));
 
-  // Prepare chart data with debug logging
-  console.log('📊 DEBUG: Preparing chart data from balances:', balances.length, 'records');
-  const companyPerformanceData = balances.reduce((acc: any[], balance) => {
-    const existing = acc.find(item => item.company === balance.companyName);
-    if (existing) {
+  // Group by full company name first, then prepare display data
+  const companyTotals = new Map();
+  balances.forEach(balance => {
+    const key = balance.companyName;
+    if (companyTotals.has(key)) {
+      const existing = companyTotals.get(key);
       existing.invoiced += Number(balance.totalInvoiced || 0);
       existing.paid += Number(balance.totalPaid || 0);
       existing.remaining += Math.max(0, Number(balance.outstandingBalance || 0));
     } else {
-      acc.push({
-        company: balance.companyName.length > 15 
-          ? balance.companyName.substring(0, 15) + '...' 
-          : balance.companyName,
+      companyTotals.set(key, {
+        fullName: balance.companyName,
         invoiced: Number(balance.totalInvoiced || 0),
         paid: Number(balance.totalPaid || 0),
         remaining: Math.max(0, Number(balance.outstandingBalance || 0))
       });
     }
-    return acc;
-  }, [])
-  .sort((a, b) => b.invoiced - a.invoiced) // Sort by invoiced amount descending
-  .slice(0, 5); // Top 5 companies
+  });
+
+  // Convert to array and prepare display names
+  const companyPerformanceData = Array.from(companyTotals.values())
+    .map(company => ({
+      ...company,
+      company: company.fullName.length > 20 
+        ? company.fullName.substring(0, 17) + '...' 
+        : company.fullName
+    }))
+    .sort((a, b) => b.invoiced - a.invoiced)
+    .slice(0, 5);
   
+  console.log('📊 DEBUG: Company totals before display:', Array.from(companyTotals.entries()).slice(0, 7));
   console.log('📊 DEBUG: Top 5 companies for chart:', companyPerformanceData);
 
   const pieColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
