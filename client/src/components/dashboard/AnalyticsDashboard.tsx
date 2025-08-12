@@ -299,7 +299,48 @@ export default function AnalyticsDashboard() {
   const dataBy2024 = monthlyDataFromBalances.filter(month => month.year === 2024);
   const dataBy2025 = monthlyDataFromBalances.filter(month => month.year === 2025);
   
-  // Combined monthly analysis with year indicators
+  // Month-by-month comparison data - each month gets ONE row with comparative data
+  const monthlyComparisonData = (() => {
+    const months = ['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul', 'aug', 'sep', 'oct', 'noi', 'dec'];
+    const monthNames = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 
+                       'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+    
+    return months.map((monthKey, index) => {
+      const data2024 = dataBy2024.find((d: any) => {
+        const monthStr = d.date.toLocaleDateString('ro-RO', { month: 'short' }).toLowerCase().substring(0, 3);
+        return monthStr === monthKey;
+      }) || { totalInvoiced: 0 };
+      
+      const data2025 = dataBy2025.find((d: any) => {
+        const monthStr = d.date.toLocaleDateString('ro-RO', { month: 'short' }).toLowerCase().substring(0, 3);
+        return monthStr === monthKey;
+      }) || { totalInvoiced: 0 };
+      
+      const total2024 = data2024.totalInvoiced || 0;
+      const total2025 = data2025.totalInvoiced || 0;
+      const maxValue = Math.max(total2024, total2025);
+      
+      // Calculate percentage progress for visual bars
+      const progress2024 = maxValue > 0 ? (total2024 / maxValue) * 100 : 0;
+      const progress2025 = maxValue > 0 ? (total2025 / maxValue) * 100 : 0;
+      
+      return {
+        monthName: monthNames[index],
+        monthKey: monthKey,
+        total2024: total2024,
+        total2025: total2025,
+        progress2024: progress2024,
+        progress2025: progress2025,
+        hasData2024: total2024 > 0,
+        hasData2025: total2025 > 0,
+        winner: total2025 > total2024 ? '2025' : total2024 > total2025 ? '2024' : 'tie',
+        difference: Math.abs(total2025 - total2024),
+        percentageChange: total2024 > 0 ? ((total2025 - total2024) / total2024) * 100 : 0
+      };
+    }).filter(month => month.hasData2024 || month.hasData2025); // Only show months with data
+  })();
+  
+  // Keep the original yearlyMonthlyData for chart compatibility
   const yearlyMonthlyData = monthlyDataFromBalances.map(month => ({
     ...month,
     displayName: `${month.monthName} ${month.year}`,
@@ -622,56 +663,107 @@ export default function AnalyticsDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-purple-600" />
-                Analiză Anuală - 2024 vs 2025
+                Comparație Lunară - 2024 vs 2025
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Comparație între anii 2024 și 2025 cu identificarea lunilor de vârf
+                Analiză side-by-side a performanței pentru fiecare lună din an
               </p>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={yearlyMonthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="displayName"
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    fontSize={12}
-                  />
-                  <YAxis formatter={(value: number) => `€${(value / 1000).toFixed(0)}k`} />
-                  <Tooltip 
-                    formatter={(value: number) => [
-                      `€${value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}`,
-                      'Total Facturat'
-                    ]}
-                    labelFormatter={(label: string) => `Perioada: ${label}`}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      color: 'hsl(var(--foreground))',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                    }}
-                    labelStyle={{
-                      color: 'hsl(var(--foreground))',
-                      fontWeight: '600'
-                    }}
-                  />
-                  <Bar dataKey="totalInvoiced" radius={[4, 4, 0, 0]}>
-                    {yearlyMonthlyData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.colorByYear} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              
-              {/* Year Comparison Cards */}
+              <div className="space-y-4">
+                {monthlyComparisonData.map((month) => (
+                  <div key={month.monthKey} className="border rounded-lg p-4 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {month.monthName}
+                        {month.winner !== 'tie' && (
+                          <span className={`ml-2 text-sm font-medium ${
+                            month.winner === '2025' ? 'text-green-600' : 'text-blue-600'
+                          }`}>
+                            {month.winner === '2025' ? '↗️ 2025 câștigă' : '⬇️ 2024 mai bun'}
+                          </span>
+                        )}
+                      </h3>
+                      <div className="text-sm text-muted-foreground">
+                        {month.total2024 > 0 && month.total2025 > 0 && (
+                          <span className={`font-medium ${
+                            month.percentageChange > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {month.percentageChange > 0 ? '+' : ''}{month.percentageChange.toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Split Progress Bars for 2024 and 2025 */}
+                    <div className="space-y-3">
+                      {/* 2024 Section */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 text-sm font-medium text-blue-700 dark:text-blue-300">
+                          2024
+                        </div>
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 relative overflow-hidden">
+                          {month.hasData2024 && (
+                            <div 
+                              className="bg-blue-500 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                              style={{ width: `${month.progress2024}%` }}
+                            >
+                              <span className="text-white text-xs font-medium">
+                                €{month.total2024.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                          )}
+                          {!month.hasData2024 && (
+                            <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 text-xs">
+                              Fără date
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 2025 Section */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 text-sm font-medium text-green-700 dark:text-green-300">
+                          2025
+                        </div>
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 relative overflow-hidden">
+                          {month.hasData2025 && (
+                            <div 
+                              className="bg-green-500 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                              style={{ width: `${month.progress2025}%` }}
+                            >
+                              <span className="text-white text-xs font-medium">
+                                €{month.total2025.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
+                              </span>
+                            </div>
+                          )}
+                          {!month.hasData2025 && (
+                            <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 text-xs">
+                              Fără date
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Difference Display */}
+                    {month.difference > 0 && (
+                      <div className="mt-2 text-center">
+                        <span className="text-xs text-muted-foreground">
+                          Diferența: €{month.difference.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Year Summary Cards */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-center border-2 border-blue-200 dark:border-blue-800">
-                  <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">📅 ANUL 2024</div>
+                  <div className="text-sm text-blue-600 dark:text-blue-400 font-medium mb-1">📊 ANUL 2024</div>
                   <div className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                    {dataBy2024.length} luni procesate
+                    {dataBy2024.length} luni active
                   </div>
                   <div className="text-2xl font-bold text-blue-600 mt-2">
                     €{total2024.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
@@ -684,18 +776,13 @@ export default function AnalyticsDashboard() {
                 <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center border-2 border-green-200 dark:border-green-800">
                   <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">🚀 ANUL 2025</div>
                   <div className="text-xl font-bold text-green-700 dark:text-green-300">
-                    {dataBy2025.length} luni procesate
+                    {dataBy2025.length} luni active
                   </div>
                   <div className="text-2xl font-bold text-green-600 mt-2">
                     €{total2025.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     Media: €{avg2025.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}/lună
-                    {avg2025 > avg2024 && (
-                      <span className="text-green-600 ml-2">
-                        (+{((avg2025 - avg2024) / avg2024 * 100).toFixed(1)}%)
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>

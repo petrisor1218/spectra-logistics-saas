@@ -370,10 +370,7 @@ export default function CompanyBalancesView() {
       const dateA = parseRomanianWeekDate(a.weekLabel);
       const dateB = parseRomanianWeekDate(b.weekLabel);
       
-      // Debug parsing for 2025 weeks
-      if (a.weekLabel.includes('ian') || b.weekLabel.includes('ian')) {
-        console.log('💰 CompanyBalances parsing:', a.weekLabel, '→', dateA, 'vs', b.weekLabel, '→', dateB);
-      }
+      // Debug parsing for 2025 weeks (removed - no longer needed)
       
       return dateB.getTime() - dateA.getTime(); // Newest first (inverse chronological)
     });
