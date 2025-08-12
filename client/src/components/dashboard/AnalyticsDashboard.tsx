@@ -446,6 +446,17 @@ export default function AnalyticsDashboard() {
                       'Total Facturat'
                     ]}
                     labelFormatter={(label: string) => `Luna: ${label}`}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    labelStyle={{
+                      color: 'hsl(var(--foreground))',
+                      fontWeight: '600'
+                    }}
                   />
                   <Bar 
                     dataKey="totalInvoiced" 
@@ -562,7 +573,20 @@ export default function AnalyticsDashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="company" />
                   <YAxis />
-                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, '']} />
+                  <Tooltip 
+                    formatter={(value: number) => [`€${value.toFixed(2)}`, '']} 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    labelStyle={{
+                      color: 'hsl(var(--foreground))',
+                      fontWeight: '600'
+                    }}
+                  />
                   <Bar dataKey="invoiced" fill="#3b82f6" name="Facturat" />
                   <Bar dataKey="paid" fill="#10b981" name="Plătit" />
                   <Bar dataKey="remaining" fill="#ef4444" name="Restant" />
@@ -594,7 +618,20 @@ export default function AnalyticsDashboard() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Facturat']} />
+                  <Tooltip 
+                    formatter={(value: number) => [`€${value.toFixed(2)}`, 'Facturat']} 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    labelStyle={{
+                      color: 'hsl(var(--foreground))',
+                      fontWeight: '600'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -615,7 +652,20 @@ export default function AnalyticsDashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
-                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Sumă']} />
+                  <Tooltip 
+                    formatter={(value: number) => [`€${value.toFixed(2)}`, 'Sumă']} 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    labelStyle={{
+                      color: 'hsl(var(--foreground))',
+                      fontWeight: '600'
+                    }}
+                  />
                   <Area type="monotone" dataKey="amount" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
                 </AreaChart>
               </ResponsiveContainer>
