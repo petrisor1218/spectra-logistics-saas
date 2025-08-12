@@ -8,7 +8,8 @@ export class DataProtectionSystem {
     '19 ian. 2025 - 25 ian. 2025',
     '26 ian. 2025 - 1 feb. 2025',
     '29 dec. 2024 - 4 ian. 2025',
-    '2 feb. 2025 - 8 feb. 2025'
+    '2 feb. 2025 - 8 feb. 2025',
+    '9 feb. 2025 - 15 feb. 2025'
   ];
 
   // Validate if a week label change is safe
@@ -54,7 +55,7 @@ export class DataProtectionSystem {
         return false;
       }
 
-      console.log('✅ Database integrity verified - exactly 6 valid 2025 weeks found');
+      console.log('✅ Database integrity verified - exactly 7 valid 2025 weeks found');
       return true;
     } catch (error) {
       console.error('❌ Database integrity check failed:', error);

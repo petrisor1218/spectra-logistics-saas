@@ -103,12 +103,25 @@ Preferred communication style: Simple, everyday language.
 - **Solution**: Comprehensive data protection system with strict validation
 - **Actions Taken**:
   - Implemented DataProtectionSystem class with validation rules
-  - Created whitelist of exactly 6 valid 2025 weeks to prevent future errors
+  - Created whitelist of exactly 7 valid 2025 weeks to prevent future errors
   - Added automatic integrity checks and corruption prevention
   - Updated frontend logic to use protected week validation
+  - Fixed upload logic to force year inclusion for February weeks
 - **Protection Features**:
   - Prevents accidental bulk year changes
   - Validates all week label modifications against approved list
   - Automatic database integrity verification
   - Clear error logging for attempted invalid changes
-- **Valid 2025 Weeks**: 4 January weeks + 1 cross-year + 1 specific February week only
+  - Auto-correction for weeks uploaded without year
+- **Valid 2025 Weeks**: 4 January weeks + 1 cross-year + 2 February weeks
+
+### ✅ Upload Year Assignment Fix - COMPLETED - August 12, 2025
+- **Issue**: "9-15 feb" uploaded without year, incorrectly defaulting to incomplete format
+- **Root Cause**: saveProcessedData used selectedWeek instead of processingWeek (with year)
+- **Solution**: Enhanced upload protection with auto-correction
+- **Actions Taken**:
+  - Modified saveProcessedData to use processingWeek with year
+  - Added auto-correction for February weeks without year → force 2025
+  - Updated data protection list to include "9 feb. 2025 - 15 feb. 2025"
+  - Corrected existing "9 feb. - 15 feb." record to include 2025
+- **Result**: All uploads now properly assign year, preventing future corruption

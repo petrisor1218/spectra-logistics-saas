@@ -1441,9 +1441,19 @@ ACȚIUNI RECOMANDATE:
 
   // Save processed data to database
   const saveProcessedData = async () => {
-    if (!selectedWeek || Object.keys(processedData).length === 0) {
+    // Use processingWeek (which has year) instead of selectedWeek (which might not)
+    const weekToSave = processingWeek || selectedWeek;
+    if (!weekToSave || Object.keys(processedData).length === 0) {
       alert('Nu există date procesate de salvat');
       return;
+    }
+
+    // 🛡️ VERIFICARE PROTECȚIE - forțează anul pentru săptămânile din februarie
+    let finalWeekLabel = weekToSave;
+    if (weekToSave.includes('feb') && !weekToSave.includes('2025') && !weekToSave.includes('2024')) {
+      // Pentru februarie fără an, forțează 2025
+      finalWeekLabel = weekToSave.replace('feb.', 'feb. 2025');
+      console.log(`🛡️ PROTECȚIE: Corectez săptămâna fără an: "${weekToSave}" → "${finalWeekLabel}"`);
     }
 
     setLoading(true);
@@ -1454,7 +1464,7 @@ ACȚIUNI RECOMANDATE:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          weekLabel: selectedWeek,
+          weekLabel: finalWeekLabel,
           data: processedData,
           processedAt: new Date().toISOString(),
           // Include raw data for historical VRID tracking
@@ -1465,10 +1475,12 @@ ACȚIUNI RECOMANDATE:
       });
 
       if (response.ok) {
-        console.log(`💾 Date salvate manual cu istoric complet pentru ${selectedWeek}`);
+        console.log(`💾 Date salvate manual cu istoric complet pentru ${finalWeekLabel}`);
         // Update saved data to match current processed data
         setSavedProcessedData({...processedData});
-        alert('Datele au fost salvate cu succes în baza de date cu istoric permanent!');
+        // Update selectedWeek to use the corrected week label with year
+        setSelectedWeek(finalWeekLabel);
+        alert(`Datele au fost salvate cu succes în baza de date pentru "${finalWeekLabel}"!`);
       } else {
         throw new Error('Failed to save processed data');
       }
