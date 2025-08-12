@@ -28,6 +28,7 @@ export class DataProtectionSystem {
     // May 2025
     '4 mai 2025 - 10 mai 2025',
     '11 mai 2025 - 17 mai 2025',
+    '18 mai 2025 - 24 mai 2025',
     '25 mai 2025 - 31 mai 2025',
     // June 2025
     '1 iun. 2025 - 7 iun. 2025',

@@ -113,7 +113,7 @@ Preferred communication style: Simple, everyday language.
   - Automatic database integrity verification
   - Clear error logging for attempted invalid changes
   - Auto-correction for weeks uploaded without year
-- **Valid 2025 Weeks**: 4 January weeks + 1 cross-year + 2 February weeks
+- **Valid 2025 Weeks**: Complete coverage from January through July 2025 (28 weeks total)
 
 ### ✅ Upload Year Assignment Fix - COMPLETED - August 12, 2025
 - **Issue**: "9-15 feb" uploaded without year, incorrectly defaulting to incomplete format
@@ -174,3 +174,14 @@ Preferred communication style: Simple, everyday language.
   - 2025 (Current): 42 payments, €397,911.30, 6 companies, 9 weeks
   - Zero discrepancy between invoiced and collected amounts
 - **System Integrity**: Complete data accuracy achieved - all duplicates eliminated, perfect fiscal year separation
+
+### ✅ Calendar Display Fix & Week Coverage Completion - COMPLETED - August 12, 2025
+- **Issue**: Missing weeks in calendar display, specifically "18 mai 2025 - 24 mai 2025" and formatting inconsistencies
+- **Root Cause**: Incomplete week coverage in data protection system and legacy format weeks without year
+- **Solution**: Complete calendar week coverage and standardized year formatting
+- **Actions Taken**:
+  - Updated data protection system to include 28 valid 2025 weeks (January through July)
+  - Standardized all June/July weeks to include full year format
+  - Added missing "18 mai 2025 - 24 mai 2025" week to database
+  - Updated all related tables (payments, company_balances, weekly_processing) with consistent formatting
+- **Final Coverage**: Complete weekly coverage from December 2024 through July 2025 with proper year separation
