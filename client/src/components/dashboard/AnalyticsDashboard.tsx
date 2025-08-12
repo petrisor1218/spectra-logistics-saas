@@ -136,13 +136,14 @@ export default function AnalyticsDashboard() {
   // Debug info - confirm we're using the correct data source
   console.log('✅ Using Company Balances as authoritative source:', totalInvoiced.toFixed(2));
 
-  // Prepare chart data
+  // Prepare chart data with debug logging
+  console.log('📊 DEBUG: Preparing chart data from balances:', balances.length, 'records');
   const companyPerformanceData = balances.reduce((acc: any[], balance) => {
     const existing = acc.find(item => item.company === balance.companyName);
     if (existing) {
       existing.invoiced += Number(balance.totalInvoiced || 0);
       existing.paid += Number(balance.totalPaid || 0);
-      existing.remaining += Number(balance.outstandingBalance || 0);
+      existing.remaining += Math.max(0, Number(balance.outstandingBalance || 0));
     } else {
       acc.push({
         company: balance.companyName.length > 15 
@@ -150,11 +151,15 @@ export default function AnalyticsDashboard() {
           : balance.companyName,
         invoiced: Number(balance.totalInvoiced || 0),
         paid: Number(balance.totalPaid || 0),
-        remaining: Number(balance.outstandingBalance || 0)
+        remaining: Math.max(0, Number(balance.outstandingBalance || 0))
       });
     }
     return acc;
-  }, []).slice(0, 5); // Top 5 companies
+  }, [])
+  .sort((a, b) => b.invoiced - a.invoiced) // Sort by invoiced amount descending
+  .slice(0, 5); // Top 5 companies
+  
+  console.log('📊 DEBUG: Top 5 companies for chart:', companyPerformanceData);
 
   const pieColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
