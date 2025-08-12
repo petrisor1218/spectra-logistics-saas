@@ -175,6 +175,26 @@ Preferred communication style: Simple, everyday language.
   - Zero discrepancy between invoiced and collected amounts
 - **System Integrity**: Complete data accuracy achieved - all duplicates eliminated, perfect fiscal year separation
 
+### ✅ Amazon Placeholder Tracking System Implementation - COMPLETED - August 12, 2025
+- **Issue**: Amazon initially invoices placeholder amounts (€0.01) then later updates with real amounts, causing tracking difficulties
+- **Solution**: Complete automated tracking and matching system for small amount placeholders
+- **System Components**:
+  - Database table `small_amount_alerts` with full tracking schema (VRID, company, amounts, dates, status)
+  - Backend API with CRUD operations (create, read, update, delete, resolve alerts)
+  - Frontend modal interface for monitoring and managing alerts
+  - Navigation integration with dynamic badge showing pending count
+- **Automation Features**:
+  - Auto-detection of amounts ≤5 EUR during file processing
+  - Auto-matching with existing alerts when real amounts appear
+  - Auto-resolution of alerts when placeholders are replaced with real amounts
+  - Continuous monitoring across weekly processing cycles
+- **Active Monitoring**: 4 real Amazon placeholder VRID alerts currently being tracked:
+  - T-114QYYSH3 (DE Cargo Speed) - €0.01
+  - T-1122PSC4L (DE Cargo Speed) - €0.01  
+  - T-112SSP3VC (Fast Express) - €0.01
+  - T-113TN6XCQ (Fast Express) - €0.01
+- **Business Impact**: Prevents revenue loss from overlooked placeholder invoices and ensures complete payment tracking
+
 ### ✅ Calendar Display Fix & Week Coverage Completion - COMPLETED - August 12, 2025
 - **Issue**: Missing weeks in calendar display, specifically "18 mai 2025 - 24 mai 2025" and formatting inconsistencies
 - **Root Cause**: Incomplete week coverage in data protection system and legacy format weeks without year
