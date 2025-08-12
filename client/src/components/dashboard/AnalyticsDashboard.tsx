@@ -39,8 +39,10 @@ interface CompanyBalance {
   totalInvoiced: number;
   totalPaid: number;
   remainingAmount: number;
+  outstandingBalance: number;
   commission: number;
   status: string;
+  paymentStatus: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -89,21 +91,20 @@ export default function AnalyticsDashboard() {
   const totalInvoicedFromBalances = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
   const totalPaid = balances.reduce((sum, b) => sum + Number(b.totalPaid || 0), 0);
   
-  // Calculate total remaining correctly - never show negative values
-  // Only count positive outstanding balances to avoid showing overpayments as negative debt
-  const totalRemaining = Math.max(0, balances.reduce((sum, b) => {
-    const outstanding = Number(b.outstandingBalance || 0);
-    return sum + (outstanding > 0 ? outstanding : 0);
-  }, 0));
+  // FIX: Ensure Total Paid never exceeds Total Invoiced
+  // If total paid > total invoiced, it means there are overpayments but debt should be 0
+  const correctedTotalPaid = Math.min(totalPaid, totalInvoicedFromBalances);
+  const totalRemaining = Math.max(0, totalInvoicedFromBalances - correctedTotalPaid);
   
   const activeCompanies = new Set(balances.map(b => b.companyName)).size;
-  const averagePayment = payments.length > 0 ? totalPaid / payments.length : 0;
-  const overdueBalances = balances.filter(b => b.paymentStatus === 'pending' && Number(b.outstandingBalance || 0) > 1).length;
+  const averagePayment = payments.length > 0 ? correctedTotalPaid / payments.length : 0;
+  const overdueBalances = balances.filter(b => (b.paymentStatus === 'pending' || b.status === 'pending') && Number(b.outstandingBalance || 0) > 1).length;
   
   // Debug the calculation
   console.log('💰 Debug calcule Analytics:');
   console.log('   Total Facturat:', totalInvoicedFromBalances.toFixed(2));
-  console.log('   Total Încasat:', totalPaid.toFixed(2));
+  console.log('   Total Încasat (original):', totalPaid.toFixed(2));
+  console.log('   Total Încasat (corectat):', correctedTotalPaid.toFixed(2));
   console.log('   De Încasat (corect):', totalRemaining.toFixed(2));
   console.log('   Sumă individual outstandingBalance:', balances.reduce((sum, b) => sum + Number(b.outstandingBalance || 0), 0).toFixed(2));
   
@@ -382,7 +383,7 @@ export default function AnalyticsDashboard() {
     const analyticsData = {
       summary: {
         totalInvoiced,
-        totalPaid,
+        totalPaid: correctedTotalPaid,
         totalRemaining,
         activeCompanies,
         averagePayment,
@@ -473,9 +474,9 @@ export default function AnalyticsDashboard() {
               <CheckCircle className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">€{totalPaid.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-600">€{correctedTotalPaid.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">
-                {totalInvoiced > 0 ? ((totalPaid / totalInvoiced) * 100).toFixed(1) : '0'}% din total
+                {totalInvoiced > 0 ? ((correctedTotalPaid / totalInvoiced) * 100).toFixed(1) : '0'}% din total
               </p>
             </CardContent>
           </Card>
@@ -1012,9 +1013,113 @@ export default function AnalyticsDashboard() {
         </motion.div>
       )}
 
+      {/* AI-Powered Business Intelligence Analysis */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
+        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/10 dark:to-blue-900/10">
+          <CardHeader>
+            <CardTitle className="text-purple-700 dark:text-purple-400 flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              🤖 Analiză Inteligentă AI - Insights Strategice
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Analize avansate bazate pe datele tale de business</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Growth Analysis */}
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+              <h3 className="font-semibold text-purple-700 dark:text-purple-300 mb-2">📈 Analiza Creșterii</h3>
+              <div className="space-y-2 text-sm">
+                {dataBy2025.length > 0 && dataBy2024.length > 0 && (
+                  <p>
+                    <strong>Trend pozitiv:</strong> În 2025 ai procesat deja {dataBy2025.length} luni cu o medie de{' '}
+                    <span className="text-green-600 font-semibold">€{avg2025.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</span> pe lună,
+                    comparativ cu media de €{avg2024.toLocaleString('ro-RO', { minimumFractionDigits: 0 })} din 2024
+                    ({avg2025 > avg2024 ? `+${((avg2025 - avg2024) / avg2024 * 100).toFixed(1)}% creștere` : 
+                    `${((avg2025 - avg2024) / avg2024 * 100).toFixed(1)}% scădere`}).
+                  </p>
+                )}
+                <p>
+                  <strong>Volum de business:</strong> Cu un total facturat de{' '}
+                  <span className="text-blue-600 font-semibold">€{totalInvoiced.toLocaleString('ro-RO')}</span> și o rată de colectare de{' '}
+                  <span className="text-green-600 font-semibold">{((correctedTotalPaid / totalInvoiced) * 100).toFixed(1)}%</span>,
+                  performance-ul financiar este {((correctedTotalPaid / totalInvoiced) * 100) > 90 ? 'excelent' : 
+                  ((correctedTotalPaid / totalInvoiced) * 100) > 75 ? 'bun' : 'sub așteptări'}.
+                </p>
+              </div>
+            </div>
+
+            {/* Company Performance Analysis */}
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+              <h3 className="font-semibold text-blue-700 dark:text-blue-300 mb-2">🏢 Analiza Portfolio Companii</h3>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong>Concentrarea riscului:</strong> Top 3 companii ({companyPerformanceData.slice(0, 3).map(c => c.fullName).join(', ')})
+                  reprezintă{' '}
+                  <span className="font-semibold">
+                    {((companyPerformanceData.slice(0, 3).reduce((sum, c) => sum + c.invoiced, 0) / totalInvoiced) * 100).toFixed(1)}%
+                  </span>{' '}
+                  din total. {((companyPerformanceData.slice(0, 3).reduce((sum, c) => sum + c.invoiced, 0) / totalInvoiced) * 100) > 70 ? 
+                  'Concentrare ridicată - consideră diversificarea.' : 'Distribuție echilibrată a riscului.'}
+                </p>
+                {companyPerformanceData.length > 0 && (
+                  <p>
+                    <strong>Top performer:</strong> {companyPerformanceData[0].fullName} generează{' '}
+                    <span className="text-green-600 font-semibold">
+                      €{companyPerformanceData[0].invoiced.toLocaleString('ro-RO', { minimumFractionDigits: 0 })}
+                    </span>{' '}
+                    ({((companyPerformanceData[0].invoiced / totalInvoiced) * 100).toFixed(1)}% din total).
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Strategic Recommendations */}
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-green-200 dark:border-green-700">
+              <h3 className="font-semibold text-green-700 dark:text-green-300 mb-2">💡 Recomandări Strategice</h3>
+              <div className="space-y-2 text-sm">
+                {totalRemaining > 0 ? (
+                  <p>🔴 <strong>Prioritate înaltă:</strong> Există €{totalRemaining.toFixed(2)} restanțe care afectează cash flow-ul. Implementează un sistem de urmărire agresiv.</p>
+                ) : (
+                  <p>✅ <strong>Excelent:</strong> Nu există restanțe semnificative - cash flow-ul este sănătos.</p>
+                )}
+                
+                {monthlyComparisonData.length > 0 && (
+                  <>
+                    {monthlyComparisonData.filter(m => m.winner === '2025' && m.hasData2024 && m.hasData2025).length > 0 ? (
+                      <p>📈 <strong>Momentum pozitiv:</strong> {monthlyComparisonData.filter(m => m.winner === '2025' && m.hasData2024 && m.hasData2025).length} luni din 2025 depășesc performanța din 2024.</p>
+                    ) : dataBy2025.length > 0 ? (
+                      <p>⚠️ <strong>Atenție:</strong> Performanța din 2025 este sub nivelul din 2024 - analizează cauzele și implementează măsuri corective.</p>
+                    ) : null}
+                  </>
+                )}
+
+                <p>🎯 <strong>Obiectiv recomandat:</strong> Pentru a menține creșterea, țintește o medie lunară de{' '}
+                <span className="text-purple-600 font-semibold">€{(avg2024 * 1.15).toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</span>{' '}
+                (+15% față de 2024).</p>
+              </div>
+            </div>
+
+            {/* Seasonal Insights */}
+            {weeklyInvoicedData.length > 5 && (
+              <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                <h3 className="font-semibold text-orange-700 dark:text-orange-300 mb-2">📅 Patterns Sezoniere</h3>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <strong>Variabilitate săptămânală:</strong> Între{' '}
+                    <span className="text-green-600">€{Math.min(...weeklyInvoicedData.map((w: any) => w.totalInvoiced)).toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</span> și{' '}
+                    <span className="text-blue-600">€{Math.max(...weeklyInvoicedData.map((w: any) => w.totalInvoiced)).toLocaleString('ro-RO', { minimumFractionDigits: 0 })}</span>.
+                    {Math.max(...weeklyInvoicedData.map((w: any) => w.totalInvoiced)) / Math.min(...weeklyInvoicedData.map((w: any) => w.totalInvoiced)) > 2 ? 
+                    ' Variabilitate mare - optimizează planificarea.' : ' Consistență bună în operațiuni.'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Status Alerts */}
       {overdueBalances > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0 }}>
           <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
             <CardHeader>
               <CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2">
