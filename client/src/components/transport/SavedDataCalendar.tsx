@@ -30,7 +30,9 @@ export function SavedDataCalendar({
     try {
       const data = await loadAllWeeklyProcessing();
       console.log('🗓️ SavedDataCalendar - Raw data from API:', data);
-      console.log('🗓️ September weeks found:', data.filter((w: any) => w.weekLabel.includes('sept')));
+      console.log('🗓️ Total weeks found:', data.length);
+      console.log('🗓️ All week labels:', data.map((w: any) => w.weekLabel));
+      console.log('🗓️ February weeks found:', data.filter((w: any) => w.weekLabel.includes('feb')));
       setSavedWeeks(data);
     } catch (error) {
       console.error('Error loading saved data:', error);
