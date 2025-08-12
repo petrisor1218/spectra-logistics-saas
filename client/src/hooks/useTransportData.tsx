@@ -926,8 +926,8 @@ export function useTransportData() {
             }
           }
 
-          // ⚠️ DETECTARE SUME MICI - Alert pentru sume ≤10 EUR
-          if (amount <= 10) {
+          // ⚠️ DETECTARE SUME MICI - Alert pentru sume ≤5 EUR (tipic Amazon placeholders)
+          if (amount <= 5) {
             const alert = {
               vrid: vrid,
               amount: amount,
@@ -1244,14 +1244,46 @@ ACȚIUNI RECOMANDATE:
     } catch (error: any) {
       alert('Eroare la procesarea datelor: ' + error.message);
     } finally {
-      // 🚨 SALVARE ALERTE PENTRU SUME MICI ≤10 EUR ÎN STATE
+      // 🚨 SALVARE AUTOMATĂ ALERTE PENTRU SUME MICI ≤10 EUR ÎN BAZA DE DATE
       if (currentAlerts.length > 0) {
-        setSmallAmountAlerts(currentAlerts);
         console.log('🚨 RAPORT SUME MICI:', currentAlerts);
         
-        // Opțional: afișare alertă simplă pentru notificare
-        const alertMessage = `⚠️ ATENȚIE! Am găsit ${currentAlerts.length} VRID-uri cu sume foarte mici (≤10 EUR). Verificați lista detaliată în secțiunea de alerte.`;
-        alert(alertMessage);
+        // Salvează alertele în baza de date
+        try {
+          for (const alert of currentAlerts) {
+            const alertData = {
+              vrid: alert.vrid,
+              companyName: alert.company,
+              invoiceType: alert.invoiceType === '7 zile' ? '7-day' : '30-day',
+              initialAmount: alert.amount.toString(),
+              weekDetected: processingWeek,
+              status: 'pending',
+              notes: `Sumă mică detectată automat în timpul procesării - €${alert.amount.toFixed(2)}`
+            };
+            
+            const response = await fetch('/api/small-amount-alerts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(alertData)
+            });
+            
+            if (response.ok) {
+              console.log(`✅ Alertă salvată pentru VRID ${alert.vrid} - €${alert.amount.toFixed(2)}`);
+            }
+          }
+          
+          // Reîncarcă alertele pentru a afișa cele noi
+          await loadSmallAmountAlerts();
+          
+          // Afișare notificare
+          const alertMessage = `⚠️ ATENȚIE! Am găsit și salvat ${currentAlerts.length} VRID-uri cu sume foarte mici (≤10 EUR). Verificați secțiunea "Alerte Sume Mici" pentru detalii.`;
+          alert(alertMessage);
+          
+        } catch (error) {
+          console.error('Eroare la salvarea alertelor:', error);
+          // Fallback - salvează în state local dacă API-ul nu funcționează
+          setSmallAmountAlerts(currentAlerts);
+        }
       }
       
       setLoading(false);
