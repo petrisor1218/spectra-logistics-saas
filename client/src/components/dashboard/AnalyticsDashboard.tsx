@@ -88,9 +88,12 @@ export default function AnalyticsDashboard() {
   const totalInvoicedFromBalances = balances.reduce((sum, b) => sum + Number(b.totalInvoiced || 0), 0);
   const totalPaid = balances.reduce((sum, b) => sum + Number(b.totalPaid || 0), 0);
   
-  // Calculate total remaining correctly - should be totalInvoiced - totalPaid, not sum of individual outstandingBalance
-  // This fixes the negative balance issue when payments exceed invoices in some weeks
-  const totalRemaining = totalInvoicedFromBalances - totalPaid;
+  // Calculate total remaining correctly - never show negative values
+  // Only count positive outstanding balances to avoid showing overpayments as negative debt
+  const totalRemaining = Math.max(0, balances.reduce((sum, b) => {
+    const outstanding = Number(b.outstandingBalance || 0);
+    return sum + (outstanding > 0 ? outstanding : 0);
+  }, 0));
   
   const activeCompanies = new Set(balances.map(b => b.companyName)).size;
   const averagePayment = payments.length > 0 ? totalPaid / payments.length : 0;
