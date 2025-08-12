@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield, AlertTriangle, TrendingUp } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield, AlertTriangle, TrendingUp, Lock as LockIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
@@ -22,6 +22,7 @@ import { CompanySummaryTable } from "@/components/transport/CompanySummaryTable"
 import SmallAmountAlertsModal from "@/components/transport/SmallAmountAlertsModal";
 import { TruckEmptyState } from "@/components/transport/TruckEmptyState";
 import { TruckBackground } from "@/components/transport/TruckBackground";
+import { YearEndClosurePanel } from "@/components/admin/YearEndClosurePanel";
 import { useTransportData } from "@/hooks/useTransportData";
 import { useAuth } from "@/hooks/useAuth";
 import { SimpleLogin } from "@/components/auth/SimpleLogin";
@@ -124,7 +125,8 @@ export default function Home() {
     { id: 'orders', label: 'Comenzi Transport', icon: Truck },
     { id: 'management', label: 'Gestionare', icon: Settings },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'history', label: 'Istoric Plăți', icon: History }
+    { id: 'history', label: 'Istoric Plăți', icon: History },
+    { id: 'year-closure', label: 'Închidere Anuală', icon: LockIcon }
   ];
 
   return (
@@ -750,6 +752,17 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 <PaymentHistoryView />
+              </motion.div>
+            )}
+
+            {/* Year-End Closure Tab */}
+            {activeTab === 'year-closure' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <YearEndClosurePanel />
               </motion.div>
             )}
           </motion.div>

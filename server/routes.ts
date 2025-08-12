@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { yearClosureSystem } from "./year-closure";
 import { tenantStorage } from "./storage-tenant";
 import { tenantMiddleware, requireTenantAuth } from "./middleware/tenant";
 import { insertPaymentSchema, insertWeeklyProcessingSchema, insertTransportOrderSchema, insertCompanySchema, insertDriverSchema, insertUserSchema, insertTenantSchema, tenants, companyBalances, weeklyProcessing, payments, type InsertCompanyBalance, type CompanyBalance } from "@shared/schema";
@@ -2328,6 +2329,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   
   setTimeout(initializeBackup, 2000);
+
+  // ==================== YEAR-END CLOSURE ROUTES ====================
+  
+  // Perform year-end closure
+  app.post('/api/year-end-closure', async (req, res) => {
+    try {
+      console.log('🔒 Starting year-end closure process...');
+      const result = await yearClosureSystem.performYearEndClosure();
+      res.json({
+        success: true,
+        message: 'Year-end closure completed successfully',
+        ...result
+      });
+    } catch (error: any) {
+      console.error('❌ Year-end closure failed:', error);
+      res.status(500).json({ 
+        error: 'Failed to perform year-end closure',
+        message: error.message 
+      });
+    }
+  });
+
+  // Check if year-end closure has been performed
+  app.get('/api/year-end-closure/status', async (req, res) => {
+    try {
+      const isComplete = await yearClosureSystem.isYearEndClosureComplete();
+      res.json({
+        isComplete,
+        message: isComplete 
+          ? '2024 data has been sealed and 2025 counters are reset' 
+          : 'Year-end closure not yet performed'
+      });
+    } catch (error: any) {
+      console.error('❌ Error checking closure status:', error);
+      res.status(500).json({ 
+        error: 'Failed to check closure status',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get fiscal year summary
+  app.get('/api/fiscal-year-summary/:year', async (req, res) => {
+    try {
+      const year = parseInt(req.params.year);
+      const summary = await yearClosureSystem.getFiscalYearSummary(year);
+      res.json({
+        year,
+        ...summary
+      });
+    } catch (error: any) {
+      console.error('❌ Error getting fiscal year summary:', error);
+      res.status(500).json({ 
+        error: 'Failed to get fiscal year summary',
+        message: error.message 
+      });
+    }
+  });
 
   const httpServer = createServer(app);
 

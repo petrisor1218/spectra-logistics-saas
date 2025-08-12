@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb, unique, index } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, varchar, timestamp, integer, decimal, jsonb, unique, index, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -63,6 +63,9 @@ export const weeklyProcessing = pgTable("weekly_processing", {
   invoice7Data: jsonb("invoice7_data"), // Raw 7-day invoice content  
   invoice30Data: jsonb("invoice30_data"), // Raw 30-day invoice content
   tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
+  // Year-end closure fields
+  isHistorical: boolean("is_historical").default(false),
+  historicalYear: integer("historical_year"),
 }, (table) => ({
   uniqueWeekTenant: unique().on(table.weekLabel, table.tenantId)
 }));
@@ -89,6 +92,9 @@ export const payments = pgTable("payments", {
   weekLabel: varchar("week_label", { length: 100 }).notNull(),
   paymentType: varchar("payment_type", { length: 50 }).default("partial"), // 'partial' or 'full'
   tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
+  // Year-end closure fields
+  isHistorical: boolean("is_historical").default(false),
+  historicalYear: integer("historical_year"),
 });
 
 // New table for company balances tracking
@@ -103,6 +109,9 @@ export const companyBalances = pgTable("company_balances", {
   lastUpdated: timestamp("last_updated").defaultNow(),
   tenantId: integer("tenant_id").notNull().default(1), // Pentru multi-tenancy
   createdAt: timestamp("created_at").defaultNow(),
+  // Year-end closure fields
+  isHistorical: boolean("is_historical").default(false),
+  historicalYear: integer("historical_year"),
 });
 
 export const paymentHistory = pgTable("payment_history", {
