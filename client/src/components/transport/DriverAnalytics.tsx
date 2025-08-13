@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, TrendingUp, Users, Clock, BarChart3, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useTransportData } from '@/hooks/useTransportData';
+
 
 interface WorkPeriod {
   type: 'work' | 'rest';
@@ -60,14 +60,11 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
   const [selectedDriver, setSelectedDriver] = useState<string>('none');
   const [sortBy, setSortBy] = useState<string>('workingPercentage');
 
-  // Get driver mapping from the hook
-  const { driverMapping } = useTransportData();
-
   // Load and analyze driver work periods
   const analyzeDriverWorkPeriods = async () => {
     setLoading(true);
     try {
-      // Fetch weekly processing data which contains individual driver trips
+      // Fetch weekly processing data which contains trip data with driver names
       const weeklyResponse = await fetch('/api/weekly-processing');
       const weeklyData = await weeklyResponse.json();
 
@@ -77,117 +74,48 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
 
       console.log('🔍 Processing', weeklyData.length, 'weekly data entries');
       
-      // Debug: Find entries with actual data
-      const entriesWithData = weeklyData.filter(entry => entry.processedData && entry.processedData.companies);
-      console.log(`📊 Found ${entriesWithData.length} weeks with actual company data out of ${weeklyData.length} total`);
-      
-      if (entriesWithData.length > 0) {
-        const sample = entriesWithData[0];
-        console.log('📋 Sample entry with data:', {
-          weekLabel: sample.weekLabel,
-          hasProcessedData: !!sample.processedData,
-          processedDataKeys: sample.processedData ? Object.keys(sample.processedData) : 'none',
-          companiesCount: sample.processedData?.companies ? Object.keys(sample.processedData.companies).length : 0,
-          companyNames: sample.processedData?.companies ? Object.keys(sample.processedData.companies) : 'none'
-        });
-        
-        if (sample.processedData?.companies) {
-          const firstCompanyKey = Object.keys(sample.processedData.companies)[0];
-          const firstCompany = sample.processedData.companies[firstCompanyKey];
-          console.log('📋 First company detailed structure:', {
-            companyKey: firstCompanyKey,
-            companyName: firstCompany.name,
-            hasTrips: !!firstCompany.trips,
-            tripsCount: firstCompany.trips?.length || 0,
-            sampleTrip: firstCompany.trips?.[0] || 'none',
-            allCompanyKeys: Object.keys(firstCompany)
-          });
-          
-          if (firstCompany.trips && firstCompany.trips.length > 0) {
-            console.log('📋 Sample trip structure:', {
-              driverName: firstCompany.trips[0].driverName,
-              hasDriverName: !!firstCompany.trips[0].driverName,
-              tripKeys: Object.keys(firstCompany.trips[0])
-            });
-          }
-        }
-      } else {
-        console.log('⚠️ No weekly entries found with company data - checking alternative data structure');
-        // Check if data is stored differently
-        if (weeklyData.length > 0) {
-          console.log('📋 Sample empty entry structure:', {
-            weekLabel: weeklyData[0].weekLabel,
-            allKeys: Object.keys(weeklyData[0]),
-            processedData: weeklyData[0].processedData
-          });
-        }
-      }
-      
       weeklyData.forEach((weekEntry: any) => {
-        if (!weekEntry.processedData && !weekEntry.processed_data) {
-          console.log('⚠️ Skipping week entry without processed data:', weekEntry.weekLabel || weekEntry.week_label);
-          return;
-        }
-
         const weekLabel = weekEntry.weekLabel || weekEntry.week_label;
-        const processedData = weekEntry.processedData || weekEntry.processed_data;
+        const tripData = weekEntry.tripData;
         
-        // Skip if processed data is empty or not an object
-        if (!processedData || typeof processedData !== 'object' || Object.keys(processedData).length === 0) {
-          console.log('⚠️ Skipping week with empty processed data:', weekLabel);
+        if (!tripData || !Array.isArray(tripData) || tripData.length === 0) {
+          console.log('⚠️ Skipping week without trip data:', weekLabel);
           return;
         }
 
         allWeeks.add(weekLabel);
+        console.log(`🔍 Processing ${tripData.length} trips for week ${weekLabel}`);
 
-        // The processed data structure has company names as keys directly
-        Object.entries(processedData).forEach(([companyName, companyData]: [string, any]) => {
-          if (!companyData || !companyData.VRID_details) {
-            console.log(`⚠️ Company ${companyName} has no VRID details`);
+        // Extract driver information from trip data
+        tripData.forEach((trip: any) => {
+          const driverName = trip.driverName || trip.driver_name || trip['Driver Name'];
+          const companyName = trip.companyName || trip.company_name || trip['Company Name'] || trip.company;
+          
+          if (!driverName || !companyName) {
+            console.log('⚠️ Trip missing driver or company name:', { driverName, companyName, trip });
             return;
           }
 
-          console.log(`🔍 Processing ${Object.keys(companyData.VRID_details).length} VRIDs for ${companyName} in week ${weekLabel}`);
+          // Skip invalid driver names
+          if (driverName === 'undefined' || driverName === 'null' || driverName.trim() === '') {
+            return;
+          }
 
-          // Each VRID represents a trip/shipment
-          Object.entries(companyData.VRID_details).forEach(([vrid, tripData]: [string, any]) => {
-            // Find which driver this VRID belongs to using the driver mapping
-            let driverName = null;
-            for (const [driver, vrids] of Object.entries(driverMapping)) {
-              if (Array.isArray(vrids) && vrids.includes(vrid)) {
-                driverName = driver;
-                break;
-              }
-            }
+          console.log(`✅ Found trip: ${driverName} at ${companyName}`);
 
-            if (!driverName) {
-              console.log(`⚠️ No driver mapping found for VRID ${vrid}`);
-              return;
-            }
-
-            console.log(`✅ Found driver mapping: VRID ${vrid} → ${driverName} at ${companyName}`);
-
-            const driverKey = `${driverName}|${companyName}`;
-            if (!driverWeekMap[driverKey]) {
-              driverWeekMap[driverKey] = {};
-            }
-            if (!driverWeekMap[driverKey][weekLabel]) {
-              driverWeekMap[driverKey][weekLabel] = [];
-            }
-            
-            // Create a trip object from VRID data
-            const tripAmount = (tripData['7_days'] || 0) + (tripData['30_days'] || 0);
-            driverWeekMap[driverKey][weekLabel].push({
-              vrid: vrid,
-              driverName: driverName,
-              companyName: companyName,
-              amount: tripAmount,
-              netAmount: tripAmount,
-              sevenDays: tripData['7_days'] || 0,
-              thirtyDays: tripData['30_days'] || 0,
-              commission: tripData.commission || 0,
-              weekLabel
-            });
+          const driverKey = `${driverName}|${companyName}`;
+          if (!driverWeekMap[driverKey]) {
+            driverWeekMap[driverKey] = {};
+          }
+          if (!driverWeekMap[driverKey][weekLabel]) {
+            driverWeekMap[driverKey][weekLabel] = [];
+          }
+          
+          driverWeekMap[driverKey][weekLabel].push({
+            ...trip,
+            driverName,
+            companyName,
+            weekLabel
           });
         });
       });
