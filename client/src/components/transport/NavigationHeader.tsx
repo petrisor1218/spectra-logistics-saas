@@ -81,54 +81,7 @@ export function NavigationHeader() {
               Backup
             </Button>
 
-            {/* Show admin buttons only when NOT in tenant context */}
-            {!isTenantContext && (
-              <>
-                <div className="w-px h-6 bg-white/20"></div>
 
-                {/* Tenant Registration Button */}
-                <Button
-                  onClick={() => setLocation('/register-tenant')}
-                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
-                  size="sm"
-                  variant="outline"
-                >
-                  <Building className="w-4 h-4 mr-2" />
-                  Tenant Nou
-                </Button>
-
-                {/* Tenant Login Button */}
-                <Button
-                  onClick={() => setLocation('/tenant-login')}
-                  className="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600"
-                  size="sm"
-                  variant="outline"
-                >
-                  <Building className="w-4 h-4 mr-2" />
-                  Login Tenant
-                </Button>
-
-                {/* Tenant Management Button */}
-                <Button
-                  onClick={() => setLocation('/tenants')}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                  size="sm"
-                >
-                  <Building className="w-4 h-4 mr-2" />
-                  Gestionare
-                </Button>
-
-                {/* Admin Dashboard Button */}
-                <Button
-                  onClick={() => setLocation('/admin')}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                  size="sm"
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Admin
-                </Button>
-              </>
-            )}
             
             {/* Show tenant info when in tenant context */}
             {isTenantContext && (
