@@ -51,7 +51,7 @@ export function SavedDataCalendar({
       // Fetch payment data for this week
       const paymentsResponse = await fetch('/api/payments');
       const allPayments = await paymentsResponse.json();
-      const weekPayments = allPayments.filter((payment: any) => payment.week_label === weekLabel);
+      const weekPayments = allPayments.filter((payment: any) => payment.weekLabel === weekLabel);
       
       // Fetch company balance data for this week
       const balanceResponse = await fetch('/api/company-balances');
@@ -142,12 +142,8 @@ export function SavedDataCalendar({
       const tableData = companies.map(company => {
         const companyData = processedData[company];
         
-        // More flexible company name matching for payments
-        const companyPayments = weekPayments.filter((p: any) => 
-          p.company_name === company || 
-          p.companyName === company ||
-          p.company === company
-        );
+        // Match payments for this company
+        const companyPayments = weekPayments.filter((p: any) => p.companyName === company);
         
         const companyPaid = companyPayments.reduce((sum: number, payment: any) => {
           const amount = parseFloat(payment.amount || payment.paidAmount || 0);
