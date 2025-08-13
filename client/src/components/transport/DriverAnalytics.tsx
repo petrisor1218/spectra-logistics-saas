@@ -73,23 +73,48 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
 
       console.log('🔍 Processing', weeklyData.length, 'weekly data entries');
       
-      // Debug: Show structure of first few entries
-      if (weeklyData.length > 0) {
-        console.log('📋 Sample weekly entry structure:', {
-          weekLabel: weeklyData[0].weekLabel,
-          hasProcessedData: !!weeklyData[0].processedData,
-          processedDataKeys: weeklyData[0].processedData ? Object.keys(weeklyData[0].processedData) : 'none',
-          firstCompany: weeklyData[0].processedData?.companies ? Object.keys(weeklyData[0].processedData.companies)[0] : 'none'
+      // Debug: Find entries with actual data
+      const entriesWithData = weeklyData.filter(entry => entry.processedData && entry.processedData.companies);
+      console.log(`📊 Found ${entriesWithData.length} weeks with actual company data out of ${weeklyData.length} total`);
+      
+      if (entriesWithData.length > 0) {
+        const sample = entriesWithData[0];
+        console.log('📋 Sample entry with data:', {
+          weekLabel: sample.weekLabel,
+          hasProcessedData: !!sample.processedData,
+          processedDataKeys: sample.processedData ? Object.keys(sample.processedData) : 'none',
+          companiesCount: sample.processedData?.companies ? Object.keys(sample.processedData.companies).length : 0,
+          companyNames: sample.processedData?.companies ? Object.keys(sample.processedData.companies) : 'none'
         });
         
-        if (weeklyData[0].processedData?.companies) {
-          const firstCompanyKey = Object.keys(weeklyData[0].processedData.companies)[0];
-          const firstCompany = weeklyData[0].processedData.companies[firstCompanyKey];
-          console.log('📋 First company structure:', {
+        if (sample.processedData?.companies) {
+          const firstCompanyKey = Object.keys(sample.processedData.companies)[0];
+          const firstCompany = sample.processedData.companies[firstCompanyKey];
+          console.log('📋 First company detailed structure:', {
+            companyKey: firstCompanyKey,
             companyName: firstCompany.name,
             hasTrips: !!firstCompany.trips,
             tripsCount: firstCompany.trips?.length || 0,
-            firstTrip: firstCompany.trips?.[0] || 'none'
+            sampleTrip: firstCompany.trips?.[0] || 'none',
+            allCompanyKeys: Object.keys(firstCompany)
+          });
+          
+          if (firstCompany.trips && firstCompany.trips.length > 0) {
+            console.log('📋 Sample trip structure:', {
+              driverName: firstCompany.trips[0].driverName,
+              hasDriverName: !!firstCompany.trips[0].driverName,
+              tripKeys: Object.keys(firstCompany.trips[0])
+            });
+          }
+        }
+      } else {
+        console.log('⚠️ No weekly entries found with company data - checking alternative data structure');
+        // Check if data is stored differently
+        if (weeklyData.length > 0) {
+          console.log('📋 Sample empty entry structure:', {
+            weekLabel: weeklyData[0].weekLabel,
+            allKeys: Object.keys(weeklyData[0]),
+            processedData: weeklyData[0].processedData
           });
         }
       }
