@@ -63,29 +63,47 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
   const analyzeDriverWorkPeriods = async () => {
     setLoading(true);
     try {
-      // Fetch all payments to analyze work patterns
-      const paymentsResponse = await fetch('/api/payments');
-      const payments = await paymentsResponse.json();
+      // Fetch weekly processing data which contains individual driver trips
+      const weeklyResponse = await fetch('/api/weekly-processing');
+      const weeklyData = await weeklyResponse.json();
 
-      // Group payments by driver and week
+      // Group trips by driver and week
       const driverWeekMap: { [key: string]: { [week: string]: any[] } } = {};
       const allWeeks = new Set<string>();
 
-      payments.forEach((payment: any) => {
-        // Skip payments without valid driver name
-        if (!payment.driverName || payment.driverName === 'undefined' || payment.driverName.trim() === '') {
+      console.log('🔍 Processing', weeklyData.length, 'weekly data entries');
+      
+      weeklyData.forEach((weekEntry: any) => {
+        if (!weekEntry.processedData || !weekEntry.processedData.companies) {
           return;
         }
-        
-        const driverKey = `${payment.driverName}|${payment.companyName}`;
-        if (!driverWeekMap[driverKey]) {
-          driverWeekMap[driverKey] = {};
-        }
-        if (!driverWeekMap[driverKey][payment.weekLabel]) {
-          driverWeekMap[driverKey][payment.weekLabel] = [];
-        }
-        driverWeekMap[driverKey][payment.weekLabel].push(payment);
-        allWeeks.add(payment.weekLabel);
+
+        const weekLabel = weekEntry.weekLabel;
+        allWeeks.add(weekLabel);
+
+        // Extract driver trips from each company's data
+        Object.values(weekEntry.processedData.companies).forEach((companyData: any) => {
+          if (!companyData.trips) return;
+
+          companyData.trips.forEach((trip: any) => {
+            if (!trip.driverName || trip.driverName === 'undefined' || trip.driverName === 'null') {
+              return;
+            }
+
+            const driverKey = `${trip.driverName}|${companyData.name || trip.companyName}`;
+            if (!driverWeekMap[driverKey]) {
+              driverWeekMap[driverKey] = {};
+            }
+            if (!driverWeekMap[driverKey][weekLabel]) {
+              driverWeekMap[driverKey][weekLabel] = [];
+            }
+            driverWeekMap[driverKey][weekLabel].push({
+              ...trip,
+              weekLabel,
+              companyName: companyData.name || trip.companyName
+            });
+          });
+        });
       });
 
       const sortedWeeks = Array.from(allWeeks).sort();
@@ -106,8 +124,9 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
       Object.entries(driverWeekMap).forEach(([driverKey, weekData]) => {
         const [driverName, company] = driverKey.split('|');
         
-        // Skip invalid driver names that may have passed through
-        if (!driverName || driverName === 'undefined' || driverName.trim() === '') {
+        // More lenient validation - only skip truly invalid names
+        if (!driverName || driverName === 'null') {
+          console.log('⚠️ Skipping driver analysis for invalid name:', driverName);
           return;
         }
         
@@ -115,7 +134,7 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
           const trips = weekData[week] || [];
           const tripsCount = trips.length;
           const isWorking = tripsCount >= 2; // 2+ trips = working week
-          const totalAmount = trips.reduce((sum, trip) => sum + parseFloat(trip.amount || 0), 0);
+          const totalAmount = trips.reduce((sum, trip) => sum + parseFloat(trip.netAmount || trip.amount || 0), 0);
 
           // Update weekly company stats
           if (isWorking) {
