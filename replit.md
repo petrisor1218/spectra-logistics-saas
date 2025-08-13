@@ -70,6 +70,11 @@ Preferred communication style: Simple, everyday language.
 - Brevo SMTP Service (for email delivery)
 - Stripe (for payment processing and subscriptions)
 
+## Login Credentials
+
+- **Username:** Petrisor  
+- **Password:** Olanda99&
+
 ## Recent System Corrections and Updates
 
 ### ✅ Company Data Unification - FULLY RESOLVED - August 11, 2025
