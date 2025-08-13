@@ -73,8 +73,30 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
 
       console.log('🔍 Processing', weeklyData.length, 'weekly data entries');
       
+      // Debug: Show structure of first few entries
+      if (weeklyData.length > 0) {
+        console.log('📋 Sample weekly entry structure:', {
+          weekLabel: weeklyData[0].weekLabel,
+          hasProcessedData: !!weeklyData[0].processedData,
+          processedDataKeys: weeklyData[0].processedData ? Object.keys(weeklyData[0].processedData) : 'none',
+          firstCompany: weeklyData[0].processedData?.companies ? Object.keys(weeklyData[0].processedData.companies)[0] : 'none'
+        });
+        
+        if (weeklyData[0].processedData?.companies) {
+          const firstCompanyKey = Object.keys(weeklyData[0].processedData.companies)[0];
+          const firstCompany = weeklyData[0].processedData.companies[firstCompanyKey];
+          console.log('📋 First company structure:', {
+            companyName: firstCompany.name,
+            hasTrips: !!firstCompany.trips,
+            tripsCount: firstCompany.trips?.length || 0,
+            firstTrip: firstCompany.trips?.[0] || 'none'
+          });
+        }
+      }
+      
       weeklyData.forEach((weekEntry: any) => {
         if (!weekEntry.processedData || !weekEntry.processedData.companies) {
+          console.log('⚠️ Skipping week entry without companies:', weekEntry.weekLabel);
           return;
         }
 
@@ -83,12 +105,20 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
 
         // Extract driver trips from each company's data
         Object.values(weekEntry.processedData.companies).forEach((companyData: any) => {
-          if (!companyData.trips) return;
+          if (!companyData.trips) {
+            console.log('⚠️ Company has no trips:', companyData.name);
+            return;
+          }
+
+          console.log(`🔍 Processing ${companyData.trips.length} trips for ${companyData.name} in week ${weekLabel}`);
 
           companyData.trips.forEach((trip: any) => {
             if (!trip.driverName || trip.driverName === 'undefined' || trip.driverName === 'null') {
+              console.log('⚠️ Trip without valid driver name:', trip);
               return;
             }
+
+            console.log(`✅ Found driver trip: ${trip.driverName} at ${companyData.name}`);
 
             const driverKey = `${trip.driverName}|${companyData.name || trip.companyName}`;
             if (!driverWeekMap[driverKey]) {
