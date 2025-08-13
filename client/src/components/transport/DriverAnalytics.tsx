@@ -8,6 +8,15 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar, TrendingUp, Users, Clock, BarChart3, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+interface WorkPeriod {
+  type: 'work' | 'rest';
+  startWeek: string;
+  endWeek: string;
+  duration: number; // number of weeks
+  totalTrips?: number;
+  totalAmount?: number;
+}
+
 interface DriverWorkPeriod {
   driverName: string;
   company: string;
@@ -17,6 +26,7 @@ interface DriverWorkPeriod {
   workingPercentage: number;
   longestWorkStreak: number;
   longestRestStreak: number;
+  periods: WorkPeriod[]; // Detailed chronological periods
   weeklyDetails: {
     week: string;
     tripsCount: number;
@@ -127,21 +137,61 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
         const totalWeeks = sortedWeeks.length;
         const workingPercentage = totalWeeks > 0 ? (workingWeeks / totalWeeks) * 100 : 0;
 
-        // Calculate streaks
+        // Calculate streaks and periods
         let longestWorkStreak = 0;
         let longestRestStreak = 0;
         let currentWorkStreak = 0;
         let currentRestStreak = 0;
+        
+        const periods: WorkPeriod[] = [];
+        let currentPeriod: WorkPeriod | null = null;
 
-        weeklyDetails.forEach(week => {
+        weeklyDetails.forEach((week, index) => {
           if (week.isWorking) {
             currentWorkStreak++;
             currentRestStreak = 0;
             longestWorkStreak = Math.max(longestWorkStreak, currentWorkStreak);
+            
+            // Start new work period or continue existing one
+            if (!currentPeriod || currentPeriod.type !== 'work') {
+              if (currentPeriod) periods.push(currentPeriod);
+              currentPeriod = {
+                type: 'work',
+                startWeek: week.week,
+                endWeek: week.week,
+                duration: 1,
+                totalTrips: week.tripsCount,
+                totalAmount: week.totalAmount
+              };
+            } else {
+              currentPeriod.endWeek = week.week;
+              currentPeriod.duration++;
+              currentPeriod.totalTrips = (currentPeriod.totalTrips || 0) + week.tripsCount;
+              currentPeriod.totalAmount = (currentPeriod.totalAmount || 0) + week.totalAmount;
+            }
           } else {
             currentRestStreak++;
             currentWorkStreak = 0;
             longestRestStreak = Math.max(longestRestStreak, currentRestStreak);
+            
+            // Start new rest period or continue existing one
+            if (!currentPeriod || currentPeriod.type !== 'rest') {
+              if (currentPeriod) periods.push(currentPeriod);
+              currentPeriod = {
+                type: 'rest',
+                startWeek: week.week,
+                endWeek: week.week,
+                duration: 1
+              };
+            } else {
+              currentPeriod.endWeek = week.week;
+              currentPeriod.duration++;
+            }
+          }
+          
+          // Add the last period
+          if (index === weeklyDetails.length - 1 && currentPeriod) {
+            periods.push(currentPeriod);
           }
         });
 
@@ -154,6 +204,7 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
           workingPercentage,
           longestWorkStreak,
           longestRestStreak,
+          periods,
           weeklyDetails
         });
       });
@@ -429,27 +480,74 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <h4 className="font-semibold mb-3">Activitate pe Săptămâni:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
-                      {selectedDriverData.weeklyDetails.map((week, index) => (
+                  <div className="space-y-4">
+                    <h4 className="font-semibold mb-3">Perioade de Lucru și Odihnă:</h4>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {selectedDriverData.periods.map((period, index) => (
                         <div 
                           key={index}
-                          className={`p-2 rounded text-sm border ${
-                            week.isWorking 
+                          className={`p-4 rounded-lg border ${
+                            period.type === 'work' 
                               ? 'bg-green-50 border-green-200 dark:bg-green-900/20' 
-                              : 'bg-gray-50 border-gray-200 dark:bg-gray-800'
+                              : 'bg-blue-50 border-blue-200 dark:bg-blue-900/20'
                           }`}
                         >
-                          <div className="font-medium">{week.week}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {week.tripsCount} curse • €{week.totalAmount.toFixed(2)}
-                          </div>
-                          <div className={`text-xs ${week.isWorking ? 'text-green-600' : 'text-gray-500'}`}>
-                            {week.isWorking ? '🚛 La Lucru' : '🏠 Acasă'}
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium flex items-center space-x-2">
+                                <span className={period.type === 'work' ? 'text-green-600' : 'text-blue-600'}>
+                                  {period.type === 'work' ? '🚛 Perioada de Lucru' : '🏠 Perioada de Odihnă'}
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                  ({period.duration} săptămân{period.duration === 1 ? 'ă' : 'i'})
+                                </span>
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                <strong>De la:</strong> {period.startWeek}
+                                {period.startWeek !== period.endWeek && (
+                                  <>
+                                    <br />
+                                    <strong>Până la:</strong> {period.endWeek}
+                                  </>
+                                )}
+                              </div>
+                              {period.type === 'work' && period.totalTrips && (
+                                <div className="text-xs text-muted-foreground mt-2">
+                                  {period.totalTrips} curse totale • €{period.totalAmount?.toFixed(2)}
+                                </div>
+                              )}
+                            </div>
+                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              period.type === 'work' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-200' 
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-200'
+                            }`}>
+                              {period.duration}w
+                            </div>
                           </div>
                         </div>
                       ))}
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-semibold mb-2">Activitate Detaliată pe Săptămâni:</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                        {selectedDriverData.weeklyDetails.map((week, index) => (
+                          <div 
+                            key={index}
+                            className={`p-2 rounded text-xs border ${
+                              week.isWorking 
+                                ? 'bg-green-50 border-green-200 dark:bg-green-900/20' 
+                                : 'bg-gray-50 border-gray-200 dark:bg-gray-800'
+                            }`}
+                          >
+                            <div className="font-medium">{week.week}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {week.tripsCount} curse • €{week.totalAmount.toFixed(2)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
