@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Calendar, Database, Eye, TrendingUp, FileText, Loader2, AlertCircle, SortDesc, SortAsc, RefreshCw } from "lucide-react";
+import { Calendar, Database, Eye, TrendingUp, FileText, Loader2, AlertCircle, SortDesc, SortAsc, RefreshCw, Download } from "lucide-react";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { useToast } from "@/hooks/use-toast";
 
 interface SavedDataCalendarProps {
   loadAllWeeklyProcessing: () => Promise<any[]>;
@@ -20,6 +23,222 @@ export function SavedDataCalendar({
   const [selectedWeekData, setSelectedWeekData] = useState<any>(null);
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'recent' | 'oldest'>('recent');
+  const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Helper function to fix Romanian diacritics for PDF generation
+  const fixRomanianText = (text: string): string => {
+    return text
+      .replace(/ă/g, 'a')
+      .replace(/â/g, 'a') 
+      .replace(/î/g, 'i')
+      .replace(/ș/g, 's')
+      .replace(/ț/g, 't')
+      .replace(/Ă/g, 'A')
+      .replace(/Â/g, 'A')
+      .replace(/Î/g, 'I')
+      .replace(/Ș/g, 'S')
+      .replace(/Ț/g, 'T');
+  };
+
+  // Function to generate weekly PDF report
+  const generateWeeklyPDF = async (weekLabel: string, processedData: any) => {
+    if (!processedData || generatingPDF === weekLabel) return;
+    
+    setGeneratingPDF(weekLabel);
+    
+    try {
+      // Fetch payment data for this week
+      const paymentsResponse = await fetch('/api/payments');
+      const allPayments = await paymentsResponse.json();
+      const weekPayments = allPayments.filter((payment: any) => payment.week_label === weekLabel);
+      
+      // Fetch company balance data for this week
+      const balanceResponse = await fetch('/api/company-balances');
+      const allBalances = await balanceResponse.json();
+      const weekBalances = allBalances.filter((balance: any) => balance.weekLabel === weekLabel);
+      
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(fixRomanianText('RAPORT SAPTAMANAL - TRANSPORT PRO'), pageWidth / 2, 25, { align: 'center' });
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text(fixRomanianText(`Saptamana: ${weekLabel}`), pageWidth / 2, 35, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.text(fixRomanianText(`Generat pe: ${new Date().toLocaleDateString('ro-RO')} la ${new Date().toLocaleTimeString('ro-RO')}`), pageWidth / 2, 45, { align: 'center' });
+      
+      // Line separator
+      doc.setLineWidth(0.5);
+      doc.line(20, 50, pageWidth - 20, 50);
+      
+      let yPosition = 60;
+      
+      // Summary section
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(fixRomanianText('SUMAR GENERAL'), 20, yPosition);
+      yPosition += 15;
+      
+      const companies = Object.keys(processedData).filter(company => 
+        company !== 'Unmatched' && company !== 'Pending Mapping'
+      );
+      
+      const totalInvoiced7 = companies.reduce((sum, company) => sum + (processedData[company].Total_7_days || 0), 0);
+      const totalInvoiced30 = companies.reduce((sum, company) => sum + (processedData[company].Total_30_days || 0), 0);
+      const totalCommission = companies.reduce((sum, company) => sum + (processedData[company].Total_comision || 0), 0);
+      const totalNet = totalInvoiced7 + totalInvoiced30 - totalCommission;
+      const totalPaid = weekPayments.reduce((sum: number, payment: any) => sum + parseFloat(payment.amount || 0), 0);
+      const totalOutstanding = totalNet - totalPaid;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(fixRomanianText(`Companii procesate: ${companies.length}`), 20, yPosition);
+      yPosition += 10;
+      doc.text(fixRomanianText(`Total facturat (7 zile): €${totalInvoiced7.toFixed(2)}`), 20, yPosition);
+      yPosition += 8;
+      doc.text(fixRomanianText(`Total facturat (30 zile): €${totalInvoiced30.toFixed(2)}`), 20, yPosition);
+      yPosition += 8;
+      doc.text(fixRomanianText(`Total comisioane: €${totalCommission.toFixed(2)}`), 20, yPosition);
+      yPosition += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.text(fixRomanianText(`Total net facturat: €${totalNet.toFixed(2)}`), 20, yPosition);
+      yPosition += 8;
+      doc.text(fixRomanianText(`Total incasat: €${totalPaid.toFixed(2)}`), 20, yPosition);
+      yPosition += 8;
+      
+      // Color coding for outstanding amount
+      if (totalOutstanding > 0) {
+        doc.setTextColor(220, 53, 69); // Red for outstanding
+        doc.text(fixRomanianText(`Restant de incasat: €${totalOutstanding.toFixed(2)}`), 20, yPosition);
+      } else if (totalOutstanding < 0) {
+        doc.setTextColor(40, 167, 69); // Green for overpaid
+        doc.text(fixRomanianText(`Surplus incasat: €${Math.abs(totalOutstanding).toFixed(2)}`), 20, yPosition);
+      } else {
+        doc.setTextColor(40, 167, 69); // Green for balanced
+        doc.text(fixRomanianText('Status: Complet incasat'), 20, yPosition);
+      }
+      doc.setTextColor(0, 0, 0); // Reset to black
+      
+      yPosition += 20;
+      
+      // Detailed company breakdown
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(fixRomanianText('DETALII PE COMPANII'), 20, yPosition);
+      yPosition += 15;
+      
+      // Table data preparation
+      const tableData = companies.map(company => {
+        const companyData = processedData[company];
+        const companyPayments = weekPayments.filter((p: any) => p.company_name === company);
+        const companyPaid = companyPayments.reduce((sum: number, payment: any) => sum + parseFloat(payment.amount || 0), 0);
+        const companyBalance = weekBalances.find((b: any) => b.companyName === company);
+        const companyOutstanding = companyBalance ? parseFloat(companyBalance.outstandingBalance || '0') : 0;
+        
+        const total7 = companyData.Total_7_days || 0;
+        const total30 = companyData.Total_30_days || 0;
+        const commission = companyData.Total_comision || 0;
+        const netAmount = total7 + total30 - commission;
+        
+        return [
+          fixRomanianText(company),
+          `€${total7.toFixed(2)}`,
+          `€${total30.toFixed(2)}`,
+          `€${commission.toFixed(2)}`,
+          `€${netAmount.toFixed(2)}`,
+          `€${companyPaid.toFixed(2)}`,
+          `€${companyOutstanding.toFixed(2)}`
+        ];
+      });
+      
+      // Add table
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Companie', '7 Zile', '30 Zile', 'Comision', 'Net', 'Incasat', 'Restant']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { 
+          fillColor: [52, 152, 219], 
+          textColor: 255,
+          fontSize: 9,
+          fontStyle: 'bold'
+        },
+        styles: { 
+          fontSize: 8, 
+          halign: 'left',
+          cellPadding: 2
+        },
+        columnStyles: {
+          0: { cellWidth: 35 }, // Company
+          1: { halign: 'right', cellWidth: 20 }, // 7 Days
+          2: { halign: 'right', cellWidth: 20 }, // 30 Days
+          3: { halign: 'right', cellWidth: 20 }, // Commission
+          4: { halign: 'right', cellWidth: 20 }, // Net
+          5: { halign: 'right', cellWidth: 20 }, // Paid
+          6: { halign: 'right', fontStyle: 'bold', cellWidth: 20 } // Outstanding
+        },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { left: 20, right: 20 },
+        // Color coding for outstanding amounts
+        didParseCell: function (data) {
+          if (data.column.index === 6) { // Outstanding column
+            const amount = parseFloat(data.cell.text[0].replace(/[^\d.-]/g, ''));
+            if (amount > 0) {
+              data.cell.styles.textColor = [220, 53, 69]; // Red for outstanding
+              data.cell.styles.fontStyle = 'bold';
+            } else if (amount < 0) {
+              data.cell.styles.textColor = [40, 167, 69]; // Green for overpaid
+            } else {
+              data.cell.styles.textColor = [40, 167, 69]; // Green for zero
+            }
+          }
+        }
+      });
+      
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        
+        // Footer line
+        doc.setLineWidth(0.3);
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, pageHeight - 20, pageWidth - 20, pageHeight - 20);
+        
+        // Footer text
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(fixRomanianText('Transport Pro - Raport Saptamanal'), 20, pageHeight - 12);
+        doc.text(`Pagina ${i} din ${pageCount}`, pageWidth - 30, pageHeight - 12);
+      }
+      
+      // Save PDF
+      const fileName = fixRomanianText(`raport_saptamanal_${weekLabel.replace(/\s/g, '_').replace(/\./g, '')}.pdf`);
+      doc.save(fileName);
+      
+      toast({
+        title: "PDF generat cu succes",
+        description: `Raportul săptămânal pentru ${weekLabel} a fost descărcat.`,
+      });
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Eroare la generarea PDF",
+        description: "Nu s-a putut genera raportul. Încercați din nou.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingPDF(null);
+    }
+  };
 
   useEffect(() => {
     loadSavedData();
@@ -281,6 +500,23 @@ export function SavedDataCalendar({
                       </div>
                       
                       <div className="flex items-center space-x-2">
+                        <motion.button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            generateWeeklyPDF(week.weekLabel, week.processedData);
+                          }}
+                          disabled={generatingPDF === week.weekLabel}
+                          className="glass-button p-2 rounded-lg hover:bg-white/10 disabled:opacity-50"
+                          whileHover={{ scale: generatingPDF === week.weekLabel ? 1 : 1.05 }}
+                          whileTap={{ scale: generatingPDF === week.weekLabel ? 1 : 0.95 }}
+                          title="Descarcă raport PDF săptămânal"
+                        >
+                          {generatingPDF === week.weekLabel ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                        </motion.button>
                         <motion.button
                           onClick={(e) => {
                             e.stopPropagation();
