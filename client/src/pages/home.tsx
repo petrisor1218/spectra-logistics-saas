@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield, AlertTriangle, TrendingUp, Lock as LockIcon } from "lucide-react";
+import { Upload, Calculator, DollarSign, Calendar, History, Save, Truck, Settings, BarChart3, Shield, AlertTriangle, TrendingUp, Lock as LockIcon, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NavigationHeader } from "@/components/transport/NavigationHeader";
 import { StatusCards } from "@/components/transport/StatusCards";
@@ -23,6 +23,7 @@ import { SmallAmountAlertsModal } from "@/components/admin/SmallAmountAlertsModa
 import { TruckEmptyState } from "@/components/transport/TruckEmptyState";
 import { TruckBackground } from "@/components/transport/TruckBackground";
 import { YearEndClosurePanel } from "@/components/admin/YearEndClosurePanel";
+import DriverAnalytics from "@/components/transport/DriverAnalytics";
 import { useTransportData } from "@/hooks/useTransportData";
 import { useAuth } from "@/hooks/useAuth";
 import { SimpleLogin } from "@/components/auth/SimpleLogin";
@@ -126,6 +127,7 @@ export default function Home() {
     { id: 'management', label: 'Gestionare', icon: Settings },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'history', label: 'Istoric Plăți', icon: History },
+    { id: 'driver-analytics', label: 'Analiză Șoferi', icon: Users },
     { id: 'year-closure', label: 'Închidere Anuală', icon: LockIcon }
   ];
 
@@ -750,6 +752,17 @@ export default function Home() {
                 transition={{ duration: 0.3 }}
               >
                 <PaymentHistoryView />
+              </motion.div>
+            )}
+
+            {/* Driver Analytics Tab */}
+            {activeTab === 'driver-analytics' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <DriverAnalytics activeTab={activeTab} />
               </motion.div>
             )}
 
