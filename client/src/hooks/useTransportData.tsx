@@ -139,7 +139,7 @@ export function useTransportData() {
         
         // Search for this VRID in the processed data with a higher amount
         const initialAmount = parseFloat(alert.initialAmount);
-        let foundRealAmount = null;
+        let foundRealAmount: number | null = null;
         
         // Check in all company results for this VRID
         Object.values(processedData).forEach((companyData: any) => {
@@ -491,9 +491,9 @@ export function useTransportData() {
       const alternatives = allCompanies.filter(c => c !== finalSuggestion);
       
       setPendingMappings(prev => [...prev, {
+        vrid: '',
         driverName,
-        suggestedCompany: finalSuggestion,
-        alternatives
+        suggestedCompanies: [finalSuggestion, ...alternatives]
       }]);
       console.log(`📝 Adăugat în pending mappings: ${driverName} → ${finalSuggestion}`);
     } else {
