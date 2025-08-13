@@ -94,7 +94,11 @@ export function SavedDataCalendar({
       const totalInvoiced30 = companies.reduce((sum, company) => sum + (processedData[company].Total_30_days || 0), 0);
       const totalCommission = companies.reduce((sum, company) => sum + (processedData[company].Total_comision || 0), 0);
       const totalNet = totalInvoiced7 + totalInvoiced30 - totalCommission;
-      const totalPaid = weekPayments.reduce((sum: number, payment: any) => sum + parseFloat(payment.amount || 0), 0);
+      // Calculate total paid with proper amount parsing
+      const totalPaid = weekPayments.reduce((sum: number, payment: any) => {
+        const amount = parseFloat(payment.amount || payment.paidAmount || 0);
+        return sum + amount;
+      }, 0);
       const totalOutstanding = totalNet - totalPaid;
       
       doc.setFontSize(10);
@@ -137,8 +141,18 @@ export function SavedDataCalendar({
       // Table data preparation
       const tableData = companies.map(company => {
         const companyData = processedData[company];
-        const companyPayments = weekPayments.filter((p: any) => p.company_name === company);
-        const companyPaid = companyPayments.reduce((sum: number, payment: any) => sum + parseFloat(payment.amount || 0), 0);
+        
+        // More flexible company name matching for payments
+        const companyPayments = weekPayments.filter((p: any) => 
+          p.company_name === company || 
+          p.companyName === company ||
+          p.company === company
+        );
+        
+        const companyPaid = companyPayments.reduce((sum: number, payment: any) => {
+          const amount = parseFloat(payment.amount || payment.paidAmount || 0);
+          return sum + amount;
+        }, 0);
         const companyBalance = weekBalances.find((b: any) => b.companyName === company);
         const companyOutstanding = companyBalance ? parseFloat(companyBalance.outstandingBalance || '0') : 0;
         
