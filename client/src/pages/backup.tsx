@@ -51,7 +51,21 @@ export default function Backup() {
   });
 
   const createBackupMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/backup'),
+    mutationFn: async () => {
+      const response = await fetch('/api/backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Backup Created",

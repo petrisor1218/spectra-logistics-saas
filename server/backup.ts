@@ -175,8 +175,29 @@ class BackupManager {
   }
 
   async scheduleAutomaticBackup() {
-    // Schedule daily backup at 2:00 AM
+    // Check if we need a backup today (if none exists from today)
+    const today = new Date().toISOString().split('T')[0];
+    const history = await this.getBackupHistory();
+    const hasBackupToday = history.some(backup => 
+      backup.createdBy === 'automatic' && 
+      backup.createdAt.startsWith(today)
+    );
+
+    // If no backup today and it's already past 2 AM, create one immediately
     const now = new Date();
+    const twoAMToday = new Date();
+    twoAMToday.setHours(2, 0, 0, 0);
+    
+    if (!hasBackupToday && now.getTime() > twoAMToday.getTime()) {
+      try {
+        await this.createBackup('automatic');
+        console.log('✅ Created missing automatic backup for today');
+      } catch (error) {
+        console.error('Failed to create missing backup:', error);
+      }
+    }
+
+    // Schedule next backup at 2:00 AM
     const scheduledTime = new Date();
     scheduledTime.setHours(2, 0, 0, 0);
 
@@ -192,9 +213,9 @@ class BackupManager {
     setTimeout(async () => {
       try {
         await this.createBackup('automatic');
-        console.log('Automatic backup completed successfully');
+        console.log('✅ Automatic backup completed successfully');
       } catch (error) {
-        console.error('Automatic backup failed:', error);
+        console.error('❌ Automatic backup failed:', error);
       }
 
       // Schedule the next backup (24 hours later)
