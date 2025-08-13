@@ -72,6 +72,11 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
       const allWeeks = new Set<string>();
 
       payments.forEach((payment: any) => {
+        // Skip payments without valid driver name
+        if (!payment.driverName || payment.driverName === 'undefined' || payment.driverName.trim() === '') {
+          return;
+        }
+        
         const driverKey = `${payment.driverName}|${payment.companyName}`;
         if (!driverWeekMap[driverKey]) {
           driverWeekMap[driverKey] = {};
@@ -100,6 +105,11 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
 
       Object.entries(driverWeekMap).forEach(([driverKey, weekData]) => {
         const [driverName, company] = driverKey.split('|');
+        
+        // Skip invalid driver names that may have passed through
+        if (!driverName || driverName === 'undefined' || driverName.trim() === '') {
+          return;
+        }
         
         const weeklyDetails = sortedWeeks.map(week => {
           const trips = weekData[week] || [];
@@ -222,6 +232,7 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
       setWeeklyStats(Object.values(weeklyCompanyStats));
       
       console.log('✅ Driver analysis completed:', driverAnalysis.length, 'drivers processed');
+      console.log('📋 Valid drivers found:', driverAnalysis.map(d => d.driverName));
       
     } catch (error) {
       console.error('❌ Error analyzing driver work periods:', error);
