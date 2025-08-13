@@ -130,9 +130,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen text-white relative" style={{
-      background: 'linear-gradient(135deg, hsl(240, 21%, 9%) 0%, hsl(240, 19%, 13%) 50%, hsl(240, 17%, 16%) 100%)'
-    }}>
+    <div className="min-h-screen text-foreground relative bg-background">
       <TruckBackground />
       <NavigationHeader />
       
@@ -161,7 +159,7 @@ export default function Home() {
                     className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2 ${
                       activeTab === tab.id
                         ? 'tab-active text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-white/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

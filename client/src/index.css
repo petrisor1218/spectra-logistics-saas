@@ -24,14 +24,14 @@
   --ring: hsl(20, 14.3%, 4.1%);
   --radius: 0.5rem;
   
-  /* Custom dark theme colors */
-  --dark-900: hsl(240, 21%, 9%);
-  --dark-800: hsl(240, 19%, 13%);
-  --dark-700: hsl(240, 17%, 16%);
-  --dark-600: hsl(240, 15%, 29%);
+  /* Custom light theme colors */
+  --dark-900: hsl(210, 11%, 15%);
+  --dark-800: hsl(210, 10%, 23%);
+  --dark-700: hsl(210, 9%, 31%);
+  --dark-600: hsl(210, 7%, 56%);
   --primary-gradient: linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(213, 94%, 68%) 100%);
-  --glass-bg: hsla(0, 0%, 100%, 0.1);
-  --glass-border: hsla(0, 0%, 100%, 0.2);
+  --glass-bg: hsla(0, 0%, 100%, 0.7);
+  --glass-border: hsla(220, 13%, 91%, 0.3);
 }
 
 .dark {
@@ -55,6 +55,14 @@
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 4.9%, 83.9%);
   --radius: 0.5rem;
+  
+  /* Dark theme specific colors */
+  --dark-900: hsl(240, 21%, 9%);
+  --dark-800: hsl(240, 19%, 13%);
+  --dark-700: hsl(240, 17%, 16%);
+  --dark-600: hsl(240, 15%, 29%);
+  --glass-bg: hsla(0, 0%, 100%, 0.1);
+  --glass-border: hsla(0, 0%, 100%, 0.2);
 }
 
 @layer base {
@@ -63,10 +71,20 @@
   }
 
   body {
-    @apply font-sans antialiased text-foreground;
-    background: linear-gradient(135deg, hsl(240, 21%, 9%) 0%, hsl(240, 19%, 13%) 50%, hsl(240, 17%, 16%) 100%);
+    @apply font-sans antialiased text-foreground bg-background;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Light mode background */
+  body {
+    background: linear-gradient(135deg, hsl(210, 40%, 98%) 0%, hsl(220, 14%, 96%) 50%, hsl(210, 20%, 98%) 100%);
+  }
+
+  /* Dark mode background */
+  .dark body {
+    background: linear-gradient(135deg, hsl(240, 21%, 9%) 0%, hsl(240, 19%, 13%) 50%, hsl(240, 17%, 16%) 100%);
   }
 }
 
