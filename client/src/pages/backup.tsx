@@ -15,7 +15,8 @@ import {
   CheckCircle,
   RefreshCw,
   History,
-  HardDrive
+  HardDrive,
+  FileDown
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from 'date-fns';
@@ -81,6 +82,40 @@ export default function Backup() {
       });
     }
   });
+
+  // Function to download backup file
+  const downloadBackup = async (filename: string) => {
+    try {
+      const response = await fetch(`/api/backup/download/${filename}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download backup');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Backup descărcat",
+        description: `Fișierul ${filename} a fost descărcat cu succes`,
+      });
+    } catch (error) {
+      toast({
+        title: "Eroare la descărcare",
+        description: "Nu s-a putut descărca backup-ul",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -299,6 +334,15 @@ export default function Backup() {
                         <Badge variant="outline">
                           {backup.createdBy}
                         </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadBackup(backup.filename)}
+                          className="hover:bg-blue-50 hover:border-blue-300"
+                        >
+                          <FileDown className="h-4 w-4 mr-1" />
+                          Descarcă
+                        </Button>
                       </div>
                     </div>
                   </motion.div>

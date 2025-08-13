@@ -1818,6 +1818,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/backup/download/:filename', async (req, res) => {
+    try {
+      const { backupManager } = await import('./backup');
+      const filePath = await backupManager.getBackupFilePath(req.params.filename);
+      
+      if (!filePath) {
+        return res.status(404).json({ error: 'Backup file not found' });
+      }
+
+      res.download(filePath, req.params.filename);
+    } catch (error: any) {
+      console.error('Backup download error:', error);
+      res.status(500).json({ 
+        error: 'Failed to download backup',
+        message: error.message 
+      });
+    }
+  });
+
   // Secondary database routes
   app.get('/api/secondary/users', getSecondaryUsers);
   app.get('/api/secondary/projects', getSecondaryProjects);

@@ -222,6 +222,14 @@ class BackupManager {
       setTimeout(() => this.scheduleAutomaticBackup(), 24 * 60 * 60 * 1000);
     }, msUntilBackup);
   }
+
+  async getBackupFilePath(filename: string): Promise<string | null> {
+    const filePath = path.join(this.backupDir, filename);
+    if (fs.existsSync(filePath)) {
+      return filePath;
+    }
+    return null;
+  }
 }
 
 export const backupManager = new BackupManager();
