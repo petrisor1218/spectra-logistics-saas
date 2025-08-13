@@ -45,7 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Driver-Company Mapping**: Manages driver assignments to companies with company-specific commission rates.
 - **Payment Processing**: Weekly cycles (Sunday-Saturday), calendar-based week selection, commission calculations, and payment tracking.
 - **Company Balance Management**: Tracks outstanding payments per company, automatic balance creation during weekly processing, interactive payment recording with status updates, and multi-week support. Commissions are accurately excluded from outstanding balance calculations.
-- **Driver Activity Tracking**: Comprehensive monthly analysis of driver work time vs home time with detailed analytics dashboard, including activity rate percentage calculation and visualization.
+
 - **SaaS Monetization**: Single plan model with Stripe integration, modern pricing page, and subscription tracking.
 - **Admin Dashboard**: Management interface for subscriber oversight, user roles, and analytics.
 - **Data Protection System**: Strict validation and integrity checks, including whitelisting valid weeks and year-end closure with data sealing and fiscal year separation to prevent cross-year data mixing.

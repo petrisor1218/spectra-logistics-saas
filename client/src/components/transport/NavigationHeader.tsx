@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Truck, Bell, LogOut, User, Shield, BarChart3, Database, Building, Activity } from "lucide-react";
+import { Truck, Bell, LogOut, User, Shield, BarChart3, Database, Building } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -81,15 +81,7 @@ export function NavigationHeader() {
               Backup
             </Button>
 
-            {/* Driver Activity Button */}
-            <Button
-              onClick={() => setLocation('/driver-activity')}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              size="sm"
-            >
-              <Activity className="w-4 h-4 mr-2" />
-              Activitate Șoferi
-            </Button>
+
 
 
             
