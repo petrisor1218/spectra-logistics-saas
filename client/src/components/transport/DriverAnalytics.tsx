@@ -202,7 +202,7 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
     });
 
   const companies = Array.from(new Set(driverData.map(d => d.company)));
-  const selectedDriverData = selectedDriver ? driverData.find(d => d.driverName === selectedDriver) : null;
+  const selectedDriverData = selectedDriver && selectedDriver !== 'none' ? driverData.find(d => d.driverName === selectedDriver) : null;
 
   const getActivityStatus = (percentage: number) => {
     if (percentage >= 80) return { label: 'Foarte Activ', color: 'bg-green-500' };
@@ -336,7 +336,7 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
                 <SelectValue placeholder="Selectează șofer pentru detalii" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Niciunul selectat</SelectItem>
+                <SelectItem value="none">Niciunul selectat</SelectItem>
                 {filteredDrivers.map(driver => (
                   <SelectItem key={`${driver.driverName}-${driver.company}`} value={driver.driverName}>
                     {driver.driverName} ({driver.company})
@@ -408,7 +408,7 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Detalii Activitate: {selectedDriverData.driverName}</span>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedDriver('')}>
+                    <Button variant="outline" size="sm" onClick={() => setSelectedDriver('none')}>
                       Închide
                     </Button>
                   </CardTitle>
