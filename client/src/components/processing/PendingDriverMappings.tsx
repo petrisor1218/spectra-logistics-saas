@@ -211,7 +211,8 @@ export function PendingDriverMappings({
             {pendingMappings.map((mapping, index) => {
               // Use all companies from database instead of just file-processed ones
               const allDatabaseCompanies = allCompanies.map(c => c.name);
-              const optionsSet = new Set([mapping.suggestedCompany, ...mapping.alternatives, ...allDatabaseCompanies]);
+              const safeAlternatives = Array.isArray(mapping.alternatives) ? mapping.alternatives : [];
+              const optionsSet = new Set([mapping.suggestedCompany, ...safeAlternatives, ...allDatabaseCompanies]);
               const allOptions = Array.from(optionsSet);
               const selectedCompany = selectedCompanies[mapping.driverName] || mapping.suggestedCompany;
               
