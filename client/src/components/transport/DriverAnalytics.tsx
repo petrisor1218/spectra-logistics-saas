@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, TrendingUp, Users, Clock, BarChart3, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTransportData } from '@/hooks/useTransportData';
 
 interface WorkPeriod {
   type: 'work' | 'rest';
@@ -58,6 +59,9 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
   const [selectedCompany, setSelectedCompany] = useState<string>('all');
   const [selectedDriver, setSelectedDriver] = useState<string>('none');
   const [sortBy, setSortBy] = useState<string>('workingPercentage');
+
+  // Get driver mapping from the hook
+  const { driverMapping } = useTransportData();
 
   // Load and analyze driver work periods
   const analyzeDriverWorkPeriods = async () => {
@@ -120,42 +124,69 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
       }
       
       weeklyData.forEach((weekEntry: any) => {
-        if (!weekEntry.processedData || !weekEntry.processedData.companies) {
-          console.log('⚠️ Skipping week entry without companies:', weekEntry.weekLabel);
+        if (!weekEntry.processedData && !weekEntry.processed_data) {
+          console.log('⚠️ Skipping week entry without processed data:', weekEntry.weekLabel || weekEntry.week_label);
           return;
         }
 
-        const weekLabel = weekEntry.weekLabel;
+        const weekLabel = weekEntry.weekLabel || weekEntry.week_label;
+        const processedData = weekEntry.processedData || weekEntry.processed_data;
+        
+        // Skip if processed data is empty or not an object
+        if (!processedData || typeof processedData !== 'object' || Object.keys(processedData).length === 0) {
+          console.log('⚠️ Skipping week with empty processed data:', weekLabel);
+          return;
+        }
+
         allWeeks.add(weekLabel);
 
-        // Extract driver trips from each company's data
-        Object.values(weekEntry.processedData.companies).forEach((companyData: any) => {
-          if (!companyData.trips) {
-            console.log('⚠️ Company has no trips:', companyData.name);
+        // The processed data structure has company names as keys directly
+        Object.entries(processedData).forEach(([companyName, companyData]: [string, any]) => {
+          if (!companyData || !companyData.VRID_details) {
+            console.log(`⚠️ Company ${companyName} has no VRID details`);
             return;
           }
 
-          console.log(`🔍 Processing ${companyData.trips.length} trips for ${companyData.name} in week ${weekLabel}`);
+          console.log(`🔍 Processing ${Object.keys(companyData.VRID_details).length} VRIDs for ${companyName} in week ${weekLabel}`);
 
-          companyData.trips.forEach((trip: any) => {
-            if (!trip.driverName || trip.driverName === 'undefined' || trip.driverName === 'null') {
-              console.log('⚠️ Trip without valid driver name:', trip);
+          // Each VRID represents a trip/shipment
+          Object.entries(companyData.VRID_details).forEach(([vrid, tripData]: [string, any]) => {
+            // Find which driver this VRID belongs to using the driver mapping
+            let driverName = null;
+            for (const [driver, vrids] of Object.entries(driverMapping)) {
+              if (Array.isArray(vrids) && vrids.includes(vrid)) {
+                driverName = driver;
+                break;
+              }
+            }
+
+            if (!driverName) {
+              console.log(`⚠️ No driver mapping found for VRID ${vrid}`);
               return;
             }
 
-            console.log(`✅ Found driver trip: ${trip.driverName} at ${companyData.name}`);
+            console.log(`✅ Found driver mapping: VRID ${vrid} → ${driverName} at ${companyName}`);
 
-            const driverKey = `${trip.driverName}|${companyData.name || trip.companyName}`;
+            const driverKey = `${driverName}|${companyName}`;
             if (!driverWeekMap[driverKey]) {
               driverWeekMap[driverKey] = {};
             }
             if (!driverWeekMap[driverKey][weekLabel]) {
               driverWeekMap[driverKey][weekLabel] = [];
             }
+            
+            // Create a trip object from VRID data
+            const tripAmount = (tripData['7_days'] || 0) + (tripData['30_days'] || 0);
             driverWeekMap[driverKey][weekLabel].push({
-              ...trip,
-              weekLabel,
-              companyName: companyData.name || trip.companyName
+              vrid: vrid,
+              driverName: driverName,
+              companyName: companyName,
+              amount: tripAmount,
+              netAmount: tripAmount,
+              sevenDays: tripData['7_days'] || 0,
+              thirtyDays: tripData['30_days'] || 0,
+              commission: tripData.commission || 0,
+              weekLabel
             });
           });
         });
