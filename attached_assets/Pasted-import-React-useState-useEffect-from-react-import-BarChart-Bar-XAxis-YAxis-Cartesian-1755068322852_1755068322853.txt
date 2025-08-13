@@ -1,0 +1,399 @@
+import React, { useState, useEffect } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+
+const DriverActivityTracker = () => {
+  const [selectedYear, setSelectedYear] = useState(2025);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [monthlyData, setMonthlyData] = useState(null);
+  const [selectedDriver, setSelectedDriver] = useState('');
+  const [driverDetails, setDriverDetails] = useState(null);
+  const [yearlyData, setYearlyData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('monthly');
+
+  const months = [
+    'Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie',
+    'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'
+  ];
+
+  // Fetch monthly activity data
+  const fetchMonthlyActivity = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/driver-activity/monthly/${selectedYear}/${selectedMonth}`);
+      const data = await response.json();
+      setMonthlyData(data);
+    } catch (error) {
+      console.error('Error fetching monthly activity:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch driver detailed activity
+  const fetchDriverDetails = async (driverName) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/driver-activity/driver/${encodeURIComponent(driverName)}/${selectedYear}/${selectedMonth}`);
+      const data = await response.json();
+      setDriverDetails(data);
+    } catch (error) {
+      console.error('Error fetching driver details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch yearly summary
+  const fetchYearlySummary = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/driver-activity/summary/${selectedYear}`);
+      const data = await response.json();
+      setYearlyData(data);
+    } catch (error) {
+      console.error('Error fetching yearly summary:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'monthly') {
+      fetchMonthlyActivity();
+    } else if (activeTab === 'yearly') {
+      fetchYearlySummary();
+    }
+  }, [selectedYear, selectedMonth, activeTab]);
+
+  useEffect(() => {
+    if (selectedDriver && monthlyData) {
+      fetchDriverDetails(selectedDriver);
+    }
+  }, [selectedDriver]);
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  const renderMonthlyView = () => {
+    if (!monthlyData) return null;
+
+    const activityData = monthlyData.drivers.map(driver => ({
+      name: driver.name.length > 15 ? driver.name.substring(0, 15) + '...' : driver.name,
+      fullName: driver.name,
+      workDays: driver.workDays,
+      restDays: driver.restDays,
+      totalTrips: driver.totalTrips,
+      activityRate: parseFloat(driver.activityRate)
+    }));
+
+    const pieData = [
+      { name: 'Zile Lucru', value: monthlyData.drivers.reduce((sum, d) => sum + d.workDays, 0) },
+      { name: 'Zile Odihnă', value: monthlyData.drivers.reduce((sum, d) => sum + d.restDays, 0) }
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* Header Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-blue-600">Șoferi Activi</h3>
+            <p className="text-2xl font-bold text-blue-900">{monthlyData.totalDrivers}</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-green-600">Total Curse</h3>
+            <p className="text-2xl font-bold text-green-900">{monthlyData.summary.totalTripsAllDrivers}</p>
+          </div>
+          <div className="bg-yellow-50 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-yellow-600">Zile Lucrătoare</h3>
+            <p className="text-2xl font-bold text-yellow-900">{monthlyData.totalWorkingDays}</p>
+          </div>
+          <div className="bg-purple-50 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-purple-600">Cel Mai Activ</h3>
+            <p className="text-lg font-bold text-purple-900">
+              {monthlyData.summary.mostActiveDriver.name?.length > 12 
+                ? monthlyData.summary.mostActiveDriver.name.substring(0, 12) + '...'
+                : monthlyData.summary.mostActiveDriver.name}
+            </p>
+          </div>
+        </div>
+
+        {/* Activity Chart */}
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-4">Activitatea Șoferilor - {months[selectedMonth - 1]} {selectedYear}</h3>
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={activityData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name, props) => {
+                  if (name === 'workDays') return [value, 'Zile Lucru'];
+                  if (name === 'restDays') return [value, 'Zile Odihnă'];
+                  if (name === 'totalTrips') return [value, 'Total Curse'];
+                  return [value, name];
+                }}
+                labelFormatter={(label) => {
+                  const driver = activityData.find(d => d.name === label);
+                  return driver ? driver.fullName : label;
+                }}
+              />
+              <Legend />
+              <Bar dataKey="workDays" fill="#0088FE" name="Zile Lucru" />
+              <Bar dataKey="restDays" fill="#FF8042" name="Zile Odihnă" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Pie Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-6 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-4">Distribuția Zile Lucru vs Odihnă</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Driver List */}
+          <div className="bg-white p-6 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-4">Lista Șoferi</h3>
+            <div className="max-h-80 overflow-y-auto">
+              {monthlyData.drivers.map((driver, index) => (
+                <div 
+                  key={index}
+                  className={`p-3 mb-2 rounded border cursor-pointer transition-colors ${
+                    selectedDriver === driver.name ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setSelectedDriver(driver.name)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium">{driver.name}</p>
+                      <p className="text-sm text-gray-600">{driver.company}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm"><span className="font-medium">{driver.totalTrips}</span> curse</p>
+                      <p className="text-sm text-gray-600">{driver.activityRate}% activitate</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Driver Details */}
+        {driverDetails && (
+          <div className="bg-white p-6 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-4">Detalii Șofer: {driverDetails.name}</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-3 rounded">
+                <p className="text-sm text-blue-600">Săptămâni Active</p>
+                <p className="text-xl font-bold text-blue-900">{driverDetails.summary.totalActiveWeeks}</p>
+              </div>
+              <div className="bg-green-50 p-3 rounded">
+                <p className="text-sm text-green-600">Total Curse</p>
+                <p className="text-xl font-bold text-green-900">{driverDetails.summary.totalTrips}</p>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded">
+                <p className="text-sm text-yellow-600">Media/Săptămână</p>
+                <p className="text-xl font-bold text-yellow-900">{driverDetails.summary.averageTripsPerWeek}</p>
+              </div>
+              <div className="bg-purple-50 p-3 rounded">
+                <p className="text-sm text-purple-600">Cea Mai Bună Săptămână</p>
+                <p className="text-sm font-bold text-purple-900">{driverDetails.summary.bestWeek}</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="border p-2 text-left">Săptămâna</th>
+                    <th className="border p-2 text-center">Status</th>
+                    <th className="border p-2 text-center">Curse</th>
+                    <th className="border p-2 text-right">Venit</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {driverDetails.weeklyActivity.map((week, index) => (
+                    <tr key={index} className={week.isActive ? 'bg-green-50' : 'bg-red-50'}>
+                      <td className="border p-2">{week.week}</td>
+                      <td className="border p-2 text-center">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          week.isActive ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                        }`}>
+                          {week.isActive ? 'Activ' : 'Inactiv'}
+                        </span>
+                      </td>
+                      <td className="border p-2 text-center">{week.tripCount}</td>
+                      <td className="border p-2 text-right">{week.revenue.toFixed(2)} EUR</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderYearlyView = () => {
+    if (!yearlyData) return null;
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-blue-600">Total Curse {selectedYear}</h3>
+            <p className="text-2xl font-bold text-blue-900">{yearlyData.yearlyTotals.totalTripsYear}</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-green-600">Luna Cea Mai Productivă</h3>
+            <p className="text-lg font-bold text-green-900">{yearlyData.yearlyTotals.mostProductiveMonth.monthName}</p>
+          </div>
+          <div className="bg-yellow-50 p-4 rounded-lg border">
+            <h3 className="text-sm font-medium text-yellow-600">Media Șoferi/Lună</h3>
+            <p className="text-2xl font-bold text-yellow-900">{yearlyData.yearlyTotals.averageDriversPerMonth}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-4">Evoluția Anuală - {selectedYear}</h3>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={yearlyData.monthlyBreakdown}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="monthName" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="totalTrips" stroke="#0088FE" name="Total Curse" />
+              <Line type="monotone" dataKey="totalDrivers" stroke="#00C49F" name="Șoferi Activi" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold mb-4">Performanță Lunară</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border p-3 text-left">Luna</th>
+                  <th className="border p-3 text-center">Șoferi Activi</th>
+                  <th className="border p-3 text-center">Total Curse</th>
+                  <th className="border p-3 text-center">Media Curse/Șofer</th>
+                  <th className="border p-3 text-left">Cel Mai Activ Șofer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {yearlyData.monthlyBreakdown.map((month, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="border p-3 font-medium">{month.monthName}</td>
+                    <td className="border p-3 text-center">{month.totalDrivers}</td>
+                    <td className="border p-3 text-center">{month.totalTrips}</td>
+                    <td className="border p-3 text-center">{month.averageTripsPerDriver.toFixed(1)}</td>
+                    <td className="border p-3">{month.mostActiveDriver}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">📊 Tracker Activitate Șoferi</h1>
+        
+        {/* Controls */}
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">An</label>
+            <select 
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="border rounded px-3 py-2"
+            >
+              <option value={2024}>2024</option>
+              <option value={2025}>2025</option>
+            </select>
+          </div>
+          
+          {activeTab === 'monthly' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Luna</label>
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                className="border rounded px-3 py-2"
+              >
+                {months.map((month, index) => (
+                  <option key={index} value={index + 1}>{month}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b mb-6">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('monthly')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'monthly'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Vedere Lunară
+            </button>
+            <button
+              onClick={() => setActiveTab('yearly')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'yearly'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Vedere Anuală
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2">Se încarcă...</span>
+        </div>
+      )}
+
+      {!loading && activeTab === 'monthly' && renderMonthlyView()}
+      {!loading && activeTab === 'yearly' && renderYearlyView()}
+    </div>
+  );
+};
+
+export default DriverActivityTracker;
