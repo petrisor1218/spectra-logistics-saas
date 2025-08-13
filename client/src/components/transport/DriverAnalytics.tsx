@@ -56,7 +56,7 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
   const [weeklyStats, setWeeklyStats] = useState<WeeklyCompanyStats[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string>('all');
-  const [selectedDriver, setSelectedDriver] = useState<string>('');
+  const [selectedDriver, setSelectedDriver] = useState<string>('none');
   const [sortBy, setSortBy] = useState<string>('workingPercentage');
 
   // Load and analyze driver work periods
@@ -221,8 +221,10 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
       setDriverData(driverAnalysis);
       setWeeklyStats(Object.values(weeklyCompanyStats));
       
+      console.log('✅ Driver analysis completed:', driverAnalysis.length, 'drivers processed');
+      
     } catch (error) {
-      console.error('Error analyzing driver work periods:', error);
+      console.error('❌ Error analyzing driver work periods:', error);
     } finally {
       setLoading(false);
     }
@@ -254,6 +256,11 @@ export default function DriverAnalytics({ activeTab }: DriverAnalyticsProps) {
 
   const companies = Array.from(new Set(driverData.map(d => d.company)));
   const selectedDriverData = selectedDriver && selectedDriver !== 'none' ? driverData.find(d => d.driverName === selectedDriver) : null;
+  
+  // Debug logging
+  if (selectedDriver && selectedDriver !== 'none' && !selectedDriverData) {
+    console.log('🔍 Driver not found:', selectedDriver, 'Available drivers:', driverData.map(d => d.driverName));
+  }
 
   const getActivityStatus = (percentage: number) => {
     if (percentage >= 80) return { label: 'Foarte Activ', color: 'bg-green-500' };
