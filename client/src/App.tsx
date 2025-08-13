@@ -16,7 +16,6 @@ import AdminTenants from "@/pages/AdminTenants";
 import Analytics from "@/pages/analytics";
 import Backup from "@/pages/backup";
 import TenantManagement from "@/pages/tenant-management";
-
 import TenantLogin from "@/pages/tenant-login";
 import TenantRegistration from "@/pages/tenant-registration";
 
@@ -61,7 +60,6 @@ function Router() {
       <Route path="/tenant/:tenantId/dashboard" component={Home} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/backup" component={Backup} />
-
       <Route path="/pricing" component={Pricing} />
       <Route path="/subscribe/:planId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />

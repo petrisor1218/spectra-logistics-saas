@@ -2482,8 +2482,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
   // Delete small amount alert
   app.delete('/api/small-amount-alerts/:id', async (req, res) => {
     try {

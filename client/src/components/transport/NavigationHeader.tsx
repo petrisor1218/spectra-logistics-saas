@@ -82,8 +82,6 @@ export function NavigationHeader() {
             </Button>
 
 
-
-
             
             {/* Show tenant info when in tenant context */}
             {isTenantContext && (

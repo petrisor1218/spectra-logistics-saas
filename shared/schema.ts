@@ -303,25 +303,3 @@ export const insertTenantSchema = createInsertSchema(tenants).omit({
 
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type Tenant = typeof tenants.$inferSelect;
-
-// Driver Activity Analysis table - for tracking work/home time analysis
-export const driverActivityAnalysis = pgTable("driver_activity_analysis", {
-  id: serial("id").primaryKey(),
-  year: integer("year").notNull(),
-  month: integer("month").notNull(),
-  analysisData: jsonb("analysis_data"), // Store the complete analysis results
-  tenantId: integer("tenant_id").notNull().default(1),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  uniqueYearMonthTenant: unique().on(table.year, table.month, table.tenantId)
-}));
-
-export const insertDriverActivityAnalysisSchema = createInsertSchema(driverActivityAnalysis).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type InsertDriverActivityAnalysis = z.infer<typeof insertDriverActivityAnalysisSchema>;
-export type DriverActivityAnalysis = typeof driverActivityAnalysis.$inferSelect;
