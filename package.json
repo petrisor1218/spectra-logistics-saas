@@ -11,6 +11,7 @@
     "dev:server": "tsx server/index.ts",
     "start": "node dist/server/index.js",
     "vercel-build": "npm run build:client",
+    "netlify-build": "npm run build:client",
     "preview": "cd client && vite preview"
   },
   "dependencies": {
