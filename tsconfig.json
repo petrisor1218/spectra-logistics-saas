@@ -1,1 +1,1 @@
-{"compilerOptions":{}}
+{"compilerOptions":{"module":"ESNext","moduleResolution":"bundler","allowImportingTsExtensions":true,"skipLibCheck":true}}

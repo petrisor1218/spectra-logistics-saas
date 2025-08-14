@@ -25,5 +25,8 @@ export default defineConfig({
   publicDir: "public",
   optimizeDeps: {
     exclude: ['@shared']
+  },
+  define: {
+    global: 'globalThis'
   }
 });
