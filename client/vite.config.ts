@@ -15,5 +15,10 @@ export default defineConfig({
     sourcemap: false
   },
   base: "/",
-  publicDir: "public"
+  publicDir: "public",
+  esbuild: {
+    loader: 'tsx',
+    include: /src\/.*\.[tj]sx?$/,
+    exclude: [],
+  }
 });
