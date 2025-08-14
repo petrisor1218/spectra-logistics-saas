@@ -1,82 +1,77 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { useAuth } from "./hooks/useAuth";
-import Home from "@/pages/home";
-import LoginPage from "@/pages/login";
-import NotFound from "@/pages/not-found";
-import Pricing from "@/pages/pricing";
-import Subscribe from "@/pages/subscribe";
-import SubscriptionSuccess from "@/pages/subscription-success";
-import AdminDashboard from "@/pages/admin-dashboard";
-import AdminTenants from "@/pages/AdminTenants";
-import Analytics from "@/pages/analytics";
-import Backup from "@/pages/backup";
-import TenantManagement from "@/pages/tenant-management";
-import TenantLogin from "@/pages/tenant-login";
-import TenantRegistration from "@/pages/tenant-registration";
+import { Route, Switch } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "./components/ui/toaster";
+import { ThemeProvider } from "./components/ThemeProvider";
 
-function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+// Pages
+import Home from "./pages/home";
+import Login from "./pages/login";
+import TenantLogin from "./pages/tenant-login";
+import TenantRegistration from "./pages/tenant-registration";
+import AdminDashboard from "./pages/admin-dashboard";
+import NotFound from "./pages/not-found";
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-600 dark:text-gray-300">Se încarcă...</p>
-        </div>
-      </div>
-    );
-  }
+// Tenant pages (accesibile doar prin subdomain)
+import Dashboard from "./pages/dashboard";
+import Companies from "./pages/companies";
+import Drivers from "./pages/drivers";
+import Payments from "./pages/payments";
+import TransportOrders from "./pages/transport-orders";
+import Analytics from "./pages/analytics";
+import Settings from "./pages/settings";
 
-  if (!isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/admin" component={AdminDashboard} />
-        <Route path="/admin/tenants" component={AdminTenants} />
-        <Route path="/tenant-login" component={TenantLogin} />
-        <Route path="/register-tenant" component={TenantRegistration} />
-        <Route path="/pricing" component={Pricing} />
-        <Route path="/subscribe/:planId" component={Subscribe} />
-        <Route path="/subscription-success" component={SubscriptionSuccess} />
-        <Route path="/login" component={LoginPage} />
-        <Route path="/" component={Home} />
-        <Route path="*" component={Home} />
-      </Switch>
-    );
-  }
-
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/tenants" component={AdminTenants} />
-      <Route path="/tenants" component={TenantManagement} />
-      <Route path="/tenant-login" component={TenantLogin} />
-      <Route path="/tenant/:tenantId/dashboard" component={Home} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/backup" component={Backup} />
-      <Route path="/pricing" component={Pricing} />
-      <Route path="/subscribe/:planId" component={Subscribe} />
-      <Route path="/subscription-success" component={SubscriptionSuccess} />
-      <Route path="/login" component={LoginPage} />
-      <Route path="*" component={NotFound} />
-    </Switch>
-  );
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
+  // Detectează dacă suntem pe un subdomain (tenant)
+  const hostname = window.location.hostname;
+  const isSubdomain = hostname.split('.').length > 2 || hostname !== 'localhost';
+  const isAdminDomain = hostname.startsWith('admin.') || hostname === 'localhost';
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <div className="min-h-screen bg-background">
+          <Switch>
+            {/* Public routes (accessible from main domain) */}
+            <Route path="/" component={Home} />
+            <Route path="/login" component={Login} />
+            <Route path="/register" component={TenantRegistration} />
+            
+            {/* Admin routes (accessible from admin subdomain or localhost) */}
+            {isAdminDomain && (
+              <>
+                <Route path="/admin" component={AdminDashboard} />
+                <Route path="/admin/dashboard" component={AdminDashboard} />
+              </>
+            )}
+            
+            {/* Tenant routes (accessible from tenant subdomains) */}
+            {isSubdomain && !isAdminDomain && (
+              <>
+                <Route path="/" component={Dashboard} />
+                <Route path="/dashboard" component={Dashboard} />
+                <Route path="/companies" component={Companies} />
+                <Route path="/drivers" component={Drivers} />
+                <Route path="/payments" component={Payments} />
+                <Route path="/transport-orders" component={TransportOrders} />
+                <Route path="/analytics" component={Analytics} />
+                <Route path="/settings" component={Settings} />
+              </>
+            )}
+            
+            {/* Fallback */}
+            <Route component={NotFound} />
+          </Switch>
+        </div>
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   );

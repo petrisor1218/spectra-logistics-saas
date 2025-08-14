@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Upload, FileSpreadsheet, CheckCircle, CloudUpload } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface FileUploadSectionProps {

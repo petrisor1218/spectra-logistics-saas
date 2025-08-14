@@ -1,687 +1,569 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Badge } from "../components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { 
   Users, 
-  DollarSign, 
-  Settings, 
-  Shield, 
-  Database,
+  Database, 
+  CreditCard, 
+  TrendingUp, 
+  AlertTriangle, 
+  CheckCircle, 
+  XCircle, 
+  Eye, 
+  Settings,
+  BarChart3,
+  Activity,
+  Shield,
+  DollarSign,
   Calendar,
-  TrendingUp,
   Search,
   Filter,
-  Download,
+  MoreHorizontal,
   Plus,
-  Eye,
-  Edit,
   Trash2,
-  Building
-} from 'lucide-react';
-import { Link } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+  Play,
+  Pause
+} from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 
-interface User {
+interface Tenant {
   id: number;
-  username: string;
-  email: string;
-  role: string;
-  companyName?: string;
+  name: string;
+  subdomain: string;
+  status: string;
   subscriptionStatus: string;
+  contactEmail: string;
+  companyName: string;
+  databaseSize: number;
+  apiCallsCount: number;
+  activeUsersCount: number;
+  monthlyRecurringRevenue: number;
+  trialEndsAt: string;
+  promotionalEndsAt: string;
   createdAt: string;
-  lastLoginAt?: string;
+  lastApiCall: string;
 }
 
-interface Analytics {
-  totalSubscribers: number;
-  activeSubscriptions: number;
-  monthlyRevenue: number;
-  trialUsers: number;
+interface SystemMetrics {
+  mrr: number;
+  activeTenantsCount: number;
+  trialTenantsCount: number;
+  totalTenantsCount: number;
+  churnRate: number;
+  growthRate: number;
 }
 
 export default function AdminDashboard() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({
-    username: '',
-    email: '',
-    companyName: '',
-    subscriptionStatus: '',
-    role: ''
-  });
-  const { toast } = useToast();
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
-  // Fetch all subscribers
-  const { data: subscribers = [], isLoading } = useQuery<User[]>({
-    queryKey: ['/api/admin/subscribers'],
-    retry: false,
-  });
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // Fetch subscription analytics
-  const { data: analytics = {} } = useQuery<Analytics>({
-    queryKey: ['/api/admin/analytics'],
-    retry: false,
-  });
-
-  const handleViewUser = (userId: number) => {
-    const user = subscribers.find((u: User) => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
-      setIsViewDialogOpen(true);
-    }
-  };
-
-  const handleEditUser = (userId: number) => {
-    const user = subscribers.find((u: User) => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
-      setEditForm({
-        username: user.username,
-        email: user.email,
-        companyName: user.companyName || '',
-        subscriptionStatus: user.subscriptionStatus,
-        role: user.role
-      });
-      setIsEditDialogOpen(true);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (selectedUser) {
-      try {
-        const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editForm)
-        });
-        
-        if (response.ok) {
-          toast({
-            title: "Utilizator actualizat",
-            description: "Modificările au fost salvate cu succes",
-          });
-          setIsEditDialogOpen(false);
-          // Refresh data
-          window.location.reload();
-        } else {
-          throw new Error('Failed to update user');
-        }
-      } catch (error) {
-        toast({
-          title: "Eroare",
-          description: "Nu s-au putut salva modificările",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleDeleteUser = (userId: number) => {
-    if (confirm('Ești sigur că vrei să ștergi acest utilizator?')) {
-      fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
-        .then(response => {
-          if (response.ok) {
-            toast({
-              title: "Utilizator șters",
-              description: "Utilizatorul a fost șters cu succes",
-              variant: "destructive",
-            });
-            window.location.reload();
-          }
-        })
-        .catch(() => {
-          toast({
-            title: "Eroare",
-            description: "Nu s-a putut șterge utilizatorul",
-            variant: "destructive",
-          });
-        });
-    }
-  };
-
-  const handleAddSubscriber = () => {
-    setEditForm({
-      username: '',
-      email: '',
-      companyName: '',
-      subscriptionStatus: 'active',
-      role: 'subscriber'
-    });
-    setIsAddDialogOpen(true);
-  };
-
-  const handleSaveNewUser = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm)
+      setLoading(true);
+      
+      // Fetch tenants
+      const tenantsResponse = await fetch("/api/admin/tenants");
+      const tenantsData = await tenantsResponse.json();
+      
+      // Fetch metrics
+      const metricsResponse = await fetch("/api/admin/metrics");
+      const metricsData = await metricsResponse.json();
+      
+      setTenants(tenantsData.tenants);
+      setMetrics(metricsData);
+    } catch (err) {
+      setError("Eroare la încărcarea datelor");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTenantAction = async (tenantId: number, action: string) => {
+    try {
+      const response = await fetch(`/api/admin/tenants/${tenantId}/${action}`, {
+        method: "POST",
       });
       
       if (response.ok) {
-        toast({
-          title: "Utilizator adăugat",
-          description: "Noul utilizator a fost creat cu succes",
-        });
-        setIsAddDialogOpen(false);
-        window.location.reload();
+        fetchData(); // Refresh data
       } else {
-        throw new Error('Failed to create user');
+        throw new Error("Eroare la executarea acțiunii");
       }
-    } catch (error) {
-      toast({
-        title: "Eroare",
-        description: "Nu s-a putut crea utilizatorul",
-        variant: "destructive",
-      });
+    } catch (err) {
+      setError("Eroare la executarea acțiunii");
+      console.error(err);
     }
   };
 
-  const handleDatabaseAccess = (userId: number) => {
-    toast({
-      title: "Acces bază de date",
-      description: `Conectez la baza de date pentru utilizatorul ID: ${userId}`,
-    });
-    console.log('Database access for user:', userId);
-  };
-
-  const filteredSubscribers = subscribers.filter((user: User) => {
-    const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTenants = tenants.filter(tenant => {
+    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         tenant.companyName.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || user.subscriptionStatus === statusFilter;
+    const matchesStatus = statusFilter === "all" || tenant.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-300 border-green-500/30';
-      case 'trialing': return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
-      case 'canceled': return 'bg-red-500/20 text-red-300 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+      case "active":
+        return <Badge className="bg-green-100 text-green-800">Activ</Badge>;
+      case "trial":
+        return <Badge className="bg-blue-100 text-blue-800">Trial</Badge>;
+      case "suspended":
+        return <Badge className="bg-red-100 text-red-800">Suspendat</Badge>;
+      case "inactive":
+        return <Badge className="bg-gray-100 text-gray-800">Inactiv</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getSubscriptionStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return 'Activ';
-      case 'trialing': return 'Perioada probă';
-      case 'canceled': return 'Anulat';
-      case 'inactive': return 'Inactiv';
-      default: return status;
+      case "active":
+        return <Badge className="bg-green-100 text-green-800">Activ</Badge>;
+      case "trialing":
+        return <Badge className="bg-blue-100 text-blue-800">Trial</Badge>;
+      case "past_due":
+        return <Badge className="bg-yellow-100 text-yellow-800">Scadent</Badge>;
+      case "canceled":
+        return <Badge className="bg-red-100 text-red-800">Anulat</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+            <div className="h-96 bg-gray-200 rounded"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
-      <div className="container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">
-                Dashboard Administrator
-              </h1>
-              <p className="text-gray-300">
-                Gestionează abonaților și monitorizează sistemul Transport Pro
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/admin/tenants">
-                <Button className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
-                  <Building className="w-4 h-4 mr-2" />
-                  Gestionează Tenant-uri
-                </Button>
-              </Link>
-              <Button 
-                onClick={handleAddSubscriber}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Adaugă abonat
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Super Admin</h1>
+          <p className="text-gray-600">Gestionarea și monitorizarea tuturor tenantilor</p>
+        </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Metrics Cards */}
+        {metrics && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">MRR</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">€{metrics.mrr.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Monthly Recurring Revenue
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tenanți Activi</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.activeTenantsCount}</div>
+                <p className="text-xs text-muted-foreground">
+                  din {metrics.totalTenantsCount} total
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">În Trial</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.trialTenantsCount}</div>
+                <p className="text-xs text-muted-foreground">
+                  în perioada de testare
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Rata de Churn</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.churnRate?.toFixed(1) || 0}%</div>
+                <p className="text-xs text-muted-foreground">
+                  ultimele 30 zile
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Evoluția MRR</CardTitle>
+              <CardDescription>Monthly Recurring Revenue în ultimele 12 luni</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={[
+                  { month: "Ian", mrr: 0 },
+                  { month: "Feb", mrr: 0 },
+                  { month: "Mar", mrr: 0 },
+                  { month: "Apr", mrr: 0 },
+                  { month: "Mai", mrr: 0 },
+                  { month: "Iun", mrr: 0 },
+                  { month: "Iul", mrr: 0 },
+                  { month: "Aug", mrr: 0 },
+                  { month: "Sep", mrr: 0 },
+                  { month: "Oct", mrr: 0 },
+                  { month: "Noi", mrr: 0 },
+                  { month: "Dec", mrr: metrics?.mrr || 0 },
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`€${value}`, "MRR"]} />
+                  <Line type="monotone" dataKey="mrr" stroke="#3b82f6" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribuția Tenantilor</CardTitle>
+              <CardDescription>Statusul abonamentelor</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Activ", value: metrics?.activeTenantsCount || 0, color: "#10b981" },
+                      { name: "Trial", value: metrics?.trialTenantsCount || 0, color: "#3b82f6" },
+                      { name: "Suspendat", value: tenants.filter(t => t.status === "suspended").length, color: "#ef4444" },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {[
+                      { name: "Activ", value: metrics?.activeTenantsCount || 0, color: "#10b981" },
+                      { name: "Trial", value: metrics?.trialTenantsCount || 0, color: "#3b82f6" },
+                      { name: "Suspendat", value: tenants.filter(t => t.status === "suspended").length, color: "#ef4444" },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tenants Management */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Gestionare Tenanți</CardTitle>
+                <CardDescription>
+                  {filteredTenants.length} din {tenants.length} tenanți
+                </CardDescription>
+              </div>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Tenant Nou
               </Button>
             </div>
-          </div>
-
-          {/* Analytics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Total abonaților</p>
-                    <p className="text-3xl font-bold">{analytics.totalSubscribers || 0}</p>
-                  </div>
-                  <Users className="w-8 h-8 text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            {/* Filters */}
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1">
+                <Label htmlFor="search">Caută</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="search"
+                    placeholder="Caută după nume, subdomain sau companie..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <select
+                  id="status"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">Toți</option>
+                  <option value="active">Activ</option>
+                  <option value="trial">Trial</option>
+                  <option value="suspended">Suspendat</option>
+                  <option value="inactive">Inactiv</option>
+                </select>
+              </div>
+            </div>
 
-            <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Abonaități active</p>
-                    <p className="text-3xl font-bold">{analytics.activeSubscriptions || 0}</p>
-                  </div>
-                  <Shield className="w-8 h-8 text-green-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Venit lunar</p>
-                    <p className="text-3xl font-bold">€{analytics.monthlyRevenue || 0}</p>
-                  </div>
-                  <DollarSign className="w-8 h-8 text-yellow-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Perioada probă</p>
-                    <p className="text-3xl font-bold">{analytics.trialUsers || 0}</p>
-                  </div>
-                  <Calendar className="w-8 h-8 text-purple-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content */}
-          <Tabs defaultValue="subscribers" className="space-y-6">
-            <TabsList className="bg-white/10 backdrop-blur-lg border-white/20">
-              <TabsTrigger value="subscribers" className="data-[state=active]:bg-white/20">
-                Abonaților
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="data-[state=active]:bg-white/20">
-                Analize
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-white/20">
-                Setări
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="subscribers" className="space-y-6">
-              {/* Filters */}
-              <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-                <CardContent className="p-6">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex-1 min-w-[300px]">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                        <Input
-                          placeholder="Caută după nume, email sau companie..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                        />
-                      </div>
-                    </div>
-                    
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white"
-                    >
-                      <option value="all">Toate statusurile</option>
-                      <option value="active">Activ</option>
-                      <option value="trialing">Perioada probă</option>
-                      <option value="canceled">Anulat</option>
-                      <option value="inactive">Inactiv</option>
-                    </select>
-
-                    <Button 
-                      variant="outline" 
-                      className="border-white/30 text-white hover:bg-white/10"
-                      onClick={() => {
-                        toast({
-                          title: "Export date",
-                          description: "Exportez lista de abonaților în format CSV",
-                        });
-                        console.log('Export subscribers data');
-                      }}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Subscribers Table */}
-              <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-                <CardHeader>
-                  <CardTitle>Lista abonaților ({filteredSubscribers.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-white/20">
-                          <th className="text-left py-3 px-4">Utilizator</th>
-                          <th className="text-left py-3 px-4">Companie</th>
-                          <th className="text-left py-3 px-4">Status</th>
-                          <th className="text-left py-3 px-4">Ultima conectare</th>
-                          <th className="text-left py-3 px-4">Acțiuni</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredSubscribers.map((user: any) => (
-                          <tr key={user.id} className="border-b border-white/10 hover:bg-white/5">
-                            <td className="py-3 px-4">
-                              <div>
-                                <div className="font-medium">{user.username}</div>
-                                <div className="text-sm text-gray-400">{user.email}</div>
+            {/* Tenants Table */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tenant</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Abonament</TableHead>
+                    <TableHead>Utilizatori</TableHead>
+                    <TableHead>DB Size</TableHead>
+                    <TableHead>MRR</TableHead>
+                    <TableHead>Ultima Activitate</TableHead>
+                    <TableHead>Acțiuni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTenants.map((tenant) => (
+                    <TableRow key={tenant.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{tenant.name}</div>
+                          <div className="text-sm text-gray-500">
+                            {tenant.subdomain}.{window.location.hostname}
+                          </div>
+                          <div className="text-sm text-gray-500">{tenant.companyName}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(tenant.status)}</TableCell>
+                      <TableCell>{getSubscriptionStatusBadge(tenant.subscriptionStatus)}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{tenant.activeUsersCount} activi</div>
+                          <div className="text-gray-500">{tenant.apiCallsCount} API calls</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {tenant.databaseSize} MB
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          €{tenant.monthlyRecurringRevenue?.toFixed(2) || "0.00"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-500">
+                          {tenant.lastApiCall ? new Date(tenant.lastApiCall).toLocaleDateString('ro-RO') : "Niciodată"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Detalii Tenant</DialogTitle>
+                                <DialogDescription>
+                                  Informații detaliate despre {tenant.name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>Nume</Label>
+                                    <div className="text-sm">{tenant.name}</div>
+                                  </div>
+                                  <div>
+                                    <Label>Subdomain</Label>
+                                    <div className="text-sm">{tenant.subdomain}</div>
+                                  </div>
+                                  <div>
+                                    <Label>Email Contact</Label>
+                                    <div className="text-sm">{tenant.contactEmail}</div>
+                                  </div>
+                                  <div>
+                                    <Label>Companie</Label>
+                                    <div className="text-sm">{tenant.companyName}</div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>Status</Label>
+                                    <div>{getStatusBadge(tenant.status)}</div>
+                                  </div>
+                                  <div>
+                                    <Label>Abonament</Label>
+                                    <div>{getSubscriptionStatusBadge(tenant.subscriptionStatus)}</div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>Trial se termină</Label>
+                                    <div className="text-sm">
+                                      {tenant.trialEndsAt ? new Date(tenant.trialEndsAt).toLocaleDateString('ro-RO') : "N/A"}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label>Preț promotional se termină</Label>
+                                    <div className="text-sm">
+                                      {tenant.promotionalEndsAt ? new Date(tenant.promotionalEndsAt).toLocaleDateString('ro-RO') : "N/A"}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>Utilizatori Activi</Label>
+                                    <div className="text-sm">{tenant.activeUsersCount}</div>
+                                  </div>
+                                  <div>
+                                    <Label>API Calls</Label>
+                                    <div className="text-sm">{tenant.apiCallsCount}</div>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label>DB Size</Label>
+                                    <div className="text-sm">{tenant.databaseSize} MB</div>
+                                  </div>
+                                  <div>
+                                    <Label>MRR</Label>
+                                    <div className="text-sm">€{tenant.monthlyRecurringRevenue?.toFixed(2) || "0.00"}</div>
+                                  </div>
+                                </div>
                               </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="text-sm">{user.companyName || 'Nu este specificat'}</div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge className={getStatusColor(user.subscriptionStatus)}>
-                                {getStatusText(user.subscriptionStatus)}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="text-sm text-gray-400">
-                                {user.lastLoginAt ? 
-                                  new Date(user.lastLoginAt).toLocaleDateString('ro-RO') : 
-                                  'Niciodată'
-                                }
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="border-white/30 text-white hover:bg-white/10"
-                                  onClick={() => handleViewUser(user.id)}
-                                  title="Vizualizare detalii"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="border-white/30 text-white hover:bg-white/10"
-                                  onClick={() => handleDatabaseAccess(user.id)}
-                                  title="Acces bază de date"
-                                >
-                                  <Database className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="border-white/30 text-white hover:bg-white/10"
-                                  onClick={() => handleEditUser(user.id)}
-                                  title="Editare utilizator"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                            </DialogContent>
+                          </Dialog>
 
-            <TabsContent value="analytics" className="space-y-6">
-              <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-                <CardHeader>
-                  <CardTitle>Analize detaliate</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">Grafice și statistici detaliate vor fi implementate aici.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                          {tenant.status === "active" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTenantAction(tenant.id, "suspend")}
+                            >
+                              <Pause className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTenantAction(tenant.id, "activate")}
+                            >
+                              <Play className="h-4 w-4" />
+                            </Button>
+                          )}
 
-            <TabsContent value="settings" className="space-y-6">
-              <Card className="bg-white/10 backdrop-blur-lg border-white/20 text-white">
-                <CardHeader>
-                  <CardTitle>Setări sistem</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">Configurări pentru sistemul de abonamente și plăți.</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Acțiuni pentru {tenant.name}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start"
+                                  onClick={() => window.open(`https://${tenant.subdomain}.${window.location.hostname}`, '_blank')}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Accesează Platforma
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start"
+                                >
+                                  <Database className="h-4 w-4 mr-2" />
+                                  Backup Database
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start"
+                                >
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  Configurare
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  className="w-full justify-start"
+                                  onClick={() => handleTenantAction(tenant.id, "delete")}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Șterge Tenant
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* View User Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-gray-900 text-white border-gray-700">
-          <DialogHeader>
-            <DialogTitle>Detalii utilizator</DialogTitle>
-            <DialogDescription>
-              Informații complete despre utilizatorul selectat
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="space-y-4">
-              <div>
-                <Label>Nume utilizator</Label>
-                <p className="text-gray-300">{selectedUser.username}</p>
-              </div>
-              <div>
-                <Label>Email</Label>
-                <p className="text-gray-300">{selectedUser.email}</p>
-              </div>
-              <div>
-                <Label>Companie</Label>
-                <p className="text-gray-300">{selectedUser.companyName || 'Nu este specificat'}</p>
-              </div>
-              <div>
-                <Label>Rol</Label>
-                <p className="text-gray-300">{selectedUser.role}</p>
-              </div>
-              <div>
-                <Label>Status abonament</Label>
-                <Badge className={getStatusColor(selectedUser.subscriptionStatus)}>
-                  {getStatusText(selectedUser.subscriptionStatus)}
-                </Badge>
-              </div>
-              <div>
-                <Label>Data înregistrării</Label>
-                <p className="text-gray-300">{new Date(selectedUser.createdAt).toLocaleDateString('ro-RO')}</p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-gray-900 text-white border-gray-700">
-          <DialogHeader>
-            <DialogTitle>Editare utilizator</DialogTitle>
-            <DialogDescription>
-              Modifică informațiile utilizatorului
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="username">Nume utilizator</Label>
-              <Input
-                id="username"
-                value={editForm.username}
-                onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-              />
-            </div>
-            <div>
-              <Label htmlFor="companyName">Companie</Label>
-              <Input
-                id="companyName"
-                value={editForm.companyName}
-                onChange={(e) => setEditForm({...editForm, companyName: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-              />
-            </div>
-            <div>
-              <Label htmlFor="role">Rol</Label>
-              <Select value={editForm.role} onValueChange={(value) => setEditForm({...editForm, role: value})}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue placeholder="Selectează rolul" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="subscriber">Abonat</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="status">Status abonament</Label>
-              <Select value={editForm.subscriptionStatus} onValueChange={(value) => setEditForm({...editForm, subscriptionStatus: value})}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue placeholder="Selectează statusul" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Activ</SelectItem>
-                  <SelectItem value="trialing">Perioada probă</SelectItem>
-                  <SelectItem value="canceled">Anulat</SelectItem>
-                  <SelectItem value="inactive">Inactiv</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Anulează
-            </Button>
-            <Button onClick={handleSaveEdit} className="bg-blue-600 hover:bg-blue-700">
-              Salvează
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add User Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-gray-900 text-white border-gray-700">
-          <DialogHeader>
-            <DialogTitle>Adaugă utilizator nou</DialogTitle>
-            <DialogDescription>
-              Creează un nou cont de utilizator
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="new-username">Nume utilizator</Label>
-              <Input
-                id="new-username"
-                value={editForm.username}
-                onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-email">Email</Label>
-              <Input
-                id="new-email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-companyName">Companie</Label>
-              <Input
-                id="new-companyName"
-                value={editForm.companyName}
-                onChange={(e) => setEditForm({...editForm, companyName: e.target.value})}
-                className="bg-gray-800 border-gray-600"
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-role">Rol</Label>
-              <Select value={editForm.role} onValueChange={(value) => setEditForm({...editForm, role: value})}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue placeholder="Selectează rolul" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="subscriber">Abonat</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="new-status">Status abonament</Label>
-              <Select value={editForm.subscriptionStatus} onValueChange={(value) => setEditForm({...editForm, subscriptionStatus: value})}>
-                <SelectTrigger className="bg-gray-800 border-gray-600">
-                  <SelectValue placeholder="Selectează statusul" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Activ</SelectItem>
-                  <SelectItem value="trialing">Perioada probă</SelectItem>
-                  <SelectItem value="canceled">Anulat</SelectItem>
-                  <SelectItem value="inactive">Inactiv</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Anulează
-            </Button>
-            <Button onClick={handleSaveNewUser} className="bg-green-600 hover:bg-green-700">
-              Creează
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

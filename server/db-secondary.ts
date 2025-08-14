@@ -1,15 +1,37 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "../shared/schema-secondary";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import * as schema from "../shared/schema-secondary.js";
 
-neonConfig.webSocketConstructor = ws;
-
-if (!process.env.DATABASE_URL_SECONDARY) {
-  throw new Error(
-    "DATABASE_URL_SECONDARY must be set. Did you forget to provision the secondary database?",
-  );
+// Baza de date secundară pentru management-ul tenantilor
+const secondaryDbUrl = process.env.SECONDARY_DATABASE_URL;
+if (!secondaryDbUrl) {
+  throw new Error("SECONDARY_DATABASE_URL is required for multi-tenant management");
 }
 
-export const poolSecondary = new Pool({ connectionString: process.env.DATABASE_URL_SECONDARY });
-export const dbSecondary = drizzle({ client: poolSecondary, schema });
+const secondarySql = neon(secondaryDbUrl);
+export const secondaryDb = drizzle(secondarySql, { schema });
+
+// Pool de conexiuni pentru bazele de date ale tenantilor
+const tenantDbConnections = new Map<string, any>();
+
+export const getTenantDb = async (databaseUrl: string) => {
+  if (tenantDbConnections.has(databaseUrl)) {
+    return tenantDbConnections.get(databaseUrl);
+  }
+
+  const sql = neon(databaseUrl);
+  const db = drizzle(sql, { schema: await import("../shared/schema.js") });
+  
+  tenantDbConnections.set(databaseUrl, db);
+  return db;
+};
+
+export const closeTenantDbConnection = (databaseUrl: string) => {
+  if (tenantDbConnections.has(databaseUrl)) {
+    tenantDbConnections.delete(databaseUrl);
+  }
+};
+
+export const closeAllTenantConnections = () => {
+  tenantDbConnections.clear();
+};

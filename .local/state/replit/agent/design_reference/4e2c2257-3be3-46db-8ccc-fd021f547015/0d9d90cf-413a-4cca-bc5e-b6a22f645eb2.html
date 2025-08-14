@@ -1,0 +1,710 @@
+<html lang="ro" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Payment System - Professional Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#F5F3FF',
+                            500: '#8B5CF6',
+                            600: '#7C3AED',
+                            700: '#6D28D9',
+                        },
+                        dark: {
+                            900: '#0F0F23',
+                            800: '#16213E',
+                            700: '#1A1A2E',
+                            600: '#252547',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-primary {
+            background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hover-glow:hover {
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-zone {
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-zone:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: #8B5CF6;
+        }
+        
+        .tab-active {
+            background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #8B5CF6, #3B82F6);
+            animation: progress-shine 2s infinite;
+        }
+
+        @keyframes progress-shine {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        .data-card {
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .data-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification-badge {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+            40%, 43% { transform: translateY(-10px); }
+            70% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-dark-900 via-dark-800 to-dark-700 min-h-screen text-white font-inter">
+    <!-- @COMPONENT: Navigation Header -->
+    <header class="glass-effect fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center animate-float">
+                        <i class="fas fa-truck text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold gradient-text">Transport Payment System</h1>
+                        <p class="text-gray-400 text-sm">Professional Dashboard</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button class="w-12 h-6 bg-gray-600 rounded-full relative transition-all duration-300 hover:bg-primary-500">
+                        <div class="w-5 h-5 bg-white rounded-full absolute top-0.5 right-0.5 transition-all duration-300"></div>
+                    </button>
+                    
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button class="w-10 h-10 glass-effect rounded-xl flex items-center justify-center hover-glow">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                        <span class="notification-badge absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Navigation Header -->
+
+    <main class="pt-24 pb-8">
+        <div class="container mx-auto px-6">
+            <!-- @COMPONENT: Status Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-fade-in">
+                <div class="glass-effect rounded-2xl p-6 hover-glow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total Șoferi</p>
+                            <p class="text-2xl font-bold text-white" data-bind="totalDrivers">42</p>
+                        </div>
+                        <div class="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-6 hover-glow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Plăți Procesate</p>
+                            <p class="text-2xl font-bold text-green-400" data-bind="processedPayments">156</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-check-circle text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-6 hover-glow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Valoare Totală</p>
+                            <p class="text-2xl font-bold text-blue-400" data-bind="totalValue">€12,450</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-euro-sign text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-6 hover-glow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Săptămâna Curentă</p>
+                            <p class="text-xl font-bold text-primary-400" data-bind="currentWeek">Dec 18-24</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-calendar text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Status Overview Cards -->
+
+            <!-- @COMPONENT: Main Tabs Navigation -->
+            <div class="glass-effect rounded-2xl p-2 mb-8 animate-slide-up">
+                <div class="flex space-x-2" data-mock="true">
+                    <button class="tab-active px-6 py-3 rounded-xl text-white font-medium transition-all duration-300" data-tab="upload">
+                        <i class="fas fa-upload mr-2"></i>
+                        Încărcare Fișiere
+                    </button>
+                    <button class="px-6 py-3 rounded-xl text-gray-400 font-medium hover:text-white hover:bg-white/10 transition-all duration-300" data-tab="process">
+                        <i class="fas fa-cogs mr-2"></i>
+                        Procesare Date
+                    </button>
+                    <button class="px-6 py-3 rounded-xl text-gray-400 font-medium hover:text-white hover:bg-white/10 transition-all duration-300" data-tab="payments">
+                        <i class="fas fa-money-check-alt mr-2"></i>
+                        Evidența Plăților
+                    </button>
+                    <button class="px-6 py-3 rounded-xl text-gray-400 font-medium hover:text-white hover:bg-white/10 transition-all duration-300" data-tab="calendar">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        Calendar
+                    </button>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Main Tabs Navigation -->
+
+            <!-- @COMPONENT: File Upload Section -->
+            <div id="upload-section" class="animate-fade-in">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    <!-- TRIP File Upload -->
+                    <div class="glass-effect rounded-2xl p-8">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
+                                <i class="fas fa-file-csv text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-2">Fișier TRIP</h3>
+                            <p class="text-gray-400 text-sm">Încarcă fișierul CSV cu datele de transport</p>
+                        </div>
+                        
+                        <div class="file-upload-zone border-2 border-dashed border-gray-600 rounded-xl p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-300 mb-2">Drag & drop sau click pentru upload</p>
+                            <p class="text-gray-500 text-sm">.csv files only</p>
+                            <input type="file" class="hidden" accept=".csv" data-implementation="Connect to tripFileRef" />
+                        </div>
+                        
+                        <div class="mt-4" data-mock="true">
+                            <div class="flex items-center text-green-400">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span class="text-sm">trip_data_december.csv uploaded</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice 7 Days Upload -->
+                    <div class="glass-effect rounded-2xl p-8">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
+                                <i class="fas fa-file-excel text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-2">Facturi 7 Zile</h3>
+                            <p class="text-gray-400 text-sm">Încarcă facturile cu plată la 7 zile</p>
+                        </div>
+                        
+                        <div class="file-upload-zone border-2 border-dashed border-gray-600 rounded-xl p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-300 mb-2">Drag & drop sau click pentru upload</p>
+                            <p class="text-gray-500 text-sm">.xlsx, .xls, .csv files</p>
+                            <input type="file" class="hidden" accept=".xlsx,.xls,.csv" data-implementation="Connect to invoice7FileRef" />
+                        </div>
+                        
+                        <div class="mt-4" data-mock="true">
+                            <div class="flex items-center text-green-400">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span class="text-sm">invoices_7days.xlsx uploaded</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice 30 Days Upload -->
+                    <div class="glass-effect rounded-2xl p-8">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
+                                <i class="fas fa-file-excel text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-2">Facturi 30 Zile</h3>
+                            <p class="text-gray-400 text-sm">Încarcă facturile cu plată la 30 zile</p>
+                        </div>
+                        
+                        <div class="file-upload-zone border-2 border-dashed border-gray-600 rounded-xl p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-300 mb-2">Drag & drop sau click pentru upload</p>
+                            <p class="text-gray-500 text-sm">.xlsx, .xls, .csv files</p>
+                            <input type="file" class="hidden" accept=".xlsx,.xls,.csv" data-implementation="Connect to invoice30FileRef" />
+                        </div>
+                        
+                        <div class="mt-4" data-mock="true">
+                            <div class="flex items-center text-green-400">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span class="text-sm">invoices_30days.xlsx uploaded</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: File Upload Section -->
+
+            <!-- @COMPONENT: Data Processing Section -->
+            <div class="glass-effect rounded-2xl p-8 mb-8 animate-slide-up">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold gradient-text">Procesare Date</h2>
+                        <p class="text-gray-400">Selectează săptămâna și procesează datele încărcate</p>
+                    </div>
+                    <div class="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center animate-float">
+                        <i class="fas fa-cogs text-white"></i>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Week Selection -->
+                    <div class="space-y-4">
+                        <label class="block text-white font-medium">Selectează Săptămâna</label>
+                        <div class="relative">
+                            <select class="w-full bg-dark-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-300" data-implementation="Connect to selectedWeek state">
+                                <option value="">Alege săptămâna...</option>
+                                <option value="current" data-mock="true">Această săptămână (Dec 18-24)</option>
+                                <option value="week1" data-mock="true">Dec 11-17</option>
+                                <option value="week2" data-mock="true">Dec 4-10</option>
+                                <option value="week3" data-mock="true">Nov 27 - Dec 3</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-4 top-4 text-gray-400"></i>
+                        </div>
+                        
+                        <button class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover-glow transition-all duration-300" data-implementation="Open calendar modal">
+                            <i class="fas fa-calendar-alt mr-2"></i>
+                            Deschide Calendarul
+                        </button>
+                    </div>
+
+                    <!-- Processing Actions -->
+                    <div class="space-y-4">
+                        <label class="block text-white font-medium">Acțiuni de Procesare</label>
+                        <button class="w-full gradient-primary text-white px-6 py-4 rounded-xl font-medium hover-glow transition-all duration-300 disabled:opacity-50" data-implementation="Connect to processData function">
+                            <i class="fas fa-play mr-2"></i>
+                            Procesează Datele
+                        </button>
+                        
+                        <!-- Processing Progress -->
+                        <div class="bg-dark-700 rounded-xl p-4" data-mock="true">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-gray-300 text-sm">Progres procesare</span>
+                                <span class="text-primary-400 text-sm font-medium">75%</span>
+                            </div>
+                            <div class="w-full bg-gray-600 rounded-full h-2">
+                                <div class="progress-bar h-2 rounded-full w-3/4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Data Processing Section -->
+
+            <!-- @COMPONENT: Results Display -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Company Breakdown -->
+                <div class="glass-effect rounded-2xl p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-white">Breakdown pe Companii</h3>
+                        <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-building text-white"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4" data-mock="true">
+                        <!-- @MAP: companies.map(company => ( -->
+                        <div class="data-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-white" data-bind="company.name">Fast Express</h4>
+                                    <p class="text-gray-400 text-sm" data-bind="company.driversCount">15 șoferi</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-lg font-bold text-green-400" data-bind="company.totalAmount">€4,250</p>
+                                    <p class="text-gray-400 text-sm" data-bind="company.commission">Comision 2%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-white" data-bind="company.name">Daniel Ontheroad</h4>
+                                    <p class="text-gray-400 text-sm" data-bind="company.driversCount">8 șoferi</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-lg font-bold text-green-400" data-bind="company.totalAmount">€3,100</p>
+                                    <p class="text-gray-400 text-sm" data-bind="company.commission">Comision 4%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-white" data-bind="company.name">DE Cargo Speed</h4>
+                                    <p class="text-gray-400 text-sm" data-bind="company.driversCount">12 șoferi</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-lg font-bold text-green-400" data-bind="company.totalAmount">€2,850</p>
+                                    <p class="text-gray-400 text-sm" data-bind="company.commission">Comision 4%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+
+                <!-- Payment Management -->
+                <div class="glass-effect rounded-2xl p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold text-white">Evidența Plăților</h3>
+                        <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-money-check-alt text-white"></i>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4" data-mock="true">
+                        <!-- @MAP: payments.map(payment => ( -->
+                        <div class="data-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-check text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-white" data-bind="payment.driverName">Adrian Miron</p>
+                                        <p class="text-gray-400 text-sm" data-bind="payment.company">Fast Express</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-green-400" data-bind="payment.amount">€325</p>
+                                    <p class="text-gray-400 text-sm" data-bind="payment.date">18 Dec</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-clock text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-white" data-bind="payment.driverName">George Butnaru</p>
+                                        <p class="text-gray-400 text-sm" data-bind="payment.company">Fast Express</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-yellow-400" data-bind="payment.amount">€280</p>
+                                    <p class="text-gray-400 text-sm" data-bind="payment.status">Pending</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="data-card rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-check text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-white" data-bind="payment.driverName">Costica Mihalcea</p>
+                                        <p class="text-gray-400 text-sm" data-bind="payment.company">Daniel Ontheroad</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-green-400" data-bind="payment.amount">€390</p>
+                                    <p class="text-gray-400 text-sm" data-bind="payment.date">17 Dec</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- @END_MAP )) -->
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Results Display -->
+
+            <!-- @COMPONENT: Calendar Modal -->
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden" id="calendar-modal" data-implementation="Show/hide based on showCalendar state">
+                <div class="flex items-center justify-center min-h-screen p-4">
+                    <div class="glass-effect rounded-2xl p-8 max-w-md w-full animate-slide-up">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-bold text-white">Selectează Săptămâna</h3>
+                            <button class="w-8 h-8 text-gray-400 hover:text-white" data-implementation="Close calendar modal">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <!-- Calendar Navigation -->
+                        <div class="flex items-center justify-between mb-4">
+                            <button class="w-10 h-10 glass-effect rounded-xl flex items-center justify-center hover-glow" data-implementation="Previous month">
+                                <i class="fas fa-chevron-left text-white"></i>
+                            </button>
+                            <h4 class="text-lg font-semibold text-white" data-bind="currentMonth">Decembrie 2024</h4>
+                            <button class="w-10 h-10 glass-effect rounded-xl flex items-center justify-center hover-glow" data-implementation="Next month">
+                                <i class="fas fa-chevron-right text-white"></i>
+                            </button>
+                        </div>
+
+                        <!-- Calendar Grid -->
+                        <div class="grid grid-cols-7 gap-2 mb-4">
+                            <div class="text-center text-gray-400 text-sm font-medium p-2">Du</div>
+                            <div class="text-center text-gray-400 text-sm font-medium p-2">Lu</div>
+                            <div class="text-center text-gray-400 text-sm font-medium p-2">Ma</div>
+                            <div class="text-center text-gray-400 text-sm font-medium p-2">Mi</div>
+                            <div class="text-center text-gray-400 text-sm font-medium p-2">Jo</div>
+                            <div class="text-center text-gray-400 text-sm font-medium p-2">Vi</div>
+                            <div class="text-center text-gray-400 text-sm font-medium p-2">Sâ</div>
+                            
+                            <!-- @MAP: calendarDays.map(day => ( -->
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-gray-400" data-mock="true">1</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">2</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">3</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">4</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">5</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">6</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">7</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">8</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">9</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">10</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">11</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">12</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">13</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">14</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">15</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">16</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">17</button>
+                            <button class="w-10 h-10 text-sm rounded-lg gradient-primary text-white font-bold" data-mock="true">18</button>
+                            <button class="w-10 h-10 text-sm rounded-lg bg-primary-500 text-white" data-mock="true">19</button>
+                            <button class="w-10 h-10 text-sm rounded-lg bg-primary-500 text-white" data-mock="true">20</button>
+                            <button class="w-10 h-10 text-sm rounded-lg bg-primary-500 text-white" data-mock="true">21</button>
+                            <button class="w-10 h-10 text-sm rounded-lg bg-primary-500 text-white" data-mock="true">22</button>
+                            <button class="w-10 h-10 text-sm rounded-lg bg-primary-500 text-white" data-mock="true">23</button>
+                            <button class="w-10 h-10 text-sm rounded-lg bg-primary-500 text-white" data-mock="true">24</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">25</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">26</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">27</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">28</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">29</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">30</button>
+                            <button class="w-10 h-10 text-sm rounded-lg hover:bg-white/10 transition-all duration-200 text-white" data-mock="true">31</button>
+                            <!-- @END_MAP )) -->
+                        </div>
+
+                        <div class="text-center text-gray-400 text-sm mb-4">
+                            Săptămâna selectată: <span class="text-primary-400 font-medium" data-bind="selectedWeekRange">18 Dec - 24 Dec</span>
+                        </div>
+
+                        <button class="w-full gradient-primary text-white px-6 py-3 rounded-xl font-medium hover-glow transition-all duration-300" data-implementation="Confirm week selection">
+                            Confirmă Selecția
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Calendar Modal -->
+
+            <!-- @COMPONENT: Loading Overlay -->
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden" id="loading-overlay" data-implementation="Show/hide based on loading state">
+                <div class="flex items-center justify-center min-h-screen">
+                    <div class="glass-effect rounded-2xl p-8 text-center">
+                        <div class="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 animate-spin">
+                            <i class="fas fa-spinner text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-2">Procesare în curs...</h3>
+                        <p class="text-gray-400">Vă rugăm să așteptați</p>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Loading Overlay -->
+        </div>
+    </main>
+
+    <!-- @COMPONENT: Floating Action Button -->
+    <div class="fixed bottom-8 right-8 z-30">
+        <button class="w-16 h-16 gradient-primary rounded-full shadow-2xl hover-glow flex items-center justify-center animate-float" data-implementation="Quick actions menu">
+            <i class="fas fa-plus text-white text-xl"></i>
+        </button>
+    </div>
+    <!-- @END_COMPONENT: Floating Action Button -->
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        
+        // Mock interactive functionality for demonstration
+        (function() {
+            // Tab switching animation
+            const tabs = document.querySelectorAll('[data-tab]');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => {
+                        t.classList.remove('tab-active');
+                        t.classList.add('text-gray-400');
+                    });
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('tab-active');
+                    this.classList.remove('text-gray-400');
+                });
+            });
+
+            // File upload simulation
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    // Simulate file upload with progress
+                    const uploadZone = this.closest('.file-upload-zone');
+                    uploadZone.style.borderColor = '#8B5CF6';
+                    uploadZone.style.background = 'rgba(139, 92, 246, 0.1)';
+                });
+            });
+
+            // Calendar modal toggle
+            const calendarButton = document.querySelector('[data-implementation="Open calendar modal"]');
+            const calendarModal = document.getElementById('calendar-modal');
+            const closeCalendarButton = document.querySelector('[data-implementation="Close calendar modal"]');
+            
+            if (calendarButton && calendarModal) {
+                calendarButton.addEventListener('click', () => {
+                    calendarModal.classList.remove('hidden');
+                });
+            }
+            
+            if (closeCalendarButton && calendarModal) {
+                closeCalendarButton.addEventListener('click', () => {
+                    calendarModal.classList.add('hidden');
+                });
+            }
+
+            // Dark mode toggle (demo)
+            const darkModeToggle = document.querySelector('button[class*="w-12 h-6"]');
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('click', function() {
+                    const slider = this.querySelector('div');
+                    if (slider.classList.contains('right-0.5')) {
+                        slider.classList.remove('right-0.5');
+                        slider.classList.add('left-0.5');
+                    } else {
+                        slider.classList.remove('left-0.5');
+                        slider.classList.add('right-0.5');
+                    }
+                });
+            }
+
+            // Smooth scroll animations on load
+            window.addEventListener('load', function() {
+                const elements = document.querySelectorAll('.animate-fade-in, .animate-slide-up');
+                elements.forEach((el, index) => {
+                    setTimeout(() => {
+                        el.style.opacity = '1';
+                        el.style.transform = 'translateY(0)';
+                    }, index * 100);
+                });
+            });
+
+            // Enhanced hover effects for data cards
+            const dataCards = document.querySelectorAll('.data-card');
+            dataCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                    this.style.boxShadow = '0 25px 50px rgba(139, 92, 246, 0.2)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.boxShadow = '';
+                });
+            });
+
+        })();
+    </script>
+</body>
+</html>

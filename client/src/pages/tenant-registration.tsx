@@ -1,348 +1,366 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Building, UserPlus, ArrowRight, CheckCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import { CheckCircle, AlertCircle, Truck, Shield, Zap, CreditCard } from "lucide-react";
 
 export default function TenantRegistration() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    tenantName: "",
-    tenantDescription: "",
-    companyName: "",
+    name: "",
+    subdomain: "",
     contactEmail: "",
     contactPhone: "",
-    adminUsername: "",
-    adminPassword: "",
-    adminEmail: ""
-  });
-  
-  const [registrationSuccess, setRegistrationSuccess] = useState<any>(null);
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
-
-  // Registration mutation
-  const registrationMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/register-tenant', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    onSuccess: (result) => {
-      setRegistrationSuccess(result);
-      toast({
-        title: "🎉 Înregistrare reușită!",
-        description: `Tenant-ul "${result.tenant.name}" a fost creat cu succes!`,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "❌ Eroare la înregistrare",
-        description: error.message || "Nu s-a putut înregistra tenant-ul. Încercați din nou.",
-        variant: "destructive",
-      });
+    companyName: "",
+    adminUser: {
+      email: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+      confirmPassword: "",
     },
   });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.tenantName || !formData.adminUsername || !formData.adminPassword) {
-      toast({
-        title: "❌ Date incomplete",
-        description: "Numele tenant-ului, username-ul admin și parola sunt obligatorii.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    registrationMutation.mutate(formData);
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field.includes(".")) {
+      const [parent, child] = field.split(".");
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent as keyof typeof prev],
+          [child]: value,
+        },
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
-  if (registrationSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-green-900 flex items-center justify-center p-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
-        >
-          <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80">
-            <CardHeader className="text-center pb-6">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"
-              >
-                <CheckCircle className="w-8 h-8 text-white" />
-              </motion.div>
-              
-              <CardTitle className="text-2xl font-bold text-green-700 dark:text-green-400">
-                🎉 Înregistrare Reușită!
-              </CardTitle>
-            </CardHeader>
+  const validateForm = () => {
+    if (!formData.name || !formData.subdomain || !formData.contactEmail || 
+        !formData.companyName || !formData.adminUser.email || 
+        !formData.adminUser.firstName || !formData.adminUser.lastName || 
+        !formData.adminUser.password) {
+      setError("Toate câmpurile obligatorii trebuie completate");
+      return false;
+    }
 
-            <CardContent className="space-y-6">
-              <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg space-y-3">
-                <div>
-                  <p className="font-semibold text-green-800 dark:text-green-300">
-                    🏢 Tenant creat:
-                  </p>
-                  <p className="text-green-700 dark:text-green-400">
-                    <strong>#{registrationSuccess.tenant.id}</strong> - {registrationSuccess.tenant.name}
-                  </p>
-                  {registrationSuccess.tenant.companyName && (
-                    <p className="text-green-600 dark:text-green-500 text-sm">
-                      📋 {registrationSuccess.tenant.companyName}
-                    </p>
-                  )}
-                </div>
-                
-                <div>
-                  <p className="font-semibold text-green-800 dark:text-green-300">
-                    👤 Admin utilizator:
-                  </p>
-                  <p className="text-green-700 dark:text-green-400">
-                    <strong>{registrationSuccess.admin.username}</strong>
-                  </p>
-                  {registrationSuccess.admin.email && (
-                    <p className="text-green-600 dark:text-green-500 text-sm">
-                      ✉️ {registrationSuccess.admin.email}
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
-                <p className="font-semibold text-blue-800 dark:text-blue-300 mb-2">
-                  🔑 Pașii următori:
-                </p>
-                <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
-                  <li>1. Conectează-te cu credențialele de admin</li>
-                  <li>2. Configurează companiile și șoferii</li>
-                  <li>3. Începe să procesezi datele săptămânale</li>
-                </ol>
-              </div>
+    if (formData.adminUser.password !== formData.adminUser.confirmPassword) {
+      setError("Parolele nu se potrivesc");
+      return false;
+    }
 
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => setLocation('/tenant-login')}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Login Acum
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={() => setLocation('/')}
-                  className="flex-1"
-                >
-                  Acasă
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
+    if (formData.adminUser.password.length < 8) {
+      setError("Parola trebuie să aibă cel puțin 8 caractere");
+      return false;
+    }
+
+    if (!/^[a-z0-9-]+$/.test(formData.subdomain)) {
+      setError("Subdomain-ul poate conține doar litere mici, cifre și cratime");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/tenants/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          subdomain: formData.subdomain,
+          contactEmail: formData.contactEmail,
+          contactPhone: formData.contactPhone,
+          companyName: formData.companyName,
+          adminUser: {
+            email: formData.adminUser.email,
+            firstName: formData.adminUser.firstName,
+            lastName: formData.adminUser.lastName,
+            password: formData.adminUser.password,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Eroare la înregistrare");
+      }
+
+      setSuccess("Contul a fost creat cu succes! Vei fi redirecționat către platformă.");
+      
+      // Redirecționează către subdomain-ul tenantului după 2 secunde
+      setTimeout(() => {
+        window.location.href = `https://${formData.subdomain}.${window.location.hostname}`;
+      }, 2000);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eroare neașteptată");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-2xl"
-      >
-        <Card className="shadow-2xl border-0 backdrop-blur-sm bg-white/80 dark:bg-gray-900/80">
-          <CardHeader className="text-center pb-6">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"
-            >
-              <UserPlus className="w-8 h-8 text-white" />
-            </motion.div>
-            
-            <CardTitle className="text-3xl font-bold gradient-text">
-              🏢 Înregistrare Tenant Nou
-            </CardTitle>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
-              Creează-ți propriul tenant și primul utilizator admin
-            </p>
-          </CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="flex justify-center mb-4">
+            <div className="bg-blue-600 p-3 rounded-full">
+              <Truck className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Înregistrează-ți compania
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Obține accesul la platforma completă de logistică cu baza de date dedicată
+          </p>
+        </div>
 
-          <CardContent className="space-y-6">
+        {/* Features */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <Card className="text-center">
+            <CardContent className="pt-6">
+              <div className="bg-green-100 p-3 rounded-full w-fit mx-auto mb-4">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold mb-2">3 zile trial gratuit</h3>
+              <p className="text-sm text-gray-600">Testează toate funcționalitățile fără costuri</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="text-center">
+            <CardContent className="pt-6">
+              <div className="bg-blue-100 p-3 rounded-full w-fit mx-auto mb-4">
+                <Shield className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold mb-2">Bază de date separată</h3>
+              <p className="text-sm text-gray-600">Datele tale sunt complet izolate și securizate</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="text-center">
+            <CardContent className="pt-6">
+              <div className="bg-purple-100 p-3 rounded-full w-fit mx-auto mb-4">
+                <Zap className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold mb-2">Preț promotional</h3>
+              <p className="text-sm text-gray-600">€99.99/lună pentru primele 3 luni</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Registration Form */}
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Înregistrare companie
+            </CardTitle>
+            <CardDescription>
+              Completează informațiile pentru a crea contul companiei tale
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Tenant Information Section */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-4">
-                <h3 className="font-semibold text-blue-800 dark:text-blue-300 flex items-center">
-                  <Building className="w-4 h-4 mr-2" />
-                  Informații Tenant
-                </h3>
+              {/* Company Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Informații companie</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="tenantName">Nume Tenant *</Label>
+                    <Label htmlFor="name">Nume companie *</Label>
                     <Input
-                      id="tenantName"
-                      value={formData.tenantName}
-                      onChange={(e) => handleInputChange('tenantName', e.target.value)}
-                      placeholder="ex: Transport Express SRL"
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      placeholder="Ex: Transport Express SRL"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="companyName">Nume Companie</Label>
+                    <Label htmlFor="subdomain">Subdomain *</Label>
                     <Input
-                      id="companyName"
-                      value={formData.companyName}
-                      onChange={(e) => handleInputChange('companyName', e.target.value)}
-                      placeholder="ex: SC Transport Express SRL"
+                      id="subdomain"
+                      value={formData.subdomain}
+                      onChange={(e) => handleInputChange("subdomain", e.target.value.toLowerCase())}
+                      placeholder="ex: transport-express"
+                      required
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Va fi: {formData.subdomain}.{window.location.hostname}
+                    </p>
                   </div>
-                  
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="contactEmail">Email Contact</Label>
+                    <Label htmlFor="contactEmail">Email contact *</Label>
                     <Input
                       id="contactEmail"
                       type="email"
                       value={formData.contactEmail}
-                      onChange={(e) => handleInputChange('contactEmail', e.target.value)}
-                      placeholder="contact@transport.ro"
+                      onChange={(e) => handleInputChange("contactEmail", e.target.value)}
+                      placeholder="contact@companie.ro"
+                      required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="contactPhone">Telefon Contact</Label>
+                    <Label htmlFor="contactPhone">Telefon contact</Label>
                     <Input
                       id="contactPhone"
                       value={formData.contactPhone}
-                      onChange={(e) => handleInputChange('contactPhone', e.target.value)}
-                      placeholder="+40123456789"
+                      onChange={(e) => handleInputChange("contactPhone", e.target.value)}
+                      placeholder="+40 123 456 789"
                     />
                   </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="tenantDescription">Descriere (opțională)</Label>
-                  <Textarea
-                    id="tenantDescription"
-                    value={formData.tenantDescription}
-                    onChange={(e) => handleInputChange('tenantDescription', e.target.value)}
-                    placeholder="Descrierea activității companiei..."
-                    rows={3}
-                  />
                 </div>
               </div>
 
-              {/* Admin User Section */}
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg space-y-4">
-                <h3 className="font-semibold text-green-800 dark:text-green-300 flex items-center">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Primul Utilizator Admin
-                </h3>
+              {/* Admin User Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Cont administrator</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="adminUsername">Username Admin *</Label>
+                    <Label htmlFor="firstName">Prenume *</Label>
                     <Input
-                      id="adminUsername"
-                      value={formData.adminUsername}
-                      onChange={(e) => handleInputChange('adminUsername', e.target.value)}
-                      placeholder="admin sau numele dvs."
+                      id="firstName"
+                      value={formData.adminUser.firstName}
+                      onChange={(e) => handleInputChange("adminUser.firstName", e.target.value)}
+                      placeholder="Ion"
                       required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="adminPassword">Parola Admin *</Label>
+                    <Label htmlFor="lastName">Nume *</Label>
                     <Input
-                      id="adminPassword"
+                      id="lastName"
+                      value={formData.adminUser.lastName}
+                      onChange={(e) => handleInputChange("adminUser.lastName", e.target.value)}
+                      placeholder="Popescu"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="adminEmail">Email administrator *</Label>
+                  <Input
+                    id="adminEmail"
+                    type="email"
+                    value={formData.adminUser.email}
+                    onChange={(e) => handleInputChange("adminUser.email", e.target.value)}
+                    placeholder="admin@companie.ro"
+                    required
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="password">Parolă *</Label>
+                    <Input
+                      id="password"
                       type="password"
-                      value={formData.adminPassword}
-                      onChange={(e) => handleInputChange('adminPassword', e.target.value)}
-                      placeholder="Parolă sigură..."
+                      value={formData.adminUser.password}
+                      onChange={(e) => handleInputChange("adminUser.password", e.target.value)}
+                      placeholder="Minim 8 caractere"
                       required
                     />
                   </div>
                   
-                  <div className="md:col-span-2">
-                    <Label htmlFor="adminEmail">Email Admin</Label>
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirmă parola *</Label>
                     <Input
-                      id="adminEmail"
-                      type="email"
-                      value={formData.adminEmail}
-                      onChange={(e) => handleInputChange('adminEmail', e.target.value)}
-                      placeholder="admin@transport.ro"
+                      id="confirmPassword"
+                      type="password"
+                      value={formData.adminUser.confirmPassword}
+                      onChange={(e) => handleInputChange("adminUser.confirmPassword", e.target.value)}
+                      placeholder="Repetă parola"
+                      required
                     />
                   </div>
                 </div>
               </div>
+
+              {/* Error/Success Messages */}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {success && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={registrationMutation.isPending}
-                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3"
+                className="w-full"
+                disabled={loading}
               >
-                {registrationMutation.isPending ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Se înregistrează tenant-ul...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Creează Tenant & Admin
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </div>
-                )}
+                {loading ? "Se creează contul..." : "Creează contul companiei"}
               </Button>
-            </form>
 
-            {/* Info Section */}
-            <div className="border-t pt-4 space-y-3">
-              <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  <strong>ℹ️ Ce se întâmplă după înregistrare:</strong>
-                </p>
-                <ul className="text-xs text-gray-500 dark:text-gray-500 mt-2 space-y-1">
-                  <li>✓ Se creează tenant-ul cu ID unic</li>
-                  <li>✓ Se creează primul utilizator admin cu credențialele specificate</li>
-                  <li>✓ Se inițializează sistemul de numerotare pentru comenzi</li>
-                  <li>✓ Tenantul va avea acces doar la propriile date</li>
-                </ul>
-              </div>
-              
-              <div className="text-center">
-                <Button
-                  variant="ghost"
-                  onClick={() => setLocation('/')}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  ← Înapoi la pagina principală
-                </Button>
-              </div>
-            </div>
+              <p className="text-xs text-gray-500 text-center">
+                Prin înregistrare, ești de acord cu{" "}
+                <a href="/terms" className="text-blue-600 hover:underline">
+                  termenii și condițiile
+                </a>{" "}
+                și{" "}
+                <a href="/privacy" className="text-blue-600 hover:underline">
+                  politica de confidențialitate
+                </a>
+              </p>
+            </form>
           </CardContent>
         </Card>
-      </motion.div>
+
+        {/* Pricing Info */}
+        <div className="mt-12 text-center">
+          <Card className="max-w-md mx-auto">
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold mb-2">Prețuri transparente</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>✓ 3 zile trial gratuit</p>
+                <p>✓ €99.99/lună pentru primele 3 luni</p>
+                <p>✓ €149.99/lună după perioada promotională</p>
+                <p>✓ Toate funcționalitățile incluse</p>
+                <p>✓ Bază de date dedicată</p>
+                <p>✓ Suport tehnic inclus</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
