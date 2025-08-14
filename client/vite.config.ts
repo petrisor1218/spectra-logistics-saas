@@ -11,7 +11,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: "../dist/public",
+    outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
       output: {
@@ -21,11 +21,9 @@ export default defineConfig({
       }
     }
   },
-  esbuild: {
-    loader: 'tsx',
-    include: /src\/.*\.[tj]sx?$/,
-    exclude: [],
-  },
   base: "/",
-  publicDir: "public"
+  publicDir: "public",
+  optimizeDeps: {
+    exclude: ['@shared']
+  }
 });
