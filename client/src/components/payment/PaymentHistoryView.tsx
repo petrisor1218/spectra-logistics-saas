@@ -10,7 +10,7 @@ import { Calendar, CreditCard, Search, Filter, Download, Trash2, AlertTriangle, 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion } from "framer-motion";
-import type { Payment } from "@shared/schema";
+import type { Payment } from "../../../shared/schema";
 import {
   Dialog,
   DialogContent,

@@ -35,7 +35,7 @@ import { CreditCard, TrendingUp, TrendingDown, AlertCircle, CheckCircle, DollarS
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion } from "framer-motion";
-import type { CompanyBalance } from "@shared/schema";
+import type { CompanyBalance } from "../../../shared/schema";
 
 interface PaymentModalProps {
   balance: CompanyBalance;
