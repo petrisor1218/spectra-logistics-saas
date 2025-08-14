@@ -13,10 +13,14 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    minify: 'esbuild',
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom']
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+          utils: ['clsx', 'tailwind-merge', 'class-variance-authority']
         }
       }
     }
@@ -24,7 +28,8 @@ export default defineConfig({
   base: "/",
   publicDir: "public",
   optimizeDeps: {
-    exclude: ['@shared']
+    exclude: ['@shared'],
+    include: ['react', 'react-dom', 'clsx', 'tailwind-merge']
   },
   define: {
     global: 'globalThis'
